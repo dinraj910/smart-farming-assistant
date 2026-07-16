@@ -1,0 +1,37 @@
+cd ..   # back to repo root
+cat > .gitignore << 'EOF'
+# Node / Expo
+node_modules/
+.expo/
+dist/
+web-build/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Python / Backend
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Env files
+.env
+.env.local
+mobile/.env
+backend/.env
+
+# ML
+ml/**/*.h5
+ml/**/*.pkl
+ml/**/checkpoints/
+ml/**/datasets/
+
+# OS/editor
+.DS_Store
+.vscode/
+*.log
+EOF

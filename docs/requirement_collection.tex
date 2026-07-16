@@ -1,0 +1,291 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{times}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{setspace}
+\usepackage[colorlinks=true, linkcolor=black, citecolor=blue, urlcolor=blue]{hyperref}
+\usepackage{fancyhdr}
+
+\setlength{\headheight}{14.5pt}
+\onehalfspacing
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Requirement Collection}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\titleformat{\section}{\large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{1em}{}
+
+\begin{document}
+
+% ================= TITLE PAGE =================
+\begin{titlepage}
+    \centering
+    \vspace*{1cm}
+    {\large [YOUR COLLEGE NAME]\par}
+    {\large DEPARTMENT OF [YOUR DEPARTMENT]\par}
+    \vspace{2cm}
+    {\Huge\bfseries Requirement Collection Document\par}
+    \vspace{0.5cm}
+    {\Large For\par}
+    \vspace{0.5cm}
+    {\Large\bfseries AI-Powered Smart Farming Assistant\par}
+    \vspace{2cm}
+    {\large Submitted in partial fulfillment of the requirements for\par}
+    {\large 9th Semester Mini Project\par}
+    \vspace{2cm}
+    {\large\bfseries Submitted by:\par}
+    \vspace{0.3cm}
+    {\large [Student Name 1] -- [Register Number]\par}
+    {\large [Student Name 2] -- [Register Number]\par}
+    {\large [Student Name 3] -- [Register Number]\par}
+    \vspace{2cm}
+    {\large\bfseries Under the Guidance of:\par}
+    \vspace{0.3cm}
+    {\large [Guide Name]\par}
+    {\large [Designation]\par}
+    \vfill
+    {\large [Month, Year]\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ================= INTRODUCTION =================
+\section{Introduction}
+
+\subsection{Purpose}
+This document collects and organizes the requirements for the AI-Powered Smart Farming Assistant. It defines the target platform, the functional and non-functional requirements, and the external systems the application depends on. It is intended to guide design, development, and evaluation of the project.
+
+\subsection{Scope}
+The current phase of the project focuses on six feature categories: AI/ML-based crop and yield prediction, Weather Intelligence, Soil Intelligence (basic, manual-entry level), Disease and Pest Management, Market Intelligence, and Alerts/Notifications. Two features -- \textbf{Intercropping Suggestion} and \textbf{Market Analysis} -- are treated as the project's innovation focus, based on guidance received from the project supervisor. The project's geographic focus is \textbf{Kerala}, applied per feature as described in Section 3. Final selection of individual features within each category will be finalized in a subsequent design step; this document lists all candidate requirements under consideration.
+
+\subsection{Intended Audience}
+Project team members, project guide, and evaluators/reviewers of the mini project.
+
+% ================= PLATFORM DECISION =================
+\section{Platform Decision: Web vs. Mobile}
+
+\subsection{Options Considered}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Web application only}
+    \item \textbf{Mobile application only}
+    \item \textbf{Both, built as one shared codebase}
+\end{itemize}
+
+\subsection{Comparison}
+\begin{longtable}{p{3.2cm} p{5.7cm} p{5.1cm}}
+\toprule
+\textbf{Factor} & \textbf{Mobile App} & \textbf{Web App} \\
+\midrule
+\endhead
+Camera access (disease detection) & Native, fast, works offline-friendly & Possible via browser, but slower and less reliable \\
+Location access (weather/market by region) & Native GPS, accurate & Browser location permission, less consistent \\
+Push notifications (alerts) & Native support & Requires extra setup, less reliable on some browsers \\
+Usage pattern of target user (farmer) & Farmers primarily use smartphones in the field & Requires a laptop/desktop, less practical while working on the field \\
+Offline / low-connectivity support & Can cache data locally for rural network gaps & Harder to support offline reliably \\
+Ease of demo for evaluators & Requires installing an app or using Expo Go & Instantly accessible via a browser link \\
+Development effort (with chosen stack) & Primary target of React Native & Reused automatically via React Native Web \\
+\bottomrule
+\end{longtable}
+
+\subsection{Decision}
+The project will follow a \textbf{mobile-first approach}, with the web version generated from the same codebase as a secondary access point.
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Primary platform -- Mobile App:} Farmers are the primary users and predominantly use smartphones, especially while working in the field. Core features that depend on camera and location (disease detection, weather-by-location, on-the-go alerts) work best natively on mobile.
+    \item \textbf{Secondary platform -- Web App:} Since the tech stack (React Native + Expo + React Native Web) allows the same components to run in a browser with no separate codebase, a web version is generated at low extra effort. This web version is useful for project evaluation/demo (no installation needed), and for a more detailed dashboard view (charts, tables) when the user has access to a larger screen.
+\end{itemize}
+
+\textbf{Conclusion:} Build one shared codebase, optimize the experience for mobile first, and let the web version serve as a convenient secondary interface -- rather than building and maintaining two separate applications.
+
+% ================= GEOGRAPHIC SCOPE =================
+\section{Geographic Scope}
+
+\subsection{Decision}
+The project's product identity and demo focus is \textbf{Kerala}. Rather than applying this uniformly, geographic scope is decided \textit{per feature}, since each feature depends on different data sources with different levels of Kerala-specific coverage.
+
+\subsection{Scope by Feature}
+\begin{longtable}{p{3.4cm} p{4.6cm} p{5.4cm}}
+\toprule
+\textbf{Feature} & \textbf{Geographic Scope} & \textbf{Reasoning} \\
+\midrule
+\endhead
+Crop Recommendation & Kerala-relevant crop list; model trained on broader South India data & Keeps the crop list locally meaningful while giving the model enough data to generalize well \\
+Intercropping Suggestion & Kerala only & Based on real Kerala homestead multi-tier farming (coconut + pepper + banana + cocoa); this is the project's core innovation and should not be diluted \\
+Yield Prediction & Same as Crop Recommendation & Consistency with the recommendation model \\
+Weather Intelligence & Broad (any location) & Weather APIs work globally by coordinates at no extra implementation cost \\
+Soil Intelligence & Broad logic, Kerala context in messaging & NPK/pH thresholds are universal; regional notes (e.g. laterite soil) added for local relevance \\
+Disease Detection & Trained on broader South India data, supplemented with self-collected Kerala images for plantation crops (coconut, pepper, rubber) & Public datasets (e.g. PlantVillage) lack Kerala plantation crops; broader training improves accuracy while local images fill the most important gap \\
+Market Intelligence & Kerala primary, with optional cross-state price comparison (Tamil Nadu, Karnataka) & Reflects real farmer behaviour near state borders; adds genuine value instead of diluting focus \\
+Alerts & Inherits the scope of the triggering feature & No independent scope needed \\
+\bottomrule
+\end{longtable}
+
+\subsection{Note on Data Availability}
+Government mandi price data (Agmarknet, via data.gov.in) covers Kerala markets, though listings are comparatively sparse compared to grain-belt states, since Kerala's agricultural economy relies more on cooperative societies, the Spices Board, the Rubber Board, and the Coconut Development Board than on traditional APMC mandis. This is the reason cross-state comparison is offered as an added option under Market Intelligence rather than assumed sufficient on its own.
+
+% ================= OVERALL DESCRIPTION =================
+\section{Overall Description}
+
+\subsection{User Classes}
+\begin{longtable}{p{3.5cm} p{10.5cm}}
+\toprule
+\textbf{User Class} & \textbf{Description} \\
+\midrule
+\endhead
+Farmer & Primary user; uses the app to get crop recommendations, disease detection, weather updates, market prices, and alerts. \\
+Admin & Manages reference data (crop database, disease database) and monitors platform usage. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Operating Environment}
+\begin{itemize}[leftmargin=*]
+    \item Mobile app: Android (via Expo), with iOS support possible at no extra cost if needed later.
+    \item Web app: Any modern browser (Chrome, Firefox, Edge).
+    \item Backend: Cloud-hosted (free-tier), accessible over the internet.
+\end{itemize}
+
+\subsection{Assumptions and Constraints}
+\begin{itemize}[leftmargin=*]
+    \item Users have a basic smartphone with a working camera and internet access.
+    \item Free-tier APIs and hosting are sufficient for a semester-scale demo (not production-scale traffic).
+    \item Final feature selection within each listed category will be narrowed down after this requirement collection is reviewed.
+    \item Geographic scope is Kerala-first; some features (weather, disease-detection training data) are broadened where doing so improves accuracy or coverage without diluting the product's local identity (see Section 3).
+    \item IoT hardware/irrigation automation is not included in the current requirement scope; it may be added as a later extension.
+\end{itemize}
+
+% ================= FUNCTIONAL REQUIREMENTS =================
+\section{Functional Requirements}
+Each requirement is listed with an ID, description, and priority. Priority reflects value discussed so far: \textbf{High} (innovation focus / core), \textbf{Medium} (planned but negotiable), \textbf{Low} (only if simple to add).
+
+\subsection{AI/ML Prediction}
+\begin{longtable}{p{1.4cm} p{9cm} p{2.3cm}}
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Priority} \\
+\midrule
+\endhead
+FR-1 & The system shall recommend a suitable crop based on soil and climate inputs entered by the farmer, drawn from a Kerala-relevant crop list (e.g. rice, coconut, banana, pepper, cardamom, rubber, tapioca, arecanut, cocoa, ginger, turmeric, cashew). & High \\
+FR-2 & The system shall predict expected yield for the recommended/selected crop. & High \\
+FR-3 & The system shall suggest multi-tier intercropping combinations based on traditional Kerala homestead farming systems (e.g. coconut + pepper + banana + cocoa). & High (Innovation Focus) \\
+FR-4 & The system shall explain the reasoning behind a crop recommendation in simple language. & Medium \\
+\bottomrule
+\end{longtable}
+
+\subsection{Weather Intelligence}
+\begin{longtable}{p{1.4cm} p{9cm} p{2.3cm}}
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Priority} \\
+\midrule
+\endhead
+FR-5 & The system shall display current weather and short-term forecast for the farmer's location. & High \\
+FR-6 & The system shall show rainfall trend information relevant to the farmer's region. & Medium \\
+FR-7 & The system shall flag basic weather risk conditions (e.g. heavy rain expected) relevant to farming activity. & Medium \\
+\bottomrule
+\end{longtable}
+
+\subsection{Soil Intelligence (Basic)}
+\begin{longtable}{p{1.4cm} p{9cm} p{2.3cm}}
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Priority} \\
+\midrule
+\endhead
+FR-8 & The system shall allow farmers to manually enter soil test values (N, P, K, pH). & High \\
+FR-9 & The system shall generate a simple soil health score/summary from entered values, including notes relevant to common Kerala soil types (e.g. laterite). & Medium \\
+\bottomrule
+\end{longtable}
+
+\subsection{Disease and Pest Management}
+\begin{longtable}{p{1.4cm} p{9cm} p{2.3cm}}
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Priority} \\
+\midrule
+\endhead
+FR-10 & The system shall detect crop leaf disease from an uploaded or captured photo, using a model trained on broader South Indian crop-disease data. & High \\
+FR-11 & The system shall suggest a treatment/remedy for a detected disease. & High \\
+FR-12 & The system shall indicate the severity of a detected disease. & Medium \\
+FR-13 & The system shall additionally recognize diseases specific to Kerala plantation crops (coconut, pepper, rubber) using self-collected, locally supplemented training images. & High (Innovation Focus) \\
+\bottomrule
+\end{longtable}
+
+\subsection{Market Intelligence}
+\begin{longtable}{p{1.4cm} p{9cm} p{2.3cm}}
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Priority} \\
+\midrule
+\endhead
+FR-14 & The system shall display current market (mandi) prices for the farmer's crop, with Kerala as the default region. & High (Innovation Focus) \\
+FR-15 & The system shall allow price comparison of a crop across nearby markets, including neighbouring states (Tamil Nadu, Karnataka) when relevant. & High (Innovation Focus) \\
+FR-16 & The system shall display a recent price trend for a selected crop. & High (Innovation Focus) \\
+FR-17 & The system shall compare expected profit across candidate crop choices. & Medium \\
+\bottomrule
+\end{longtable}
+
+\subsection{Alerts and Notifications}
+\begin{longtable}{p{1.4cm} p{9cm} p{2.3cm}}
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Priority} \\
+\midrule
+\endhead
+FR-18 & The system shall notify the farmer of significant upcoming weather events. & Medium \\
+FR-19 & The system shall notify the farmer immediately after a disease is detected. & High \\
+FR-20 & The system shall notify the farmer when a tracked crop's market price reaches a target value. & Medium \\
+\bottomrule
+\end{longtable}
+
+\subsection{Account and Data Management}
+\begin{longtable}{p{1.4cm} p{9cm} p{2.3cm}}
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Priority} \\
+\midrule
+\endhead
+FR-21 & The system shall allow users to register and log in securely. & High \\
+FR-22 & The system shall allow a farmer to manage multiple crops/fields under one profile. & Medium \\
+FR-23 & The system shall let a farmer view their past recommendations and predictions in a dashboard. & Medium \\
+\bottomrule
+\end{longtable}
+
+% ================= NON FUNCTIONAL REQUIREMENTS =================
+\section{Non-Functional Requirements}
+\begin{longtable}{p{3.2cm} p{10.8cm}}
+\toprule
+\textbf{Category} & \textbf{Requirement} \\
+\midrule
+\endhead
+Performance & Predictions (crop recommendation, disease detection) should return results within a few seconds under normal network conditions. \\
+Usability & Interface should be simple enough for users with limited technical background; minimal steps to get a recommendation. \\
+Reliability & The system should handle missing/incomplete input gracefully without crashing. \\
+Security & User data (farm details, personal info) should be protected via authentication; passwords must not be stored in plain text. \\
+Portability & The application should run on both Android devices and modern web browsers from a single codebase. \\
+Maintainability & Code should be modular so new features (e.g. IoT integration) can be added later without major rework. \\
+Cost & The system should run entirely on free-tier tools and services for the duration of the academic project. \\
+\bottomrule
+\end{longtable}
+
+% ================= EXTERNAL INTERFACES =================
+\section{External Interface Requirements}
+\begin{longtable}{p{3.2cm} p{5.3cm} p{5.5cm}}
+\toprule
+\textbf{Interface} & \textbf{Source} & \textbf{Used For} \\
+\midrule
+\endhead
+Weather API & OpenWeatherMap / Open-Meteo (free tier) & Weather Intelligence features (FR-5 to FR-7) \\
+Market Price Data & data.gov.in -- ``Current Daily Price of Various Commodities in Various Markets (Mandi)'', sourced from the Agmarknet portal, Directorate of Marketing \& Inspection, Ministry of Agriculture and Farmers Welfare, Government of India & Market Intelligence features (FR-14 to FR-17) \\
+Maps/Location & OpenStreetMap + Nominatim (free) & Locating nearby markets, location-based weather \\
+\bottomrule
+\end{longtable}
+
+\textit{Note: Kerala's mandi listings within this dataset are comparatively sparse (see Section 3.3); cross-state comparison is planned to compensate. The exact API endpoint/dataset access method should be re-verified at implementation time, as government data portals are occasionally restructured.}
+
+% ================= CLOSING NOTE =================
+\section{Next Steps}
+This document lists candidate requirements across the agreed feature categories, with Intercropping Suggestion (FR-3) and Market Intelligence (FR-14 to FR-17) marked as the project's innovation focus per guidance from the project supervisor, and Kerala set as the primary geographic focus (Section 3). The next step is to review this list as a team and finalize the exact feature set that will be implemented, based on development complexity and available time.
+
+\end{document}

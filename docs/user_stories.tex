@@ -1,0 +1,180 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{times}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{setspace}
+\usepackage[colorlinks=true, linkcolor=black, citecolor=blue, urlcolor=blue]{hyperref}
+\usepackage{fancyhdr}
+
+\setlength{\headheight}{14.5pt}
+\onehalfspacing
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Initial User Stories}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\titleformat{\section}{\large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{1em}{}
+
+\begin{document}
+
+% ================= TITLE PAGE =================
+\begin{titlepage}
+    \centering
+    \vspace*{1cm}
+    {\large [YOUR COLLEGE NAME]\par}
+    {\large DEPARTMENT OF [YOUR DEPARTMENT]\par}
+    \vspace{2cm}
+    {\Huge\bfseries Initial User Stories\par}
+    \vspace{0.5cm}
+    {\Large For\par}
+    \vspace{0.5cm}
+    {\Large\bfseries AI-Powered Smart Farming Assistant\par}
+    \vspace{2cm}
+    {\large Submitted in partial fulfillment of the requirements for\par}
+    {\large 9th Semester Mini Project\par}
+    \vspace{2cm}
+    {\large\bfseries Submitted by:\par}
+    \vspace{0.3cm}
+    {\large [Student Name 1] -- [Register Number]\par}
+    {\large [Student Name 2] -- [Register Number]\par}
+    {\large [Student Name 3] -- [Register Number]\par}
+    \vspace{2cm}
+    {\large\bfseries Under the Guidance of:\par}
+    \vspace{0.3cm}
+    {\large [Guide Name]\par}
+    {\large [Designation]\par}
+    \vfill
+    {\large [Month, Year]\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ================= INTRODUCTION =================
+\section{Introduction}
+This document lists the initial user stories for the AI-Powered Smart Farming Assistant, written from the perspective of the two identified user classes: \textbf{Farmer} (primary user) and \textbf{Admin} (secondary user). Each story follows the standard format:
+
+\begin{center}
+\textit{As a [role], I want [goal], so that [benefit].}
+\end{center}
+
+Stories are grouped by feature category to match the Requirement Collection document. Priority follows the same scale: \textbf{High}, \textbf{Medium}, \textbf{Low}. Stories marked \textbf{(Innovation Focus)} correspond to Intercropping Suggestion and Market Analysis, as guided by the project supervisor. The project's geographic focus is \textbf{Kerala}; some stories reflect this directly (e.g. Kerala-relevant crops, Kerala homestead intercropping), while others (e.g. weather, disease-detection training) are intentionally broader for better accuracy, per the scope decision in the Requirement Collection document, Section 3.
+
+% ================= ACCOUNT =================
+\section{Account and Onboarding}
+\begin{longtable}{p{1.3cm} p{1.6cm} p{9.3cm} p{1.5cm}}
+\toprule
+\textbf{ID} & \textbf{Role} & \textbf{User Story} & \textbf{Priority} \\
+\midrule
+\endhead
+US-1 & Farmer & As a farmer, I want to register and log in securely, so that my farm data stays private and accessible only to me. & High \\
+US-2 & Farmer & As a farmer, I want to add and manage multiple crops/fields under my profile, so that I can get separate recommendations for each. & Medium \\
+US-3 & Farmer & As a farmer, I want to view my past recommendations and predictions in one dashboard, so that I can track my farming decisions over time. & Medium \\
+\bottomrule
+\end{longtable}
+
+% ================= AI/ML =================
+\section{AI/ML Prediction}
+\begin{longtable}{p{1.3cm} p{1.6cm} p{9.3cm} p{1.5cm}}
+\toprule
+\textbf{ID} & \textbf{Role} & \textbf{User Story} & \textbf{Priority} \\
+\midrule
+\endhead
+US-4 & Farmer & As a farmer, I want to enter my soil and location details, so that the app can recommend a suitable, Kerala-relevant crop to grow (e.g. rice, coconut, banana, pepper, rubber). & High \\
+US-5 & Farmer & As a farmer, I want to see the predicted yield for a recommended crop, so that I can estimate my expected harvest. & High \\
+US-6 & Farmer & As a farmer, I want to receive multi-tier intercropping suggestions based on traditional Kerala homestead farming (e.g. coconut + pepper + banana + cocoa), so that I can maximize land use the way many Kerala farms traditionally do. & High (Innovation Focus) \\
+US-7 & Farmer & As a farmer, I want the app to explain why a crop was recommended, so that I can trust and understand the suggestion. & Medium \\
+\bottomrule
+\end{longtable}
+
+% ================= WEATHER =================
+\section{Weather Intelligence}
+\begin{longtable}{p{1.3cm} p{1.6cm} p{9.3cm} p{1.5cm}}
+\toprule
+\textbf{ID} & \textbf{Role} & \textbf{User Story} & \textbf{Priority} \\
+\midrule
+\endhead
+US-8 & Farmer & As a farmer, I want to view the current weather forecast for my farm location, so that I can plan farming activities accordingly. & High \\
+US-9 & Farmer & As a farmer, I want to see rainfall trend information, so that I can decide on irrigation timing. & Medium \\
+US-10 & Farmer & As a farmer, I want to receive a warning before extreme weather, so that I can protect my crops in time. & Medium \\
+\bottomrule
+\end{longtable}
+
+% ================= SOIL =================
+\section{Soil Intelligence}
+\begin{longtable}{p{1.3cm} p{1.6cm} p{9.3cm} p{1.5cm}}
+\toprule
+\textbf{ID} & \textbf{Role} & \textbf{User Story} & \textbf{Priority} \\
+\midrule
+\endhead
+US-11 & Farmer & As a farmer, I want to manually enter my soil test values (N, P, K, pH), so that the app can assess my soil health. & High \\
+US-12 & Farmer & As a farmer, I want to see a simple soil health score, including notes relevant to common Kerala soil types (e.g. laterite), so that I can understand my soil condition at a glance. & Medium \\
+\bottomrule
+\end{longtable}
+
+% ================= DISEASE =================
+\section{Disease and Pest Management}
+\begin{longtable}{p{1.3cm} p{1.6cm} p{9.3cm} p{1.5cm}}
+\toprule
+\textbf{ID} & \textbf{Role} & \textbf{User Story} & \textbf{Priority} \\
+\midrule
+\endhead
+US-13 & Farmer & As a farmer, I want to upload or capture a photo of a crop leaf, so that the app can detect if it has a disease. & High \\
+US-14 & Farmer & As a farmer, I want to receive treatment suggestions for a detected disease, so that I can take corrective action quickly. & High \\
+US-15 & Farmer & As a farmer, I want to see how severe a detected disease is, so that I know how urgently to act. & Medium \\
+US-16 & Farmer & As a farmer growing plantation crops like coconut, pepper, or rubber, I want the disease detection to recognize diseases specific to these crops, so that the diagnosis is actually relevant to my farm and not just generic crops. & High (Innovation Focus) \\
+\bottomrule
+\end{longtable}
+
+% ================= MARKET =================
+\section{Market Intelligence (Innovation Focus)}
+\begin{longtable}{p{1.3cm} p{1.6cm} p{9.3cm} p{1.5cm}}
+\toprule
+\textbf{ID} & \textbf{Role} & \textbf{User Story} & \textbf{Priority} \\
+\midrule
+\endhead
+US-17 & Farmer & As a farmer, I want to view current mandi prices for my crop with Kerala as the default region, so that I can decide the best place and time to sell. & High (Innovation Focus) \\
+US-18 & Farmer & As a farmer, I want to compare prices of my crop across nearby markets, including neighbouring states like Tamil Nadu and Karnataka when relevant, so that I can choose the most profitable one to sell at. & High (Innovation Focus) \\
+US-19 & Farmer & As a farmer, I want to see a price trend graph over recent weeks, so that I can judge if prices are likely to rise or fall. & High (Innovation Focus) \\
+US-20 & Farmer & As a farmer, I want to compare expected profit between candidate crops before planting, so that I can choose the most profitable one to grow. & Medium \\
+\bottomrule
+\end{longtable}
+
+% ================= ALERTS =================
+\section{Alerts and Notifications}
+\begin{longtable}{p{1.3cm} p{1.6cm} p{9.3cm} p{1.5cm}}
+\toprule
+\textbf{ID} & \textbf{Role} & \textbf{User Story} & \textbf{Priority} \\
+\midrule
+\endhead
+US-21 & Farmer & As a farmer, I want to receive a notification for significant upcoming weather, so that I can prepare in advance. & Medium \\
+US-22 & Farmer & As a farmer, I want to receive an alert as soon as a disease is detected, so that I don't miss a critical crop health issue. & High \\
+US-23 & Farmer & As a farmer, I want to receive an alert when my crop's market price hits a target value, so that I don't miss a good selling opportunity. & Medium \\
+\bottomrule
+\end{longtable}
+
+% ================= ADMIN =================
+\section{Admin}
+\begin{longtable}{p{1.3cm} p{1.6cm} p{9.3cm} p{1.5cm}}
+\toprule
+\textbf{ID} & \textbf{Role} & \textbf{User Story} & \textbf{Priority} \\
+\midrule
+\endhead
+US-24 & Admin & As an admin, I want to view registered farmers and their activity, so that I can monitor platform usage. & Low \\
+US-25 & Admin & As an admin, I want to update the crop and disease reference data, so that predictions stay accurate over time. & Low \\
+\bottomrule
+\end{longtable}
+
+% ================= NEXT STEPS =================
+\section{Next Steps}
+These 25 initial stories will be reviewed alongside the Requirement Collection document to finalize the exact feature set for implementation, with US-6, US-16 (Intercropping and Kerala plantation-crop disease detection), and US-17 to US-19 (Market Analysis) prioritized as the project's core innovation, per the project supervisor's guidance.
+
+\end{document}
