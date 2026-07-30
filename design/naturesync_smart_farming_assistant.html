@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NatureSync - Smart Farming Assistant</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap');
+    
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #080e1a;
+      color: #0f172a;
+    }
+
+    .font-display {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    .glass-floating {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+    }
+
+    .glass-dark {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .ios-shadow {
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.08);
+    }
+  </style>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#16a34a',
+              600: '#15803d',
+              700: '#166534',
+              800: '#114223',
+              900: '#0a2e18',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-2 sm:p-6 text-slate-100">
+
+  <div class="w-full max-w-7xl flex flex-col lg:flex-row gap-8 items-start justify-center my-auto">
+    
+    <!-- LEFT CONTROL PANEL (Blueprint Sync & Prototype Navigation) -->
+    <div class="w-full lg:w-80 bg-slate-900/90 backdrop-blur-xl text-slate-100 p-6 rounded-[32px] border border-slate-800 shadow-2xl flex flex-col justify-between shrink-0">
+      <div>
+        <div class="flex items-center justify-between mb-5">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-600 to-green-400 flex items-center justify-center text-white shadow-lg shadow-emerald-600/30">
+              <i data-lucide="sprout" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h1 class="font-extrabold text-lg tracking-tight text-white font-display">NatureSync</h1>
+              <p class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">Kerala AgTech AI</p>
+            </div>
+          </div>
+
+          <!-- Language Toggle Button -->
+          <button onclick="toggleLanguage()" id="lang-btn" class="px-2.5 py-1 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/30 text-emerald-300 rounded-full text-xs font-bold transition-all flex items-center gap-1">
+            <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+            <span id="lang-label">മലയാളം</span>
+          </button>
+        </div>
+
+        <p class="text-xs text-slate-400 leading-relaxed mb-4">
+          Aligned directly with your <b>App Flow Blueprint</b>. Test the complete interactive user journey using the controls below.
+        </p>
+
+        <!-- SCREEN SWITCHER BUTTONS -->
+        <div class="space-y-2 pt-3 border-t border-slate-800/80">
+          <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Blueprint Screen Selector</span>
+          
+          <button onclick="switchScreen('home-screen')" class="nav-btn-desktop w-full text-left px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all bg-emerald-600 text-white flex items-center justify-between shadow-lg shadow-emerald-600/20">
+            <span class="flex items-center gap-2.5"><i data-lucide="home" class="w-4 h-4"></i> <span data-ml="1. ഹോം & വിള എ.ഐ">1. Home & Crop AI</span></span>
+            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+          </button>
+
+          <button onclick="switchScreen('doctor-screen')" class="nav-btn-desktop w-full text-left px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all bg-slate-800/80 text-slate-300 hover:bg-slate-700 flex items-center justify-between">
+            <span class="flex items-center gap-2.5"><i data-lucide="scan" class="w-4 h-4"></i> <span data-ml="2. ലീഫ് ഡോക്ടർ (രോഗനിർണ്ണയം)">2. Leaf Doctor (Vision AI)</span></span>
+            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+          </button>
+
+          <button onclick="switchScreen('weather-screen')" class="nav-btn-desktop w-full text-left px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all bg-slate-800/80 text-slate-300 hover:bg-slate-700 flex items-center justify-between">
+            <span class="flex items-center gap-2.5"><i data-lucide="cloud-sun" class="w-4 h-4"></i> <span data-ml="3. കാലാവസ്ഥ & മൺസൂൺ">3. Weather & Monsoon</span></span>
+            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+          </button>
+
+          <button onclick="switchScreen('market-screen')" class="nav-btn-desktop w-full text-left px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all bg-slate-800/80 text-slate-300 hover:bg-slate-700 flex items-center justify-between">
+            <span class="flex items-center gap-2.5"><i data-lucide="trending-up" class="w-4 h-4"></i> <span data-ml="4. കേരള വിപണി & അന്തർസംസ്ഥാനം">4. Market & Trade Radar</span></span>
+            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+          </button>
+
+          <button onclick="switchScreen('farms-screen')" class="nav-btn-desktop w-full text-left px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all bg-slate-800/80 text-slate-300 hover:bg-slate-700 flex items-center justify-between">
+            <span class="flex items-center gap-2.5"><i data-lucide="map-pin" class="w-4 h-4"></i> <span data-ml="5. എന്റെ തോട്ടങ്ങൾ & പ്രൊഫൈൽ">5. Profile & My Farms</span></span>
+            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Trigger Actions -->
+      <div class="mt-6 pt-4 border-t border-slate-800 space-y-2">
+        <button onclick="openAlertsModal()" class="w-full py-2.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 transition-all">
+          <i data-lucide="bell" class="w-4 h-4"></i>
+          <span>Open Push Alerts Drawer (3)</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- MOBILE FRAME MOCKUP (iOS Precision Frame) -->
+    <div class="relative mx-auto w-[390px] h-[835px] bg-slate-950 rounded-[54px] p-3 shadow-2xl border-4 border-slate-800 ring-1 ring-slate-700/50 flex flex-col justify-between overflow-hidden shrink-0">
+      
+      <!-- Top Speaker Notch & Dynamic Island -->
+      <div class="absolute top-0 left-1/2 -translate-x-1/2 w-36 h-5 bg-slate-950 rounded-b-xl z-50 flex items-center justify-center">
+        <div class="w-10 h-1 bg-slate-800 rounded-full"></div>
+      </div>
+
+      <!-- Mobile Screen Shell -->
+      <div class="w-full h-full bg-slate-100 rounded-[44px] overflow-hidden flex flex-col relative pt-3 text-slate-900">
+
+        <!-- iOS Status Bar -->
+        <div class="px-7 py-1 flex justify-between items-center text-slate-900 text-xs font-semibold z-40">
+          <span class="font-bold">9:41</span>
+          <div class="flex items-center gap-1.5">
+            <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+            <i data-lucide="battery" class="w-4 h-4"></i>
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- SCREEN 1: HOME & CROP AI (BLUEPRINT BRANCH A) -->
+        <!-- ========================================================= -->
+        <div id="home-screen" class="app-screen flex-1 overflow-y-auto no-scrollbar relative">
+          
+          <!-- Photographic Header -->
+          <div class="relative h-60 w-full">
+            <img src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-slate-100"></div>
+
+            <!-- Top User Greeting Header -->
+            <div class="absolute top-3 inset-x-5 flex justify-between items-center text-white">
+              <div>
+                <span class="text-[10px] text-emerald-300 font-bold tracking-wide uppercase block" id="lbl-date">Mon, 30 Jul 2026</span>
+                <h3 class="text-base font-extrabold tracking-tight" id="lbl-greeting">Hello, Rajesh Nair 👋</h3>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="openAlertsModal()" class="w-9 h-9 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 text-white relative">
+                  <i data-lucide="bell" class="w-4 h-4"></i>
+                  <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-amber-400 rounded-full border border-slate-900"></span>
+                </button>
+                <div class="w-9 h-9 rounded-full border-2 border-white/80 overflow-hidden shadow-md">
+                  <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80" class="w-full h-full object-cover">
+                </div>
+              </div>
+            </div>
+
+            <!-- Main Slogan -->
+            <div class="absolute top-16 inset-x-5 text-white">
+              <h2 class="text-lg font-extrabold leading-tight font-display" id="lbl-slogan">Smarter Farming for<br>Maximum Yield & Profit</h2>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="absolute bottom-11 inset-x-5 flex gap-2">
+              <div class="flex-1 bg-white/30 backdrop-blur-md rounded-2xl px-3 py-2 flex items-center gap-2 border border-white/40 text-white shadow-sm">
+                <i data-lucide="search" class="w-4 h-4 text-white/80"></i>
+                <input type="text" id="search-input" placeholder="Search crops, pests, market rates..." class="bg-transparent text-xs placeholder-white/80 text-white focus:outline-none w-full">
+              </div>
+              <button onclick="calculateCropRecommendation()" class="w-9 h-9 rounded-2xl bg-white text-slate-800 flex items-center justify-center shadow-md shrink-0 font-bold text-xs">
+                <i data-lucide="sparkles" class="w-4 h-4 text-emerald-600"></i>
+              </button>
+            </div>
+
+            <!-- Weather Card Overlay Floating -->
+            <div class="absolute -bottom-8 inset-x-5 glass-floating rounded-[22px] p-3 shadow-lg border border-white/70">
+              <div class="flex justify-between items-center">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-9 h-9 rounded-xl bg-amber-400/20 text-amber-600 flex items-center justify-center">
+                    <i data-lucide="sun" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Wayanad • 31°C</span>
+                    <h4 class="text-xs font-extrabold text-slate-900" id="lbl-weather-status">Optimal Soil Moisture</h4>
+                  </div>
+                </div>
+                <button onclick="switchScreen('weather-screen')" class="px-2.5 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-full text-[10px] font-bold transition-all">
+                  Forecast &gt;
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Content Body -->
+          <div class="px-5 pt-12 pb-24 space-y-5">
+
+            <!-- Core Quick Actions Grid (Blueprint Requirement: 4 main tap targets) -->
+            <div>
+              <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider mb-2.5" id="lbl-quick-services">Quick Assistant Actions</h3>
+              <div class="grid grid-cols-2 gap-2.5">
+                <button onclick="scrollToCropForm()" class="bg-white border border-slate-200/80 p-3 rounded-2xl flex items-center gap-3 shadow-sm text-left hover:border-emerald-500 transition-all">
+                  <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                    <i data-lucide="sprout" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <h4 class="text-xs font-extrabold text-slate-900" id="btn-crop-rec">Crop AI</h4>
+                    <span class="text-[9px] text-slate-500 block" id="sub-crop-rec">Soil & Yield</span>
+                  </div>
+                </button>
+
+                <button onclick="switchScreen('doctor-screen')" class="bg-white border border-slate-200/80 p-3 rounded-2xl flex items-center gap-3 shadow-sm text-left hover:border-emerald-500 transition-all">
+                  <div class="w-9 h-9 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
+                    <i data-lucide="scan" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <h4 class="text-xs font-extrabold text-slate-900" id="btn-leaf-doc">Leaf Doctor</h4>
+                    <span class="text-[9px] text-slate-500 block" id="sub-leaf-doc">Disease Vision</span>
+                  </div>
+                </button>
+
+                <button onclick="switchScreen('weather-screen')" class="bg-white border border-slate-200/80 p-3 rounded-2xl flex items-center gap-3 shadow-sm text-left hover:border-emerald-500 transition-all">
+                  <div class="w-9 h-9 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
+                    <i data-lucide="cloud-rain" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <h4 class="text-xs font-extrabold text-slate-900" id="btn-weather-radar">Weather</h4>
+                    <span class="text-[9px] text-slate-500 block" id="sub-weather-radar">Rain Alert</span>
+                  </div>
+                </button>
+
+                <button onclick="switchScreen('market-screen')" class="bg-white border border-slate-200/80 p-3 rounded-2xl flex items-center gap-3 shadow-sm text-left hover:border-emerald-500 transition-all">
+                  <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                    <i data-lucide="trending-up" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <h4 class="text-xs font-extrabold text-slate-900" id="btn-mandi-rates">Mandi Radar</h4>
+                    <span class="text-[9px] text-slate-500 block" id="sub-mandi-rates">Kerala & TN</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <!-- AI CROP RECOMMENDATION & SOIL FORM (BLUEPRINT FEATURE BRANCH A) -->
+            <div id="crop-form-container" class="bg-white border border-slate-200/80 rounded-[24px] p-4 shadow-sm space-y-3">
+              <div class="flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="sliders" class="w-4 h-4 text-emerald-600"></i>
+                  <h3 class="text-xs font-extrabold text-slate-900" id="lbl-soil-form-title">Soil Intelligence & Crop AI</h3>
+                </div>
+                <span class="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">Wayanad Location</span>
+              </div>
+
+              <!-- Input Grid -->
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <label class="text-[10px] text-slate-500 font-bold block mb-1">Nitrogen (N)</label>
+                  <input type="number" id="inp-n" value="85" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 font-bold text-slate-800 focus:outline-emerald-600">
+                </div>
+                <div>
+                  <label class="text-[10px] text-slate-500 font-bold block mb-1">Phosphorus (P)</label>
+                  <input type="number" id="inp-p" value="42" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 font-bold text-slate-800 focus:outline-emerald-600">
+                </div>
+                <div>
+                  <label class="text-[10px] text-slate-500 font-bold block mb-1">Potassium (K)</label>
+                  <input type="number" id="inp-k" value="140" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 font-bold text-slate-800 focus:outline-emerald-600">
+                </div>
+                <div>
+                  <label class="text-[10px] text-slate-500 font-bold block mb-1">Soil pH Level</label>
+                  <input type="number" step="0.1" id="inp-ph" value="6.2" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 font-bold text-slate-800 focus:outline-emerald-600">
+                </div>
+              </div>
+
+              <button onclick="calculateCropRecommendation()" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 shadow-sm transition-all">
+                <i data-lucide="sparkles" class="w-4 h-4"></i> <span id="btn-run-ai">Run Crop Recommendation Engine</span>
+              </button>
+
+              <!-- Recommendation Output Result Box (Blueprint Innovation Feature: Intercropping) -->
+              <div id="crop-result-box" class="bg-emerald-950 text-white p-3.5 rounded-2xl space-y-2.5">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <span class="text-[9px] font-bold text-emerald-300 uppercase tracking-wider block">AI Best Match</span>
+                    <h4 class="text-sm font-extrabold text-white" id="res-crop-name">Black Pepper + Coconut Homestead</h4>
+                  </div>
+                  <span class="text-xs font-extrabold text-amber-300 bg-amber-400/20 px-2 py-0.5 rounded-full border border-amber-400/30">96% Fit</span>
+                </div>
+
+                <div class="text-[11px] text-slate-200 leading-relaxed border-t border-emerald-800/80 pt-2 space-y-1">
+                  <p><b>Expected Yield:</b> <span id="res-yield">2.6 Tonnes / Acre</span></p>
+                  <p><b>Estimated Profit:</b> <span id="res-profit" class="text-amber-300 font-bold">₹3,20,000 / Season</span></p>
+                </div>
+
+                <!-- Intercropping Suggestion Matrix (Innovation Focus from Blueprint) -->
+                <div class="bg-white/10 backdrop-blur-sm p-2.5 rounded-xl border border-white/15 space-y-1">
+                  <span class="text-[10px] font-bold text-emerald-200 block uppercase tracking-wider">🌱 Recommended Intercrops (തോട്ടവിളകൾ)</span>
+                  <div class="flex gap-1.5 pt-1">
+                    <span class="bg-emerald-800/80 text-emerald-100 text-[10px] px-2 py-0.5 rounded-md font-bold">Black Pepper</span>
+                    <span class="bg-emerald-800/80 text-emerald-100 text-[10px] px-2 py-0.5 rounded-md font-bold">Cocoa</span>
+                    <span class="bg-emerald-800/80 text-emerald-100 text-[10px] px-2 py-0.5 rounded-md font-bold">Nendran Banana</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- "My Fields" Large Photographic Card Carousel -->
+            <div>
+              <div class="flex justify-between items-center mb-2.5">
+                <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider" id="lbl-registered-plots">My Registered Plots</h3>
+                <button onclick="switchScreen('farms-screen')" class="text-xs font-bold text-emerald-700 hover:underline">Manage &gt;</button>
+              </div>
+
+              <!-- Main Field Card -->
+              <div class="relative h-44 rounded-[24px] overflow-hidden shadow-md border border-slate-200 group">
+                <img src="https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+
+                <!-- Rating Pill Top Left -->
+                <div class="absolute top-2.5 left-2.5 bg-black/40 backdrop-blur-md text-amber-300 font-bold px-2 py-0.5 rounded-full text-[10px] flex items-center gap-1 border border-white/20">
+                  <i data-lucide="star" class="w-3 h-3 fill-amber-300"></i> 4.9 Health
+                </div>
+
+                <!-- Bottom Details Box -->
+                <div class="absolute bottom-3 inset-x-3 flex justify-between items-end text-white">
+                  <div>
+                    <span class="text-[9px] font-medium text-slate-300 block">Meenangadi Plot #F3 • 2.4 Acres</span>
+                    <h4 class="text-sm font-extrabold tracking-tight">Wayanad Pepper & Coconut Field</h4>
+                  </div>
+                  <button onclick="switchScreen('farms-screen')" class="w-8 h-8 rounded-full bg-white text-slate-900 flex items-center justify-center shadow-lg">
+                    <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- SCREEN 2: VISION DISEASE DOCTOR (BLUEPRINT BRANCH B) -->
+        <!-- ========================================================= -->
+        <div id="doctor-screen" class="app-screen hidden flex-1 overflow-y-auto no-scrollbar relative">
+          
+          <!-- Aerial Crop Scanner View Header -->
+          <div class="relative h-64 w-full">
+            <img id="leaf-preview-img" src="https://images.unsplash.com/photo-1592417817098-8f3d6eb16432?auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-slate-100"></div>
+
+            <!-- Controls -->
+            <div class="absolute top-3 inset-x-4 flex justify-between items-center text-white">
+              <button onclick="switchScreen('home-screen')" class="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/20">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              </button>
+              <div class="bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 text-[10px] font-bold flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Leaf Vision Scanner
+              </div>
+              <button class="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/20">
+                <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+
+            <!-- Bounding Box Scanner Overlay -->
+            <div class="absolute inset-14 border-2 border-emerald-400/90 rounded-2xl flex items-center justify-center overflow-hidden">
+              <div class="w-full h-0.5 bg-emerald-400 shadow-[0_0_15px_#34d399] animate-bounce"></div>
+            </div>
+          </div>
+
+          <!-- Diagnostic Prescription Floating Card -->
+          <div class="px-5 -mt-8 relative z-20 pb-24 space-y-4">
+            
+            <div class="bg-white rounded-[24px] p-4 shadow-xl border border-slate-200 space-y-3">
+              <div class="flex justify-between items-start">
+                <div>
+                  <span class="text-[9px] font-bold bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full border border-rose-200">High Risk Detected</span>
+                  <h3 class="text-sm font-extrabold text-slate-900 mt-1" id="diag-title">Quick Wilt Disease (ദ്രുതവാട്ടം)</h3>
+                  <p class="text-[11px] text-slate-500 font-medium" id="diag-pathogen">Pathogen: Phytophthora capsici</p>
+                </div>
+                <div class="text-right">
+                  <span class="text-base font-extrabold text-emerald-700 block">98%</span>
+                  <span class="text-[8px] text-slate-400 font-bold uppercase">Confidence</span>
+                </div>
+              </div>
+
+              <!-- Disease Severity Meter (Blueprint Requirement) -->
+              <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
+                <div class="flex justify-between text-[10px] font-bold text-slate-700">
+                  <span>Disease Severity Index</span>
+                  <span class="text-rose-600">Moderate (Stage 2)</span>
+                </div>
+                <div class="h-2 w-full bg-slate-200 rounded-full overflow-hidden flex gap-0.5">
+                  <div class="h-full w-1/4 bg-amber-400"></div>
+                  <div class="h-full w-1/4 bg-rose-500"></div>
+                  <div class="h-full w-1/4 bg-slate-300"></div>
+                  <div class="h-full w-1/4 bg-slate-300"></div>
+                </div>
+              </div>
+
+              <!-- Sample Photo Selectors -->
+              <div>
+                <span class="text-[10px] font-bold text-slate-500 block mb-1">Test Leaf Samples:</span>
+                <div class="grid grid-cols-3 gap-1.5">
+                  <button onclick="selectSampleLeaf('wilt')" class="text-[9px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 p-1.5 rounded-xl text-center">Black Pepper Wilt</button>
+                  <button onclick="selectSampleLeaf('blight')" class="text-[9px] font-bold bg-slate-100 text-slate-700 border border-slate-200 p-1.5 rounded-xl text-center">Banana Blight</button>
+                  <button onclick="selectSampleLeaf('healthy')" class="text-[9px] font-bold bg-slate-100 text-slate-700 border border-slate-200 p-1.5 rounded-xl text-center">Healthy Leaf</button>
+                </div>
+              </div>
+
+              <!-- Organic & Chemical Treatment Steps -->
+              <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1.5">
+                <span class="font-extrabold text-slate-900 flex items-center gap-1.5 text-[11px]">
+                  <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i> Recommended Treatment
+                </span>
+                <p class="text-slate-700 text-[10px] leading-relaxed" id="diag-step1">
+                  <b>1. Organic Spray:</b> Apply 1% Bordeaux Mixture (ബോർഡോ മിശ്രിതം) on foliage and soil base immediately.
+                </p>
+                <p class="text-slate-700 text-[10px] leading-relaxed" id="diag-step2">
+                  <b>2. Bio-Control:</b> Mix <i>Trichoderma viride</i> with organic compost around roots.
+                </p>
+              </div>
+
+              <button onclick="openDiagnosisModal()" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 shadow-md">
+                <i data-lucide="camera" class="w-4 h-4"></i> Scan New Leaf Sample
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- SCREEN 3: WEATHER & MONSOON (BLUEPRINT BRANCH C) -->
+        <!-- ========================================================= -->
+        <div id="weather-screen" class="app-screen hidden flex-1 overflow-y-auto no-scrollbar p-4 pb-24 space-y-4">
+          
+          <div class="flex justify-between items-center pt-1">
+            <div>
+              <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Palakkad & Wayanad</span>
+              <h2 class="text-lg font-extrabold text-slate-900 tracking-tight font-display" id="lbl-weather-title">Weather Radar</h2>
+            </div>
+            <div class="w-9 h-9 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-700 shadow-sm">
+              <i data-lucide="cloud-rain" class="w-4 h-4 text-sky-600"></i>
+            </div>
+          </div>
+
+          <!-- Hero Weather Card -->
+          <div class="bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 text-white rounded-[24px] p-4 shadow-lg space-y-3">
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="text-[10px] text-emerald-300 font-bold uppercase tracking-wider">Monsoon Rainfall Radar</span>
+                <h3 class="text-2xl font-extrabold mt-0.5">29°C</h3>
+                <p class="text-[11px] text-slate-300">Heavy rain expected around 3:30 PM</p>
+              </div>
+              <i data-lucide="cloud-lightning" class="w-8 h-8 text-amber-300"></i>
+            </div>
+
+            <div class="grid grid-cols-3 gap-1.5 pt-2 border-t border-white/10 text-center">
+              <div class="bg-white/10 p-1.5 rounded-xl backdrop-blur-sm">
+                <span class="text-[9px] text-slate-300 block">Humidity</span>
+                <span class="text-xs font-bold">88%</span>
+              </div>
+              <div class="bg-white/10 p-1.5 rounded-xl backdrop-blur-sm">
+                <span class="text-[9px] text-slate-300 block">Rain Risk</span>
+                <span class="text-xs font-bold text-sky-300">92%</span>
+              </div>
+              <div class="bg-white/10 p-1.5 rounded-xl backdrop-blur-sm">
+                <span class="text-[9px] text-slate-300 block">Wind</span>
+                <span class="text-xs font-bold">24 km/h</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Rain Advisory Box -->
+          <div class="bg-amber-50 border border-amber-200 rounded-[20px] p-3 flex gap-2.5 items-start">
+            <i data-lucide="alert-circle" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
+            <div>
+              <h4 class="text-xs font-bold text-amber-900" id="lbl-spray-advisory-title">Hold Spraying Fertilizers Today</h4>
+              <p class="text-[10px] text-amber-800 mt-0.5" id="lbl-spray-advisory-body">Monsoon rainfall will wash away Bordeaux sprays. Reschedule for Friday morning.</p>
+            </div>
+          </div>
+
+          <!-- Rainfall Forecast Chart -->
+          <div class="bg-white border border-slate-200 rounded-[24px] p-3.5 shadow-sm space-y-2">
+            <h4 class="text-xs font-extrabold text-slate-900">7-Day Rainfall Forecast (mm)</h4>
+            <div class="h-32 w-full">
+              <canvas id="weatherChart"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- SCREEN 4: KERALA & CROSS-STATE MARKET INTELLIGENCE (BLUEPRINT BRANCH D) -->
+        <!-- ========================================================= -->
+        <div id="market-screen" class="app-screen hidden flex-1 overflow-y-auto no-scrollbar p-4 pb-24 space-y-4">
+          
+          <div class="flex justify-between items-center pt-1">
+            <div>
+              <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Agmarknet Mandi Rates</span>
+              <h2 class="text-lg font-extrabold text-slate-900 tracking-tight font-display" id="lbl-market-title">Market Intelligence</h2>
+            </div>
+            <div class="w-9 h-9 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-amber-600 shadow-sm">
+              <i data-lucide="trending-up" class="w-4 h-4"></i>
+            </div>
+          </div>
+
+          <!-- Price Trend Chart Card -->
+          <div class="bg-white border border-slate-200 rounded-[24px] p-3.5 shadow-sm space-y-2">
+            <div class="flex justify-between items-center">
+              <div>
+                <h3 class="text-xs font-extrabold text-slate-900" id="lbl-rubber-index">Rubber RSS-4 Price Index</h3>
+                <span class="text-[9px] text-emerald-700 font-bold">▲ +₹12.50 / kg in Kottayam</span>
+              </div>
+              <span class="text-xs font-extrabold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">₹198.50/kg</span>
+            </div>
+            <div class="h-28 w-full">
+              <canvas id="marketChart"></canvas>
+            </div>
+          </div>
+
+          <!-- AI Sales Signal -->
+          <div class="bg-emerald-950 text-white rounded-[20px] p-3.5 space-y-1 shadow-md">
+            <div class="flex items-center gap-1.5">
+              <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-300"></i>
+              <h4 class="text-xs font-bold text-emerald-200">AI Sell / Hold Signal</h4>
+            </div>
+            <p class="text-[11px] text-slate-200 leading-relaxed" id="lbl-sell-hold">
+              <b>HOLD Black Pepper inventory for 8 days.</b> Export demand at Kochi port is predicted to raise prices by <b>+6%</b>.
+            </p>
+          </div>
+
+          <!-- Blueprint Innovation Feature: Cross-State Market Comparison (Kerala vs TN vs KA) -->
+          <div class="bg-white border border-slate-200 rounded-[24px] p-3.5 space-y-2 shadow-sm">
+            <div class="flex justify-between items-center">
+              <h3 class="text-xs font-extrabold text-slate-900">Cross-State Mandi Compare</h3>
+              <span class="text-[9px] font-bold text-slate-400 uppercase">Black Pepper</span>
+            </div>
+
+            <div class="space-y-1.5 text-xs">
+              <div class="flex justify-between items-center p-2 rounded-xl bg-emerald-50 border border-emerald-200">
+                <span class="font-bold text-emerald-900">🌴 Kerala (Kochi / Wayanad)</span>
+                <span class="font-extrabold text-emerald-800">₹640 / kg</span>
+              </div>
+              <div class="flex justify-between items-center p-2 rounded-xl bg-slate-50 border border-slate-200">
+                <span class="font-medium text-slate-700">🌾 Tamil Nadu (Coimbatore)</span>
+                <span class="font-bold text-slate-800">₹622 / kg</span>
+              </div>
+              <div class="flex justify-between items-center p-2 rounded-xl bg-slate-50 border border-slate-200">
+                <span class="font-medium text-slate-700">☕ Karnataka (Coorg)</span>
+                <span class="font-bold text-slate-800">₹631 / kg</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Mandi List -->
+          <div class="space-y-2">
+            <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Kerala Mandi Rates Today</h3>
+
+            <div class="bg-white border border-slate-200 p-3 rounded-[18px] flex justify-between items-center shadow-sm">
+              <div class="flex items-center gap-2.5">
+                <span class="text-xl">🥥</span>
+                <div>
+                  <h4 class="text-xs font-bold text-slate-900">Raw Coconut (നാളികേരം)</h4>
+                  <span class="text-[9px] text-slate-500">Nedumangad Market</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="text-xs font-extrabold text-slate-900 block">₹38.50 / kg</span>
+                <span class="text-[9px] text-emerald-600 font-bold">▲ +₹2.00</span>
+              </div>
+            </div>
+
+            <div class="bg-white border border-slate-200 p-3 rounded-[18px] flex justify-between items-center shadow-sm">
+              <div class="flex items-center gap-2.5">
+                <span class="text-xl">🌱</span>
+                <div>
+                  <h4 class="text-xs font-bold text-slate-900">Green Cardamom (ഏലക്ക)</h4>
+                  <span class="text-[9px] text-slate-500">Spices Board Auction</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="text-xs font-extrabold text-slate-900 block">₹2,450 / kg</span>
+                <span class="text-[9px] text-rose-600 font-bold">▼ -₹35.00</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- SCREEN 5: MY FARMS & PROFILE (BLUEPRINT SCREEN #11) -->
+        <!-- ========================================================= -->
+        <div id="farms-screen" class="app-screen hidden flex-1 overflow-y-auto no-scrollbar p-4 pb-24 space-y-4">
+          
+          <div class="flex justify-between items-center pt-1">
+            <div>
+              <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Registered Plots</span>
+              <h2 class="text-lg font-extrabold text-slate-900 tracking-tight font-display">My Farms & Plots</h2>
+            </div>
+            <button onclick="openAddFieldModal()" class="px-2.5 py-1.5 bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-sm">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Plot
+            </button>
+          </div>
+
+          <!-- Profile Info Box -->
+          <div class="bg-white border border-slate-200 p-3.5 rounded-[22px] flex items-center gap-3 shadow-sm">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80" class="w-12 h-12 rounded-2xl object-cover border border-slate-200">
+            <div>
+              <h3 class="text-xs font-extrabold text-slate-900">Rajesh Nair</h3>
+              <p class="text-[10px] text-slate-500">Member ID: KL-WYD-8821 • Wayanad</p>
+              <span class="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 inline-block mt-0.5">2 Plots Registered</span>
+            </div>
+          </div>
+
+          <!-- Registered Plot List -->
+          <div class="space-y-2.5">
+            <div class="bg-white border border-slate-200 p-3.5 rounded-[22px] space-y-2 shadow-sm">
+              <div class="flex justify-between items-start">
+                <div>
+                  <span class="text-[9px] font-bold text-slate-400 uppercase">Plot #F1</span>
+                  <h4 class="text-xs font-extrabold text-slate-900">Wayanad Pepper Homestead</h4>
+                  <p class="text-[10px] text-slate-500">2.4 Acres • Soil NPK: 85-42-140</p>
+                </div>
+                <span class="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">Healthy</span>
+              </div>
+            </div>
+
+            <div class="bg-white border border-slate-200 p-3.5 rounded-[22px] space-y-2 shadow-sm">
+              <div class="flex justify-between items-start">
+                <div>
+                  <span class="text-[9px] font-bold text-slate-400 uppercase">Plot #F2</span>
+                  <h4 class="text-xs font-extrabold text-slate-900">Palakkad Nendran Field</h4>
+                  <p class="text-[10px] text-slate-500">1.8 Acres • Soil NPK: 70-30-110</p>
+                </div>
+                <span class="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">Inspection Due</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+
+        <!-- ========================================================= -->
+        <!-- FLOATING BOTTOM NAVIGATION BAR (iOS FLOATING TAB) -->
+        <!-- ========================================================= -->
+        <div class="absolute bottom-3 inset-x-3 bg-white/90 backdrop-blur-md border border-slate-200/90 rounded-full py-2 px-3 flex justify-around items-center shadow-xl z-50">
+          <button onclick="switchScreen('home-screen')" class="tab-item active-tab flex flex-col items-center gap-0.5 text-emerald-700">
+            <i data-lucide="home" class="w-4 h-4"></i>
+            <span class="text-[8px] font-extrabold" data-ml="ഹോം">Home</span>
+          </button>
+          <button onclick="switchScreen('doctor-screen')" class="tab-item flex flex-col items-center gap-0.5 text-slate-400">
+            <i data-lucide="scan" class="w-4 h-4"></i>
+            <span class="text-[8px] font-bold" data-ml="രോഗം">Doctor</span>
+          </button>
+          <button onclick="switchScreen('weather-screen')" class="tab-item flex flex-col items-center gap-0.5 text-slate-400">
+            <i data-lucide="cloud-sun" class="w-4 h-4"></i>
+            <span class="text-[8px] font-bold" data-ml="കാലാവസ്ഥ">Weather</span>
+          </button>
+          <button onclick="switchScreen('market-screen')" class="tab-item flex flex-col items-center gap-0.5 text-slate-400">
+            <i data-lucide="trending-up" class="w-4 h-4"></i>
+            <span class="text-[8px] font-bold" data-ml="വിപണി">Market</span>
+          </button>
+          <button onclick="switchScreen('farms-screen')" class="tab-item flex flex-col items-center gap-0.5 text-slate-400">
+            <i data-lucide="user" class="w-4 h-4"></i>
+            <span class="text-[8px] font-bold" data-ml="പ്രൊഫൈൽ">Profile</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Home Indicator Bar -->
+      <div class="w-28 h-1 bg-slate-700 rounded-full mx-auto my-1"></div>
+    </div>
+
+  </div>
+
+  <!-- CAMERA VISION MODAL -->
+  <div id="diagnosis-modal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white border border-slate-200 rounded-[28px] max-w-xs w-full p-4 relative space-y-3 shadow-2xl">
+      <button onclick="closeDiagnosisModal()" class="absolute top-3 right-3 text-slate-400 hover:text-slate-700">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+
+      <div class="text-center">
+        <div class="w-10 h-10 bg-emerald-100 text-emerald-700 rounded-xl flex items-center justify-center mx-auto mb-1.5">
+          <i data-lucide="sparkles" class="w-5 h-5"></i>
+        </div>
+        <h3 class="font-extrabold text-slate-900 text-sm">Vision AI Scanner Active</h3>
+        <p class="text-[10px] text-slate-500">Analyzing leaf cellular pathogen structure...</p>
+      </div>
+
+      <div class="relative w-full h-36 rounded-xl overflow-hidden border-2 border-emerald-600">
+        <img src="https://images.unsplash.com/photo-1592417817098-8f3d6eb16432?auto=format&fit=crop&w=400&q=80" class="w-full h-full object-cover">
+        <div class="absolute inset-x-0 h-1 bg-emerald-500 top-1/2 animate-bounce"></div>
+      </div>
+
+      <button onclick="closeDiagnosisModal()" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-xl text-xs transition-all shadow-md">
+        View Diagnostic Prescription
+      </button>
+    </div>
+  </div>
+
+  <!-- PUSH ALERTS DRAWER MODAL (BLUEPRINT SCREEN #10) -->
+  <div id="alerts-modal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white border border-slate-200 rounded-[28px] max-w-sm w-full p-4 relative space-y-3 shadow-2xl">
+      <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+        <h3 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+          <i data-lucide="bell" class="w-4 h-4 text-amber-500"></i> Active Farm Alerts
+        </h3>
+        <button onclick="closeAlertsModal()" class="text-slate-400 hover:text-slate-700">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-2 text-xs">
+        <div onclick="switchScreen('weather-screen'); closeAlertsModal();" class="p-2.5 bg-amber-50 border border-amber-200 rounded-xl cursor-pointer hover:bg-amber-100/70">
+          <span class="text-[9px] font-bold text-amber-800 uppercase">Monsoon Alert • 2h ago</span>
+          <p class="font-bold text-slate-900 text-[11px] mt-0.5">🌧 Heavy rain forecasted for Wayanad</p>
+          <p class="text-[10px] text-slate-600">Delay fertilizer application until Friday.</p>
+        </div>
+
+        <div onclick="switchScreen('doctor-screen'); closeAlertsModal();" class="p-2.5 bg-rose-50 border border-rose-200 rounded-xl cursor-pointer hover:bg-rose-100/70">
+          <span class="text-[9px] font-bold text-rose-800 uppercase">Disease Warning • 1d ago</span>
+          <p class="font-bold text-slate-900 text-[11px] mt-0.5">🦠 Quick Wilt risk high in neighboring plots</p>
+          <p class="text-[10px] text-slate-600">Inspect Black Pepper vine bases today.</p>
+        </div>
+
+        <div onclick="switchScreen('market-screen'); closeAlertsModal();" class="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl cursor-pointer hover:bg-emerald-100/70">
+          <span class="text-[9px] font-bold text-emerald-800 uppercase">Price Target Hit • 2d ago</span>
+          <p class="font-bold text-slate-900 text-[11px] mt-0.5">📈 Black Pepper reached ₹640/kg in Kochi</p>
+          <p class="text-[10px] text-slate-600">Target price condition fulfilled.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD FIELD MODAL -->
+  <div id="add-field-modal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white border border-slate-200 rounded-[28px] max-w-xs w-full p-4 relative space-y-3 shadow-2xl">
+      <div class="flex justify-between items-center">
+        <h3 class="font-extrabold text-slate-900 text-sm">Register New Plot</h3>
+        <button onclick="closeAddFieldModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <div class="space-y-2 text-xs">
+        <div>
+          <label class="text-[10px] font-bold text-slate-500 block">Plot Name</label>
+          <input type="text" placeholder="e.g. Coorg Border Estate" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-semibold">
+        </div>
+        <div>
+          <label class="text-[10px] font-bold text-slate-500 block">Acreage (Acres)</label>
+          <input type="number" placeholder="1.5" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-semibold">
+        </div>
+      </div>
+
+      <button onclick="closeAddFieldModal()" class="w-full bg-emerald-700 text-white font-bold py-2 rounded-xl text-xs">
+        Save Plot
+      </button>
+    </div>
+  </div>
+
+  <!-- Application Logic & Charts -->
+  <script>
+    lucide.createIcons();
+
+    let currentLang = 'en';
+
+    const translations = {
+      en: {
+        greeting: "Hello, Rajesh Nair 👋",
+        slogan: "Smarter Farming for\nMaximum Yield & Profit",
+        weatherStatus: "Optimal Soil Moisture",
+        quickServices: "Quick Assistant Actions",
+        cropRec: "Crop AI",
+        leafDoc: "Leaf Doctor",
+        weatherRadar: "Weather",
+        mandiRates: "Mandi Radar",
+        registeredPlots: "My Registered Plots",
+        runAi: "Run Crop Recommendation Engine",
+        rubberIndex: "Rubber RSS-4 Price Index",
+        sprayTitle: "Hold Spraying Fertilizers Today",
+        sprayBody: "Monsoon rainfall will wash away Bordeaux sprays. Reschedule for Friday morning."
+      },
+      ml: {
+        greeting: "നമസ്കാരം, രാജേഷ് നായർ 👋",
+        slogan: "ലാഭകരമായ കൃഷിക്ക്\nഡിജിറ്റൽ സഹായി",
+        weatherStatus: "മണ്ണിലെ ഈർപ്പം അനുയോജ്യം",
+        quickServices: "പ്രധാന സേവനങ്ങൾ",
+        cropRec: "വിള ഉപദേശം",
+        leafDoc: "ലീഫ് ഡോക്ടർ",
+        weatherRadar: "കാലാവസ്ഥ",
+        mandiRates: "വിപണി നിരക്ക്",
+        registeredPlots: "എന്റെ തോട്ടങ്ങൾ",
+        runAi: "വിള നിർദ്ദേശം പരിശോധിക്കുക",
+        rubberIndex: "റബ്ബർ RSS-4 വില സൂചിക",
+        sprayTitle: "ഇന്ന് വളം തളിക്കുന്നത് ഒഴിവാക്കുക",
+        sprayBody: "മഴ കാരണം ബോർഡോ മിശ്രിതം കഴുകിപ്പോകാൻ സാധ്യതയുണ്ട്. വെള്ളിയാഴ്ചത്തേക്ക് മാറ്റുക."
+      }
+    };
+
+    function toggleLanguage() {
+      currentLang = currentLang === 'en' ? 'ml' : 'en';
+      document.getElementById('lang-label').innerText = currentLang === 'en' ? 'മലയാളം' : 'English';
+
+      const t = translations[currentLang];
+      document.getElementById('lbl-greeting').innerText = t.greeting;
+      document.getElementById('lbl-slogan').innerText = t.slogan;
+      document.getElementById('lbl-weather-status').innerText = t.weatherStatus;
+      document.getElementById('lbl-quick-services').innerText = t.quickServices;
+      document.getElementById('btn-crop-rec').innerText = t.cropRec;
+      document.getElementById('btn-leaf-doc').innerText = t.leafDoc;
+      document.getElementById('btn-weather-radar').innerText = t.weatherRadar;
+      document.getElementById('btn-mandi-rates').innerText = t.mandiRates;
+      document.getElementById('lbl-registered-plots').innerText = t.registeredPlots;
+      document.getElementById('btn-run-ai').innerText = t.runAi;
+      document.getElementById('lbl-rubber-index').innerText = t.rubberIndex;
+      document.getElementById('lbl-spray-advisory-title').innerText = t.sprayTitle;
+      document.getElementById('lbl-spray-advisory-body').innerText = t.sprayBody;
+    }
+
+    function switchScreen(screenId) {
+      document.querySelectorAll('.app-screen').forEach(s => s.classList.add('hidden'));
+      document.getElementById(screenId).classList.remove('hidden');
+
+      const tabs = document.querySelectorAll('.tab-item');
+      tabs.forEach(t => {
+        t.classList.remove('text-emerald-700');
+        t.classList.add('text-slate-400');
+      });
+
+      const indexMap = {'home-screen': 0, 'doctor-screen': 1, 'weather-screen': 2, 'market-screen': 3, 'farms-screen': 4};
+      if (indexMap[screenId] !== undefined) {
+        tabs[indexMap[screenId]].classList.add('text-emerald-700');
+        tabs[indexMap[screenId]].classList.remove('text-slate-400');
+      }
+
+      const desktopBtns = document.querySelectorAll('.nav-btn-desktop');
+      desktopBtns.forEach((btn, idx) => {
+        if (idx === indexMap[screenId]) {
+          btn.className = "nav-btn-desktop w-full text-left px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all bg-emerald-600 text-white flex items-center justify-between shadow-lg shadow-emerald-600/20";
+        } else {
+          btn.className = "nav-btn-desktop w-full text-left px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all bg-slate-800/80 text-slate-300 hover:bg-slate-700 flex items-center justify-between";
+        }
+      });
+    }
+
+    function scrollToCropForm() {
+      switchScreen('home-screen');
+      document.getElementById('crop-form-container').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function calculateCropRecommendation() {
+      const n = parseFloat(document.getElementById('inp-n').value) || 0;
+      const p = parseFloat(document.getElementById('inp-p').value) || 0;
+
+      if (n > 80) {
+        document.getElementById('res-crop-name').innerText = "Black Pepper + Coconut Homestead";
+        document.getElementById('res-yield').innerText = "2.6 Tonnes / Acre";
+        document.getElementById('res-profit').innerText = "₹3,20,000 / Season";
+      } else {
+        document.getElementById('res-crop-name').innerText = "Nendran Banana Plantation";
+        document.getElementById('res-yield').innerText = "12.4 Tonnes / Acre";
+        document.getElementById('res-profit').innerText = "₹2,80,000 / Season";
+      }
+    }
+
+    function selectSampleLeaf(type) {
+      const img = document.getElementById('leaf-preview-img');
+      const title = document.getElementById('diag-title');
+      const step1 = document.getElementById('diag-step1');
+
+      if (type === 'wilt') {
+        img.src = "https://images.unsplash.com/photo-1592417817098-8f3d6eb16432?auto=format&fit=crop&w=800&q=80";
+        title.innerText = "Quick Wilt Disease (ദ്രുതവാട്ടം)";
+        step1.innerHTML = "<b>1. Organic Spray:</b> Apply 1% Bordeaux Mixture (ബോർഡോ മിശ്രിതം) on foliage and soil base immediately.";
+      } else if (type === 'blight') {
+        img.src = "https://images.unsplash.com/photo-1528825871115-3581a5387919?auto=format&fit=crop&w=800&q=80";
+        title.innerText = "Banana Bunchy Top Virus (ബഞ്ചി ടോപ്പ്)";
+        step1.innerHTML = "<b>1. Quarantine:</b> Remove infected suckers and spray Neem Oil emulsion.";
+      } else {
+        img.src = "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80";
+        title.innerText = "Healthy Tissue (രോഗമില്ല)";
+        step1.innerHTML = "<b>1. Maintenance:</b> Continue regular organic compost applications.";
+      }
+    }
+
+    function openDiagnosisModal() { document.getElementById('diagnosis-modal').classList.remove('hidden'); }
+    function closeDiagnosisModal() { document.getElementById('diagnosis-modal').classList.add('hidden'); }
+
+    function openAlertsModal() { document.getElementById('alerts-modal').classList.remove('hidden'); }
+    function closeAlertsModal() { document.getElementById('alerts-modal').classList.add('hidden'); }
+
+    function openAddFieldModal() { document.getElementById('add-field-modal').classList.remove('hidden'); }
+    function closeAddFieldModal() { document.getElementById('add-field-modal').classList.add('hidden'); }
+
+    window.onload = function() {
+      const ctxWeather = document.getElementById('weatherChart').getContext('2d');
+      new Chart(ctxWeather, {
+        type: 'bar',
+        data: {
+          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          datasets: [{ data: [18, 52, 35, 10, 70, 42, 15], backgroundColor: '#059669', borderRadius: 5 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 9 } } },
+            y: { grid: { color: '#f1f5f9' }, ticks: { color: '#64748b', font: { size: 9 } } }
+          }
+        }
+      });
+
+      const ctxMarket = document.getElementById('marketChart').getContext('2d');
+      new Chart(ctxMarket, {
+        type: 'line',
+        data: {
+          labels: ['W1', 'W2', 'W3', 'W4', 'W5', 'Today'],
+          datasets: [{
+            data: [174, 180, 178, 185, 191, 198.5],
+            borderColor: '#15803d',
+            backgroundColor: 'rgba(21, 128, 61, 0.08)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 3,
+            pointBackgroundColor: '#15803d'
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 9 } } },
+            y: { grid: { color: '#f1f5f9' }, ticks: { color: '#64748b', font: { size: 9 } } }
+          }
+        }
+      });
+    };
+  </script>
+</body>
+</html>

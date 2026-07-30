@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Farming Assistant — App Flow Blueprint</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAFAF8; --grid:#E3E8EE; --ink:#19222D; --ink-soft:#54606F;
+    --blue:#2C4A6E; --blue-soft:#7C93AC;
+    --mvp:#0F766E; --mvp-bg:#E4F5F3;
+    --stretch:#B45309; --stretch-bg:#FBECD9;
+    --advanced:#6D28D9; --advanced-bg:#EEE7FC;
+    --future:#5B6472; --future-bg:#EAECEF;
+    --note:#FDE68A;
+  }
+  *{box-sizing:border-box;}
+  body{
+    background-color:var(--paper);
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 28px 28px;
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+  }
+  h1,h2,h3,.font-display{font-family:'Space Grotesk',sans-serif;}
+  .font-mono{font-family:'IBM Plex Mono',monospace;}
+  .font-hand{font-family:'Caveat',cursive;}
+
+  /* ---- layout ---- */
+  #sidebar{ width:260px; }
+  .nav-link{ display:block; padding:7px 10px; border-radius:6px; color:var(--ink-soft); font-size:13.5px; border-left:3px solid transparent; }
+  .nav-link:hover{ background:#fff; color:var(--ink); }
+  .nav-link.active{ background:#fff; color:var(--blue); border-left:3px solid var(--blue); font-weight:600; }
+  section{ scroll-margin-top: 24px; }
+
+  /* ---- tags ---- */
+  .tag{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.02em; padding:2px 8px; border-radius:999px; border:1px solid transparent; white-space:nowrap; }
+  .tag-mvp{ color:var(--mvp); background:var(--mvp-bg); border-color:#99D8D1; }
+  .tag-stretch{ color:var(--stretch); background:var(--stretch-bg); border-color:#F0C48C; }
+  .tag-advanced{ color:var(--advanced); background:var(--advanced-bg); border-color:#C9B6F5; }
+  .tag-future{ color:var(--future); background:var(--future-bg); border-color:#CBD1D8; }
+
+  /* ---- blueprint boxes / arrows ---- */
+  .bp-box{ background:#fff; border:1.5px solid var(--ink); border-radius:10px; box-shadow:3px 3px 0 var(--blue-soft); }
+  .bp-arrow-h{ position:relative; height:2px; background:var(--ink); flex:1; min-width:24px; }
+  .bp-arrow-h::after{ content:""; position:absolute; right:-1px; top:50%; transform:translateY(-50%); border:5px solid transparent; border-left-color:var(--ink); }
+  .bp-arrow-v{ position:relative; width:2px; background:var(--ink); flex:1; min-height:20px; margin:0 auto; }
+  .bp-arrow-v::after{ content:""; position:absolute; bottom:-1px; left:50%; transform:translateX(-50%); border:5px solid transparent; border-top-color:var(--ink); }
+  .diamond{ width:96px; height:96px; background:#fff; border:1.5px solid var(--ink); transform:rotate(45deg); display:flex; align-items:center; justify-content:center; box-shadow:3px 3px 0 var(--blue-soft); }
+  .diamond > span{ transform:rotate(-45deg); text-align:center; font-size:11px; line-height:1.2; padding:6px; }
+
+  /* ---- sticky dev notes ---- */
+  .devnote{ background:var(--note); font-family:'Caveat',cursive; font-size:16px; line-height:1.15; color:#4A3B00; padding:8px 10px; border-radius:2px 10px 10px 10px; box-shadow:2px 3px 4px rgba(0,0,0,.15); transform:rotate(-2deg); position:relative; }
+  .devnote::before{ content:"📌"; position:absolute; top:-10px; left:-6px; font-size:14px; }
+  .hide-notes .devnote{ display:none !important; }
+
+  /* ---- phone mockup ---- */
+  .phone{ width:250px; border:3px solid var(--ink); border-radius:26px; background:#fff; padding:8px 7px 14px; box-shadow:5px 5px 0 var(--blue-soft); }
+  .phone-notch{ width:56px; height:5px; background:var(--ink); border-radius:4px; margin:2px auto 6px; }
+  .phone-screen{ border:1px dashed #B9C2CC; border-radius:14px; min-height:420px; padding:8px; display:flex; flex-direction:column; gap:6px; background:#FCFCFB; }
+  .wf-topbar{ display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:9.5px; color:var(--ink-soft); border-bottom:1px solid #DDE2E8; padding-bottom:5px; }
+  .wf-line{ height:6px; background:#E1E5EA; border-radius:3px; }
+  .wf-box{ border:1px dashed #B9C2CC; border-radius:6px; padding:5px 6px; font-size:9.5px; color:var(--ink-soft); }
+  .wf-btn{ border:1.3px solid var(--ink); border-radius:6px; text-align:center; font-size:10px; font-weight:600; padding:5px; background:#fff; }
+  .wf-btn-primary{ background:var(--ink); color:#fff; }
+  .wf-chip{ border:1px solid var(--blue-soft); color:var(--blue); border-radius:999px; font-size:8.5px; padding:2px 7px; }
+  .wf-icon{ width:26px; height:26px; border:1px dashed #B9C2CC; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; }
+  .wf-bottomnav{ margin-top:auto; display:flex; justify-content:space-between; border-top:1px solid #DDE2E8; padding-top:6px; }
+  .wf-navicon{ width:20px; height:20px; border-radius:5px; background:#EEF1F4; }
+  .wf-navicon.on{ background:var(--ink); }
+
+  .screen-card{ transition:opacity .2s, transform .2s; }
+  .screen-card.filtered-out{ display:none; }
+
+  .flow-tab{ font-family:'IBM Plex Mono',monospace; font-size:12px; padding:8px 14px; border:1.5px solid var(--ink); border-bottom:none; border-radius:8px 8px 0 0; background:#fff; cursor:pointer; color:var(--ink-soft); }
+  .flow-tab.active{ background:var(--ink); color:#fff; }
+  .flow-panel{ display:none; }
+  .flow-panel.active{ display:block; }
+
+  ::-webkit-scrollbar{ width:9px; height:9px; }
+  ::-webkit-scrollbar-thumb{ background:#C7CED6; border-radius:6px; }
+  /* ---- build-order stepper ---- */
+  .step{ display:flex; gap:16px; }
+  .step-rail{ display:flex; flex-direction:column; align-items:center; width:34px; flex-shrink:0; }
+  .step-dot{ width:30px; height:30px; border-radius:999px; border:2px solid var(--ink); background:#fff; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; flex-shrink:0; }
+  .step-dot.on{ background:var(--ink); color:#fff; }
+  .step-line{ flex:1; width:2px; background:var(--grid); margin-top:2px; min-height:18px; }
+  .step:last-child .step-line{ display:none; }
+
+  .load-dots{ display:inline-flex; gap:2px; vertical-align:middle; }
+  .load-dot{ width:7px; height:7px; border-radius:999px; background:var(--grid); border:1px solid #C7CED6; }
+  .load-dot.filled{ background:var(--ink); border-color:var(--ink); }
+
+  .gauge-track{ height:12px; border-radius:999px; background:#fff; overflow:hidden; border:1.5px solid var(--ink); }
+  .gauge-fill{ height:100%; width:0%; background:var(--mvp); transition:width .25s ease, background .25s ease; }
+  .gauge-fill.warn{ background:var(--stretch); }
+  .gauge-fill.over{ background:#C0392B; }
+
+  .stage-check{ width:16px; height:16px; accent-color:var(--blue); cursor:pointer; }
+
+  /* ---- model cards & phase cards ---- */
+  .model-card{ background:#fff; border:1.5px solid var(--ink); border-radius:12px; box-shadow:4px 4px 0 var(--blue-soft); padding:20px; }
+  .dataset-row{ border:1px dashed #B9C2CC; border-radius:8px; padding:8px 10px; font-size:12.5px; }
+  .dataset-row a{ color:var(--blue); text-decoration:underline; }
+  .gap-flag{ background:#FDEBEA; border:1px solid #E9A5A0; color:#8C2D25; border-radius:6px; padding:6px 9px; font-size:11.5px; }
+
+  .phase-card{ background:#fff; border:1.5px solid var(--ink); border-radius:14px; box-shadow:4px 4px 0 var(--blue-soft); padding:22px; display:flex; flex-direction:column; gap:12px; }
+  .farmer-can{ background:var(--mvp-bg); border:1.5px dashed var(--mvp); border-radius:8px; padding:10px 12px; font-size:12.5px; color:#0B4A44; }
+  .phase-num{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:28px; color:var(--blue-soft); line-height:1; }
+
+  details.caveat summary{ cursor:pointer; font-size:11.5px; color:var(--stretch); font-family:'IBM Plex Mono',monospace; }
+  details.caveat[open] summary{ margin-bottom:6px; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<div class="flex">
+  <!-- ============ SIDEBAR ============ -->
+  <aside id="sidebar" class="hidden lg:block sticky top-0 h-screen overflow-y-auto border-r border-[var(--grid)] bg-[#F3F5F1]/70 backdrop-blur px-4 py-6 shrink-0">
+    <div class="mb-6">
+      <p class="font-mono text-[10px] tracking-widest text-[var(--blue)] uppercase">Doc 06 / Flow Blueprint</p>
+      <h2 class="font-display font-bold text-lg leading-tight mt-1">Smart Farming<br>Assistant</h2>
+      <p class="text-xs text-[var(--ink-soft)] mt-1">Kerala · Mobile-first</p>
+    </div>
+    <nav class="space-y-1" id="navlinks">
+      <a href="#overview" class="nav-link">00 — Overview</a>
+      <a href="#journey" class="nav-link">01 — User Journey</a>
+      <a href="#sitemap" class="nav-link">02 — App Sitemap</a>
+      <a href="#screens" class="nav-link">03 — Screen-by-Screen</a>
+      <a href="#flows" class="nav-link">04 — Feature Flows</a>
+      <a href="#system" class="nav-link">05 — System Flow</a>
+      <a href="#roadmap" class="nav-link">06 — Build Roadmap</a>
+      <a href="#buildorder" class="nav-link">07 — Build Order</a>
+      <a href="#mlmodels" class="nav-link">08 — ML Models</a>
+      <a href="#phases" class="nav-link">09 — Release Phases</a>
+    </nav>
+    <div class="mt-8 pt-5 border-t border-[var(--grid)]">
+      <p class="font-mono text-[10px] text-[var(--ink-soft)] uppercase mb-2">Legend</p>
+      <div class="flex flex-wrap gap-1.5">
+        <span class="tag tag-mvp">MVP</span>
+        <span class="tag tag-stretch">Stretch</span>
+        <span class="tag tag-advanced">Advanced</span>
+        <span class="tag tag-future">Future</span>
+      </div>
+    </div>
+    <label class="mt-5 flex items-center gap-2 text-xs text-[var(--ink-soft)] cursor-pointer select-none">
+      <input type="checkbox" id="notesToggle" checked class="accent-[var(--blue)]">
+      Show dev notes 📌
+    </label>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="flex-1 min-w-0">
+
+    <!-- mobile top bar -->
+    <div class="lg:hidden sticky top-0 z-20 bg-[#F3F5F1]/95 backdrop-blur border-b border-[var(--grid)] px-4 py-3">
+      <p class="font-display font-bold">Smart Farming Assistant — Flow Blueprint</p>
+    </div>
+
+    <!-- ============ 00 OVERVIEW ============ -->
+    <section id="overview" class="px-6 lg:px-14 pt-14 pb-16 max-w-5xl">
+      <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">App Flow Blueprint</p>
+      <h1 class="font-display font-bold text-4xl md:text-5xl mt-2 leading-[1.1]">
+        How the app should work,<br>screen by screen.
+      </h1>
+      <p class="text-[var(--ink-soft)] mt-5 max-w-2xl leading-relaxed">
+        This document sketches the full working flow of the AI-Powered Smart Farming Assistant —
+        from the moment a farmer opens the app to the moment they act on a recommendation.
+        It covers the navigation map, every core screen as a low-fidelity wireframe, the decision logic
+        behind each feature, and which pieces to build first. Read it top to bottom like a build plan,
+        not a mood board.
+      </p>
+      <div class="flex flex-wrap gap-3 mt-7">
+        <div class="bp-box px-4 py-2.5 text-sm"><span class="font-mono text-[var(--ink-soft)]">platform</span> <b>Mobile-first</b> (React Native + Expo), Web as secondary</div>
+        <div class="bp-box px-4 py-2.5 text-sm"><span class="font-mono text-[var(--ink-soft)]">geography</span> <b>Kerala</b>-focused, broadened per-feature</div>
+        <div class="bp-box px-4 py-2.5 text-sm"><span class="font-mono text-[var(--ink-soft)]">innovation</span> <b>Intercropping</b> + <b>Market Analysis</b></div>
+      </div>
+      <div class="mt-8 devnote inline-block max-w-md">
+        How to read this: every screen and flow step is tagged MVP / Stretch / Advanced / Future.
+        Build MVP first, end to end, before touching anything else — a complete simple app beats
+        an incomplete impressive one at demo time.
+      </div>
+    </section>
+
+    <!-- ============ 01 USER JOURNEY ============ -->
+    <section id="journey" class="px-6 lg:px-14 py-16 max-w-6xl border-t border-[var(--grid)]">
+      <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">01</p>
+      <h2 class="font-display font-bold text-3xl mt-1">User Journey — start to end</h2>
+      <p class="text-[var(--ink-soft)] mt-3 max-w-2xl">The macro path every farmer takes, from first open to acting on a recommendation.</p>
+
+      <div class="mt-10 overflow-x-auto pb-4">
+        <div class="flex items-center gap-2 min-w-[980px]">
+          <div class="bp-box px-4 py-3 text-sm text-center w-32 shrink-0"><span class="tag tag-mvp block mb-1 w-fit mx-auto">MVP</span>Open App /<br>Splash</div>
+          <div class="bp-arrow-h"></div>
+          <div class="bp-box px-4 py-3 text-sm text-center w-32 shrink-0"><span class="tag tag-mvp block mb-1 w-fit mx-auto">MVP</span>Register /<br>Login</div>
+          <div class="bp-arrow-h"></div>
+          <div class="bp-box px-4 py-3 text-sm text-center w-32 shrink-0"><span class="tag tag-mvp block mb-1 w-fit mx-auto">MVP</span>Home<br>Dashboard</div>
+          <div class="bp-arrow-h"></div>
+          <div class="diamond shrink-0"><span>Choose a feature</span></div>
+          <div class="bp-arrow-h"></div>
+          <div class="bp-box px-4 py-3 text-sm text-center w-36 shrink-0">Feature Flow<br><span class="text-[var(--ink-soft)] text-xs">(see Section 04)</span></div>
+          <div class="bp-arrow-h"></div>
+          <div class="bp-box px-4 py-3 text-sm text-center w-32 shrink-0">View Result /<br>Take Action</div>
+          <div class="bp-arrow-h"></div>
+          <div class="bp-box px-4 py-3 text-sm text-center w-32 shrink-0"><span class="tag tag-mvp block mb-1 w-fit mx-auto">MVP</span>Alert (if<br>triggered)</div>
+          <div class="bp-arrow-h"></div>
+          <div class="bp-box px-4 py-3 text-sm text-center w-28 shrink-0 border-dashed">Back to<br>Home</div>
+        </div>
+      </div>
+      <div class="devnote inline-block mt-2 max-w-md">
+        The whole app is a loop back to Home. No dead ends — every result screen should have an obvious
+        way back, or the farmer gets stuck and abandons the app.
+      </div>
+
+      <div class="grid md:grid-cols-4 gap-4 mt-10">
+        <div class="bp-box p-4">
+          <p class="font-mono text-xs text-[var(--blue)] mb-1">Branch A</p>
+          <p class="font-semibold text-sm">Crop Recommendation</p>
+          <p class="text-xs text-[var(--ink-soft)] mt-1">Enter soil + location → get crop + intercropping suggestion</p>
+        </div>
+        <div class="bp-box p-4">
+          <p class="font-mono text-xs text-[var(--blue)] mb-1">Branch B</p>
+          <p class="font-semibold text-sm">Disease Detection</p>
+          <p class="text-xs text-[var(--ink-soft)] mt-1">Capture leaf photo → get diagnosis + treatment</p>
+        </div>
+        <div class="bp-box p-4">
+          <p class="font-mono text-xs text-[var(--blue)] mb-1">Branch C</p>
+          <p class="font-semibold text-sm">Weather Check</p>
+          <p class="text-xs text-[var(--ink-soft)] mt-1">Auto-fetched by location → forecast + risk flags</p>
+        </div>
+        <div class="bp-box p-4">
+          <p class="font-mono text-xs text-[var(--blue)] mb-1">Branch D</p>
+          <p class="font-semibold text-sm">Market Check</p>
+          <p class="text-xs text-[var(--ink-soft)] mt-1">Select crop → Kerala price + optional cross-state compare</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 02 SITEMAP ============ -->
+    <section id="sitemap" class="px-6 lg:px-14 py-16 max-w-5xl border-t border-[var(--grid)]">
+      <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">02</p>
+      <h2 class="font-display font-bold text-3xl mt-1">App Sitemap</h2>
+      <p class="text-[var(--ink-soft)] mt-3 max-w-2xl">Every screen in the app and how it nests under Home. Use this as the navigation contract for the frontend team.</p>
+
+      <ul class="mt-10 font-mono text-sm leading-loose">
+        <li class="font-semibold text-[var(--ink)]">🏠 Home Dashboard <span class="tag tag-mvp ml-2">MVP</span></li>
+        <li class="pl-6 border-l border-[var(--grid)] ml-2">
+          <ul>
+            <li class="pl-4">↳ Crop Recommendation <span class="tag tag-mvp ml-1">MVP</span>
+              <ul class="pl-8 text-[var(--ink-soft)]">
+                <li>↳ Soil / Location Input Form</li>
+                <li>↳ Recommendation Result</li>
+                <li>↳ Intercropping Suggestion <span class="tag tag-advanced ml-1">Innovation</span></li>
+                <li>↳ Yield Prediction <span class="tag tag-mvp ml-1">MVP</span></li>
+                <li>↳ "Why this crop?" Explanation <span class="tag tag-stretch ml-1">Stretch</span></li>
+              </ul>
+            </li>
+            <li class="pl-4 mt-1">↳ Disease Detection <span class="tag tag-mvp ml-1">MVP</span>
+              <ul class="pl-8 text-[var(--ink-soft)]">
+                <li>↳ Capture / Upload Photo</li>
+                <li>↳ Diagnosis Result + Severity <span class="tag tag-stretch ml-1">Stretch</span></li>
+                <li>↳ Treatment Suggestion</li>
+              </ul>
+            </li>
+            <li class="pl-4 mt-1">↳ Weather <span class="tag tag-mvp ml-1">MVP</span>
+              <ul class="pl-8 text-[var(--ink-soft)]">
+                <li>↳ Current + Forecast</li>
+                <li>↳ Rainfall Trend <span class="tag tag-stretch ml-1">Stretch</span></li>
+              </ul>
+            </li>
+            <li class="pl-4 mt-1">↳ Market Intelligence <span class="tag tag-advanced ml-1">Innovation</span>
+              <ul class="pl-8 text-[var(--ink-soft)]">
+                <li>↳ Kerala Price (default)</li>
+                <li>↳ Cross-State Comparison <span class="tag tag-advanced ml-1">Innovation</span></li>
+                <li>↳ Price Trend Graph</li>
+                <li>↳ Profit Comparison <span class="tag tag-stretch ml-1">Stretch</span></li>
+              </ul>
+            </li>
+            <li class="pl-4 mt-1">↳ Alerts <span class="tag tag-mvp ml-1">MVP</span></li>
+            <li class="pl-4 mt-1">↳ Profile / My Farms <span class="tag tag-stretch ml-1">Stretch</span></li>
+          </ul>
+        </li>
+      </ul>
+    </section>
+
+    <!-- ============ 03 SCREEN BY SCREEN ============ -->
+    <section id="screens" class="px-6 lg:px-14 py-16 border-t border-[var(--grid)]">
+      <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">03</p>
+      <h2 class="font-display font-bold text-3xl mt-1">Screen-by-Screen (Mobile)</h2>
+      <p class="text-[var(--ink-soft)] mt-3 max-w-2xl">Low-fidelity wireframes for every core screen. Filter by priority to see what to build first.</p>
+
+      <div class="flex flex-wrap gap-2 mt-6" id="filterBar">
+        <button class="tag tag-mvp px-3 py-1.5 border" data-filter="all" style="background:var(--ink);color:#fff;border-color:var(--ink);">All screens</button>
+        <button class="tag tag-mvp px-3 py-1.5 border cursor-pointer" data-filter="mvp">MVP only</button>
+        <button class="tag tag-stretch px-3 py-1.5 border cursor-pointer" data-filter="stretch">Stretch only</button>
+        <button class="tag tag-advanced px-3 py-1.5 border cursor-pointer" data-filter="advanced">Innovation only</button>
+      </div>
+
+      <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-12 mt-10" id="screenGrid">
+
+        <!-- 1. Splash -->
+        <div class="screen-card" data-priority="mvp">
+          <div class="flex items-center justify-between mb-2">
+            <p class="font-semibold text-sm">1 · Splash / Onboarding</p><span class="tag tag-mvp">MVP</span>
+          </div>
+          <div class="phone"><div class="phone-notch"></div>
+            <div class="phone-screen items-center justify-center text-center">
+              <div class="wf-icon mx-auto" style="width:44px;height:44px;">🌾</div>
+              <div class="wf-line w-24 mx-auto mt-2"></div>
+              <div class="wf-line w-32 mx-auto"></div>
+              <div class="wf-chip mt-3 mx-auto w-fit">EN / മലയാളം</div>
+              <div class="wf-btn wf-btn-primary w-32 mx-auto mt-4">Get Started</div>
+            </div>
+          </div>
+          <p class="devnote text-sm mt-3 max-w-[250px]">Language toggle up front — Malayalam matters more than a fancy logo animation.</p>
+        </div>
+
+        <!-- 2. Login -->
+        <div class="screen-card" data-priority="mvp">
+          <div class="flex items-center justify-between mb-2">
+            <p class="font-semibold text-sm">2 · Login / Register</p><span class="tag tag-mvp">MVP</span>
+          </div>
+          <div class="phone"><div class="phone-notch"></div>
+            <div class="phone-screen">
+              <div class="wf-topbar"><span>← Back</span><span>Sign in</span></div>
+              <div class="wf-box">Phone number</div>
+              <div class="wf-btn wf-btn-primary mt-1">Send OTP</div>
+              <div class="wf-line w-20 mt-3"></div>
+              <div class="wf-box">Enter OTP</div>
+              <div class="wf-btn wf-btn-primary">Verify &amp; Continue</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Home Dashboard -->
+        <div class="screen-card" data-priority="mvp">
+          <div class="flex items-center justify-between mb-2">
+            <p class="font-semibold text-sm">3 · Home Dashboard</p><span class="tag tag-mvp">MVP</span>
+          </div>
+          <div class="phone"><div class="phone-notch"></div>
+            <div class="phone-screen">
+              <div class="wf-topbar"><span>Hi, Farmer 👋</span><span>🔔</span></div>
+              <div class="wf-box" style="border-color:#F0C48C;background:#FBECD9;">⚠ Rain expected tomorrow — alert</div>
+              <div class="grid grid-cols-2 gap-2 mt-1">
+                <div class="wf-box text-center">🌱 Recommend Crop</div>
+                <div class="wf-box text-center">📷 Detect Disease</div>
+                <div class="wf-box text-center">☀ Weather</div>
+                <div class="wf-box text-center">📈 Market Price</div>
+              </div>
+              <div class="wf-line w-24 mt-2"></div>
+              <div class="wf-box">Your fields (2) →</div>
+              <div class="wf-bottomnav">
+                <div class="wf-navicon on"></div><div class="wf-navicon"></div><div class="wf-navicon"></div><div class="wf-navicon"></div>
+              </div>
+            </div>
+          </div>
+          <p class="devnote text-sm mt-3 max-w-[250px]">Home = 4 big tap targets, nothing else competing for attention. This is the most-used screen — keep it boring and fast.</p>
+        </div>
+
+        <!-- 4. Crop Input -->
+        <div class="screen-card" data-priority="mvp">
+          <div class="flex items-center justify-between mb-2">
+            <p class="font-semibold text-sm">4 · Crop Input Form</p><span class="tag tag-mvp">MVP</span>
+          </div>
+          <div class="phone"><div class="phone-notch"></div>
+            <div class="phone-screen">
+              <div class="wf-topbar"><span>← Back</span><span>Recommend Crop</span></div>
+              <div class="wf-box">📍 Location: auto-detected</div>
+              <div class="wf-box">Nitrogen (N)</div>
+              <div class="wf-box">Phosphorus (P)</div>
+              <div class="wf-box">Potassium (K)</div>
+              <div class="wf-box">Soil pH</div>
+              <div class="wf-btn wf-btn-primary mt-1">Get Recommendation</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Crop Result -->
+        <div class="screen-card" data-priority="advanced">
+          <div class="flex items-center justify-between mb-2">
+            <p class="font-semibold text-sm">5 · Crop Result + Intercropping</p><span class="tag tag-advanced">Innovation</span>
+          </div>
+          <div class="phone"><div class="phone-notch"></div>
+            <div class="phone-screen">
+              <div class="wf-topbar"><span>← Back</span><span>Result</span></div>
+              <div class="wf-box" style="background:var(--mvp-bg);border-color:#99D8D1;">🥇 Recommended: <b>Coconut</b></div>
+              <div class="wf-chip w-fit">Why this crop? ⌄</div>
+              <div class="wf-box">Expected yield: ~ / acre</div>
+              <div class="wf-line w-28 mt-1"></div>
+              <p class="text-[9px] font-semibold text-[var(--advanced)]">🌿 Intercrop with:</p>
+              <div class="grid grid-cols-3 gap-1">
+                <div class="wf-box text-center">Pepper</div>
+                <div class="wf-box text-center">Banana</div>
+                <div class="wf-box text-center">Cocoa</div>
+              </div>
+            </div>
+          </div>
+          <p class="devnote text-sm mt-3 max-w-[250px]">This screen is the differentiator. Polish this one the most — it's what makes the app more than "another crop app."</p>
+        </div>
+
+        <!-- 6. Disease Capture -->
+        <div class="screen-card" data-priority="mvp">
+          <div class="flex items-center justify-between mb-2">
+            <p class="font-semibold text-sm">6 · Disease — Capture Photo</p><span class="tag tag-mvp">MVP</span>
+          </div>
+          <div class="phone"><div class="phone-notch"></div>
+            <div class="phone-screen">
+              <div class="wf-topbar"><span>← Back</span><span>Detect Disease</span></div>
+              <div class="wf-box flex-1 flex items-center justify-center" style="min-height:220px;">📷 Camera viewfinder</div>
+              <div class="flex justify-between items-center mt-1">
+                <div class="wf-chip">Gallery</div>
+                <div class="wf-icon" style="width:38px;height:38px;border-radius:999px;border:2px solid var(--ink);">●</div>
+                <div class="wf-chip">Flash</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. Disease Result -->
+        <div class="screen-card" data-priority="mvp">
+          <div class="flex items-center justify-between mb-2">
+            <p class="font-semibold text-sm">7 · Disease Result</p><span class="tag tag-mvp">MVP</span>
+          </div>
+          <div class="phone"><div class="phone-notch"></div>
+            <div class="phone-screen">
+              <div class="wf-topbar"><span>← Back</span><span>Diagnosis</span></div>
+              <div class="wf-box">🖼 uploaded leaf photo</div>
+              <div class="wf-box" style="background:#FBECD9;border-color:#F0C48C;">Detected: <b>Leaf Blight</b></div>
+              <div class="wf-box">Severity: ▮▮▮▯▯ Moderate</div>
+              <div class="wf-line w-24 mt-1"></div>
+              <p class="text-[9px] font-semibold">Suggested treatment:</p>
+              <div class="wf-box">Copper-based fungicide, apply...</div>
+              <div class="wf-chip w-fit mt-1">Not accurate? Report ↗</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 8. Weather -->
+        <div class="screen-card" data-priority="mvp">
+          <div class="flex items-center justify-between mb-2">
+            <p class="font-semibold text-sm">8 · Weather</p><span class="tag tag-mvp">MVP</span>
+          </div>
+          <div class="phone"><div class="phone-notch"></div>
+            <div class="phone-screen">
+              <div class="wf-topbar"><span>← Back</span><span>Weather</span></div>
+              <div class="wf-box text-center">☀ 31°C — Kottayam</div>
+              <div class="flex gap-1 mt-1">
+                <div class="wf-box text-center flex-1">Mon<br>🌦</div>
+                <div class="wf-box text-center flex-1">Tue<br>☀</div>
+                <div class="wf-box text-center flex-1">Wed<br>🌧</div>
+                <div class="wf-box text-center flex-1">Thu<br>☀</div>
+              </div>
+              <p class="text-[9px] font-semibold mt-1">Rainfall trend</p>
+              <div class="wf-box" style="height:52px;">📉 mini chart</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 9. Market -->
+        <div class="screen-card" data-priority="advanced">
+          <div class="flex items-center justify-between mb-2">
+            <p class="font-semibold text-sm">9 · Market Price Compare</p><span class="tag tag-advanced">Innovation</span>
+          </div>
+          <div class="phone"><div class="phone-notch"></div>
+            <div class="phone-screen">
+              <div class="wf-topbar"><span>← Back</span><span>Market — Pepper</span></div>
+              <div class="wf-box" style="background:var(--mvp-bg);border-color:#99D8D1;">Kerala (default): ₹/kg</div>
+              <p class="text-[9px] font-semibold mt-1">Compare nearby states</p>
+              <div class="wf-box">Tamil Nadu: ₹/kg</div>
+              <div class="wf-box">Karnataka: ₹/kg</div>
+              <div class="wf-box" style="height:46px;">📈 price trend, 30 days</div>
+              <div class="wf-chip w-fit">Set price alert 🔔</div>
+            </div>
+          </div>
+          <p class="devnote text-sm mt-3 max-w-[250px]">Kerala data may be sparse — show a graceful "limited data" state, don't just show a blank chart.</p>
+        </div>
+
+        <!-- 10. Alerts -->
+        <div class="screen-card" data-priority="mvp">
+          <div class="flex items-center justify-between mb-2">
+            <p class="font-semibold text-sm">10 · Alerts</p><span class="tag tag-mvp">MVP</span>
+          </div>
+          <div class="phone"><div class="phone-notch"></div>
+            <div class="phone-screen">
+              <div class="wf-topbar"><span>Alerts</span><span>Mark all read</span></div>
+              <div class="wf-box">🌧 Heavy rain expected — 2h ago</div>
+              <div class="wf-box">🦠 Disease detected on Field 1 — 1d ago</div>
+              <div class="wf-box">📈 Pepper price target reached — 2d ago</div>
+              <div class="wf-line w-20 mt-1"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 11. Profile -->
+        <div class="screen-card" data-priority="stretch">
+          <div class="flex items-center justify-between mb-2">
+            <p class="font-semibold text-sm">11 · Profile / My Farms</p><span class="tag tag-stretch">Stretch</span>
+          </div>
+          <div class="phone"><div class="phone-notch"></div>
+            <div class="phone-screen">
+              <div class="wf-topbar"><span>Profile</span><span>⚙</span></div>
+              <div class="wf-box text-center">👤 Farmer Name</div>
+              <p class="text-[9px] font-semibold mt-1">My fields</p>
+              <div class="wf-box">Field 1 — Coconut, 1.2 acre</div>
+              <div class="wf-box">Field 2 — Pepper, 0.5 acre</div>
+              <div class="wf-btn mt-1">+ Add Field</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============ 04 FEATURE FLOWS ============ -->
+    <section id="flows" class="px-6 lg:px-14 py-16 border-t border-[var(--grid)]">
+      <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">04</p>
+      <h2 class="font-display font-bold text-3xl mt-1">Feature Flows — decision logic</h2>
+      <p class="text-[var(--ink-soft)] mt-3 max-w-2xl">What actually happens, step by step, behind each of the four feature branches.</p>
+
+      <div class="flex gap-1 mt-8 overflow-x-auto" id="flowTabs">
+        <button class="flow-tab active" data-flow="crop">Crop Recommendation</button>
+        <button class="flow-tab" data-flow="disease">Disease Detection</button>
+        <button class="flow-tab" data-flow="weather">Weather</button>
+        <button class="flow-tab" data-flow="market">Market Intelligence</button>
+        <button class="flow-tab" data-flow="alerts">Alerts</button>
+      </div>
+
+      <div class="bp-box p-6 md:p-8 overflow-x-auto" style="border-top-left-radius:0;">
+
+        <!-- FLOW: Crop -->
+        <div class="flow-panel active" id="flow-crop">
+          <div class="flex items-start gap-2 min-w-[900px]">
+            <div class="bp-box px-3 py-2 text-xs text-center w-28 shrink-0">Farmer taps<br>"Recommend Crop"</div>
+            <div class="bp-arrow-h mt-4"></div>
+            <div class="bp-box px-3 py-2 text-xs text-center w-32 shrink-0">Enter soil N-P-K, pH<br>+ auto location</div>
+            <div class="bp-arrow-h mt-4"></div>
+            <div class="diamond shrink-0"><span>Inputs valid?</span></div>
+            <div class="flex flex-col items-center shrink-0">
+              <div class="bp-arrow-h mt-4" style="width:24px;"></div>
+              <p class="text-[10px] text-[var(--ink-soft)] -mt-1">yes</p>
+            </div>
+            <div class="bp-box px-3 py-2 text-xs text-center w-32 shrink-0">ML model predicts<br>crop + yield</div>
+            <div class="bp-arrow-h mt-4"></div>
+            <div class="bp-box px-3 py-2 text-xs text-center w-36 shrink-0" style="border-color:var(--advanced);background:var(--advanced-bg);">Generate intercropping<br>suggestion (rule-based)</div>
+            <div class="bp-arrow-h mt-4"></div>
+            <div class="bp-box px-3 py-2 text-xs text-center w-32 shrink-0">Show Result screen<br>+ explanation</div>
+          </div>
+          <div class="flex items-center gap-2 mt-3 min-w-[900px]">
+            <div style="width:400px;"></div>
+            <p class="text-[10px] text-[var(--ink-soft)]">no →</p>
+            <div class="bp-box px-3 py-2 text-xs text-center w-40 border-dashed">Inline validation error,<br>stay on form</div>
+          </div>
+          <div class="devnote inline-block mt-6 max-w-lg">
+            Intercropping is rule-based (a lookup table of known Kerala homestead combinations), not a
+            separate trained model — much faster to build, and it's genuinely how this is done in practice.
+          </div>
+        </div>
+
+        <!-- FLOW: Disease -->
+        <div class="flow-panel" id="flow-disease">
+          <div class="flex items-start gap-2 min-w-[900px]">
+            <div class="bp-box px-3 py-2 text-xs text-center w-28 shrink-0">Farmer taps<br>"Detect Disease"</div>
+            <div class="bp-arrow-h mt-4"></div>
+            <div class="bp-box px-3 py-2 text-xs text-center w-32 shrink-0">Capture photo /<br>choose from gallery</div>
+            <div class="bp-arrow-h mt-4"></div>
+            <div class="bp-box px-3 py-2 text-xs text-center w-32 shrink-0">Upload to backend →<br>CNN inference</div>
+            <div class="bp-arrow-h mt-4"></div>
+            <div class="diamond shrink-0"><span>Confidence high?</span></div>
+            <div class="flex flex-col items-center shrink-0">
+              <div class="bp-arrow-h mt-4" style="width:24px;"></div>
+              <p class="text-[10px] text-[var(--ink-soft)] -mt-1">yes</p>
+            </div>
+            <div class="bp-box px-3 py-2 text-xs text-center w-32 shrink-0">Show disease +<br>severity + treatment</div>
+            <div class="bp-arrow-h mt-4"></div>
+            <div class="bp-box px-3 py-2 text-xs text-center w-28 shrink-0" style="border-color:var(--mvp);background:var(--mvp-bg);">Trigger<br>Disease Alert</div>
+          </div>
+          <div class="flex items-center gap-2 mt-3 min-w-[900px]">
+            <div style="width:508px;"></div>
+            <p class="text-[10px] text-[var(--ink-soft)]">no →</p>
+            <div class="bp-box px-3 py-2 text-xs text-center w-44 border-dashed">"Unclear photo — retake in better light" prompt</div>
+          </div>
+          <div class="devnote inline-block mt-6 max-w-lg">
+            The low-confidence branch matters more than it looks — field photos are messy. Don't let the app
+            confidently guess wrong; it should know when to say "not sure."
+          </div>
+        </div>
+
+        <!-- FLOW: Weather -->
+        <div class="flow-panel" id="flow-weather">
+          <div class="flex items-start gap-2 min-w-[820px]">
+            <div class="bp-box px-3 py-2 text-xs text-center w-28 shrink-0">App opens /<br>Home loads</div>
+            <div class="bp-arrow-h mt-4"></div>
+            <div class="bp-box px-3 py-2 text-xs text-center w-32 shrink-0">Get device location<br>(or saved farm location)</div>
+            <div class="bp-arrow-h mt-4"></div>
+            <div class="bp-box px-3 py-2 text-xs text-center w-32 shrink-0">Call Weather API<br>(OpenWeather/Open-Meteo)</div>
+            <div class="bp-arrow-h mt-4"></div>
+            <div class="diamond shrink-0"><span>Severe event flagged?</span></div>
+            <div class="flex flex-col items-center shrink-0">
+              <div class="bp-arrow-h mt-4" style="width:24px;"></div>
+              <p class="text-[10px] text-[var(--ink-soft)] -mt-1">yes</p>
+            </div>
+            <div class="bp-box px-3 py-2 text-xs text-center w-28 shrink-0" style="border-color:var(--mvp);background:var(--mvp-bg);">Trigger<br>Weather Alert</div>
+          </div>
+          <div class="flex items-center gap-2 mt-3 min-w-[820px]">
+            <div style="width:400px;"></div>
+            <p class="text-[10px] text-[var(--ink-soft)]">no →</p>
+            <div class="bp-box px-3 py-2 text-xs text-center w-40 border-dashed">Just display forecast<br>on Weather screen</div>
+          </div>
+        </div>
+
+        <!-- FLOW: Market -->
+        <div class="flow-panel" id="flow-market">
+          <div class="flex items-start gap-2 min-w-[940px]">
+            <div class="bp-box px-3 py-2 text-xs text-center w-28 shrink-0">Farmer selects<br>a crop</div>
+            <div class="bp-arrow-h mt-4"></div>
+            <div class="bp-box px-3 py-2 text-xs text-center w-32 shrink-0">Fetch Kerala mandi<br>price (Agmarknet)</div>
+            <div class="bp-arrow-h mt-4"></div>
+            <div class="diamond shrink-0"><span>Kerala data sufficient?</span></div>
+            <div class="flex flex-col items-center shrink-0">
+              <div class="bp-arrow-h mt-4" style="width:24px;"></div>
+              <p class="text-[10px] text-[var(--ink-soft)] -mt-1">yes</p>
+            </div>
+            <div class="bp-box px-3 py-2 text-xs text-center w-32 shrink-0">Show Kerala price<br>+ trend graph</div>
+            <div class="bp-arrow-h mt-4"></div>
+            <div class="diamond shrink-0"><span>Target price set?</span></div>
+            <div class="flex flex-col items-center shrink-0">
+              <div class="bp-arrow-h mt-4" style="width:24px;"></div>
+              <p class="text-[10px] text-[var(--ink-soft)] -mt-1">yes</p>
+            </div>
+            <div class="bp-box px-3 py-2 text-xs text-center w-28 shrink-0" style="border-color:var(--mvp);background:var(--mvp-bg);">Trigger<br>Price Alert</div>
+          </div>
+          <div class="flex items-center gap-2 mt-3 min-w-[940px]">
+            <div style="width:400px;"></div>
+            <p class="text-[10px] text-[var(--ink-soft)]">no →</p>
+            <div class="bp-box px-3 py-2 text-xs text-center w-48 border-dashed" style="border-color:var(--advanced);background:var(--advanced-bg);">Offer cross-state comparison (Tamil Nadu / Karnataka)</div>
+          </div>
+          <div class="devnote inline-block mt-6 max-w-lg">
+            This "insufficient data" branch is exactly why cross-state comparison exists — it's a fallback
+            with real value, not a nice-to-have add-on.
+          </div>
+        </div>
+
+        <!-- FLOW: Alerts -->
+        <div class="flow-panel" id="flow-alerts">
+          <div class="flex items-start gap-2 min-w-[860px] flex-wrap">
+            <div class="flex flex-col gap-2 shrink-0">
+              <div class="bp-box px-3 py-2 text-xs text-center w-36">Weather flagged severe</div>
+              <div class="bp-box px-3 py-2 text-xs text-center w-36">Disease detected</div>
+              <div class="bp-box px-3 py-2 text-xs text-center w-36">Price target hit</div>
+            </div>
+            <div class="flex flex-col justify-center shrink-0 px-2">
+              <div class="bp-arrow-h" style="width:36px;"></div>
+            </div>
+            <div class="bp-box px-3 py-2 text-xs text-center w-32 self-center shrink-0" style="border-color:var(--mvp);background:var(--mvp-bg);">Push Notification<br>sent to device</div>
+            <div class="flex items-center self-center shrink-0"><div class="bp-arrow-h" style="width:36px;"></div></div>
+            <div class="bp-box px-3 py-2 text-xs text-center w-32 self-center shrink-0">Farmer taps<br>notification</div>
+            <div class="flex items-center self-center shrink-0"><div class="bp-arrow-h" style="width:36px;"></div></div>
+            <div class="bp-box px-3 py-2 text-xs text-center w-36 self-center shrink-0">Deep-link to relevant<br>screen (not just Home)</div>
+          </div>
+          <div class="devnote inline-block mt-6 max-w-lg">
+            Deep-linking matters: tapping a "disease detected" alert should open that result directly, not
+            dump the farmer back on Home to go hunting for it.
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============ 05 SYSTEM FLOW ============ -->
+    <section id="system" class="px-6 lg:px-14 py-16 border-t border-[var(--grid)]">
+      <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">05</p>
+      <h2 class="font-display font-bold text-3xl mt-1">System Flow — what talks to what</h2>
+      <p class="text-[var(--ink-soft)] mt-3 max-w-2xl">A simplified request path, for developers wiring up the layers.</p>
+
+      <div class="bp-box p-6 md:p-8 mt-8 overflow-x-auto">
+        <div class="flex items-start gap-2 min-w-[900px]">
+          <div class="bp-box px-3 py-3 text-xs text-center w-32 shrink-0 self-center">Mobile / Web App<br><span class="font-mono text-[9px] text-[var(--ink-soft)]">React Native</span></div>
+          <div class="bp-arrow-h mt-5"></div>
+          <div class="bp-box px-3 py-3 text-xs text-center w-32 shrink-0 self-center">Backend API<br><span class="font-mono text-[9px] text-[var(--ink-soft)]">FastAPI</span></div>
+          <div class="flex flex-col items-center shrink-0 gap-3">
+            <div class="bp-arrow-h" style="width:26px;"></div>
+          </div>
+          <div class="flex flex-col gap-3 shrink-0">
+            <div class="bp-box px-3 py-2 text-xs text-center w-36">ML Models<br><span class="font-mono text-[9px] text-[var(--ink-soft)]">crop / yield / disease CNN</span></div>
+            <div class="bp-box px-3 py-2 text-xs text-center w-36">External APIs<br><span class="font-mono text-[9px] text-[var(--ink-soft)]">Weather, Agmarknet, Maps</span></div>
+          </div>
+          <div class="flex flex-col items-center shrink-0 gap-3">
+            <div class="bp-arrow-h" style="width:26px;"></div>
+          </div>
+          <div class="bp-box px-3 py-3 text-xs text-center w-32 shrink-0 self-center">Backend API<br>merges response</div>
+          <div class="bp-arrow-h mt-5"></div>
+          <div class="bp-box px-3 py-3 text-xs text-center w-32 shrink-0 self-center" style="border-color:var(--mvp);background:var(--mvp-bg);">App renders<br>result screen</div>
+        </div>
+        <div class="flex justify-center mt-4">
+          <div class="flex flex-col items-center">
+            <div class="bp-arrow-v" style="height:22px;"></div>
+            <div class="bp-box px-4 py-2 text-xs text-center">PostgreSQL — users, farms, predictions, sensor-free history</div>
+          </div>
+        </div>
+      </div>
+      <p class="text-xs text-[var(--ink-soft)] mt-3">Backend reads/writes the database on most requests (saving a prediction, logging a disease check) — arrow omitted above for clarity, but assume every box connects to it.</p>
+    </section>
+
+    <!-- ============ 06 ROADMAP ============ -->
+    <section id="roadmap" class="px-6 lg:px-14 py-16 border-t border-[var(--grid)] pb-24">
+      <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">06</p>
+      <h2 class="font-display font-bold text-3xl mt-1">Build Priority Roadmap</h2>
+      <p class="text-[var(--ink-soft)] mt-3 max-w-2xl">What to build first, what to add next, and what to leave for the report's "future scope" section.</p>
+
+      <div class="overflow-x-auto mt-8">
+        <table class="w-full text-sm border-collapse">
+          <thead>
+            <tr class="text-left border-b-2 border-[var(--ink)]">
+              <th class="py-2 pr-4">Priority</th>
+              <th class="py-2 pr-4">What</th>
+              <th class="py-2 pr-4">Build When</th>
+              <th class="py-2">Note</th>
+            </tr>
+          </thead>
+          <tbody class="align-top">
+            <tr class="border-b border-[var(--grid)]">
+              <td class="py-3 pr-4"><span class="tag tag-mvp">MVP</span></td>
+              <td class="py-3 pr-4">Login, Home, Crop Input/Result, Disease Capture/Result, Weather, Alerts</td>
+              <td class="py-3 pr-4 font-mono text-xs">Implementation Plan — Phases 4, 5, 7, 9</td>
+              <td class="py-3">This alone is a complete, demoable app. Do not start anything else before this works end to end.</td>
+            </tr>
+            <tr class="border-b border-[var(--grid)]">
+              <td class="py-3 pr-4"><span class="tag tag-advanced">Innovation</span></td>
+              <td class="py-3 pr-4">Intercropping suggestion, Kerala plantation-crop disease recognition, Market price + cross-state comparison</td>
+              <td class="py-3 pr-4 font-mono text-xs">Right after MVP is stable</td>
+              <td class="py-3">This is what your professor asked you to focus on — build this second, not last, so it isn't rushed.</td>
+            </tr>
+            <tr class="border-b border-[var(--grid)]">
+              <td class="py-3 pr-4"><span class="tag tag-stretch">Stretch</span></td>
+              <td class="py-3 pr-4">"Why this crop" explanation, disease severity meter, profit comparison, rainfall trend, Profile/My Farms</td>
+              <td class="py-3 pr-4 font-mono text-xs">If ahead of schedule</td>
+              <td class="py-3">Add only after MVP + Innovation are both working reliably in a live demo.</td>
+            </tr>
+            <tr>
+              <td class="py-3 pr-4"><span class="tag tag-future">Future</span></td>
+              <td class="py-3 pr-4">IoT sensor integration, multi-language voice assistant, satellite imagery, expert consultation booking</td>
+              <td class="py-3 pr-4 font-mono text-xs">Not this semester</td>
+              <td class="py-3">Mention explicitly in the report as future scope — good answer material for viva.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="devnote inline-block mt-10 max-w-lg">
+        If you only remember one thing from this document: build the MVP loop fully working first
+        (Home → one feature → result → back to Home), then layer the Innovation features on top of a
+        working skeleton — not the other way around.
+      </div>
+    </section>
+
+    <!-- ============ 07 BUILD ORDER & LOAD MANAGEMENT ============ -->
+    <section id="buildorder" class="px-6 lg:px-14 py-16 border-t border-[var(--grid)] pb-24">
+      <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">07</p>
+      <h2 class="font-display font-bold text-3xl mt-1">Build Order &amp; Load Management</h2>
+      <p class="text-[var(--ink-soft)] mt-3 max-w-2xl">
+        Nine sequenced build stages, each tagged with a <b>load score</b> (1 = light, 5 = heavy).
+        The simulator below checks whether your currently-active stages overload a 3-person team.
+      </p>
+
+      <!-- ---- capacity simulator ---- -->
+      <div class="bp-box p-5 md:p-6 mt-8">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <p class="font-semibold text-sm">🧮 Team Load Simulator</p>
+          <p class="font-mono text-xs text-[var(--ink-soft)]">Capacity: 7 load-units · 3-person team</p>
+        </div>
+        <p class="text-xs text-[var(--ink-soft)] mt-1">Tick the stages you're actively building <i>right now</i> — not finished ones — to check your current load.</p>
+        <div class="gauge-track mt-4"><div class="gauge-fill" id="loadFill"></div></div>
+        <div class="flex items-center justify-between mt-2">
+          <p class="font-mono text-xs" id="loadReadout">0 / 7 load-units active</p>
+          <p class="text-xs font-semibold" id="loadStatus">✓ Within safe capacity</p>
+        </div>
+      </div>
+
+      <!-- ---- stepper ---- -->
+      <div class="mt-10 space-y-6" id="stepper">
+
+        <div class="step" data-load="1">
+          <div class="step-rail"><div class="step-dot">1</div><div class="step-line"></div></div>
+          <div class="bp-box p-4 flex-1">
+            <div class="flex items-start justify-between gap-3 flex-wrap">
+              <div>
+                <p class="font-semibold text-sm">Foundation &amp; Shell <span class="tag tag-mvp ml-1">MVP</span></p>
+                <p class="text-xs text-[var(--ink-soft)] mt-1">Auth (OTP login), Home dashboard shell, navigation skeleton — no ML yet.</p>
+                <p class="text-xs text-[var(--ink-soft)] mt-1">Screens: #1 Splash · #2 Login · #3 Home</p>
+              </div>
+              <div class="text-right shrink-0">
+                <label class="flex items-center gap-1.5 justify-end text-xs"><input type="checkbox" class="stage-check" data-weight="1"> in progress</label>
+                <p class="font-mono text-[10px] text-[var(--ink-soft)] mt-1">Weeks 1–3</p>
+                <div class="load-dots mt-1 justify-end flex"><span class="load-dot filled"></span><span class="load-dot"></span><span class="load-dot"></span><span class="load-dot"></span><span class="load-dot"></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step" data-load="1">
+          <div class="step-rail"><div class="step-dot">2</div><div class="step-line"></div></div>
+          <div class="bp-box p-4 flex-1">
+            <div class="flex items-start justify-between gap-3 flex-wrap">
+              <div>
+                <p class="font-semibold text-sm">Soil Intelligence — the free win <span class="tag tag-mvp ml-1">MVP</span></p>
+                <p class="text-xs text-[var(--ink-soft)] mt-1">Manual N-P-K/pH entry, rule-based soil health score. Lowest risk in the whole project — build it early for a guaranteed win.</p>
+                <p class="text-xs text-[var(--ink-soft)] mt-1">Screens: #4 (soil fields)</p>
+              </div>
+              <div class="text-right shrink-0">
+                <label class="flex items-center gap-1.5 justify-end text-xs"><input type="checkbox" class="stage-check" data-weight="1"> in progress</label>
+                <p class="font-mono text-[10px] text-[var(--ink-soft)] mt-1">Weeks 3–5</p>
+                <div class="load-dots mt-1 justify-end flex"><span class="load-dot filled"></span><span class="load-dot"></span><span class="load-dot"></span><span class="load-dot"></span><span class="load-dot"></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step" data-load="3">
+          <div class="step-rail"><div class="step-dot">3</div><div class="step-line"></div></div>
+          <div class="bp-box p-4 flex-1">
+            <div class="flex items-start justify-between gap-3 flex-wrap">
+              <div>
+                <p class="font-semibold text-sm">Crop Recommendation + Yield <span class="tag tag-mvp ml-1">MVP</span></p>
+                <p class="text-xs text-[var(--ink-soft)] mt-1">Classical ML (Random Forest / Gradient Boosting) crop model + yield regression. Well-documented approach, medium effort.</p>
+                <p class="text-xs text-[var(--ink-soft)] mt-1">Screens: #4 complete · #5 (base result)</p>
+              </div>
+              <div class="text-right shrink-0">
+                <label class="flex items-center gap-1.5 justify-end text-xs"><input type="checkbox" class="stage-check" data-weight="3"> in progress</label>
+                <p class="font-mono text-[10px] text-[var(--ink-soft)] mt-1">Weeks 4–6</p>
+                <div class="load-dots mt-1 justify-end flex"><span class="load-dot filled"></span><span class="load-dot filled"></span><span class="load-dot filled"></span><span class="load-dot"></span><span class="load-dot"></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step" data-load="2">
+          <div class="step-rail"><div class="step-dot">4</div><div class="step-line"></div></div>
+          <div class="bp-box p-4 flex-1" style="border-color:var(--advanced);">
+            <div class="flex items-start justify-between gap-3 flex-wrap">
+              <div>
+                <p class="font-semibold text-sm">Intercropping — Innovation #1 <span class="tag tag-advanced ml-1">Innovation</span></p>
+                <p class="text-xs text-[var(--ink-soft)] mt-1">Rule-based lookup table of Kerala homestead combos (coconut + pepper + banana + cocoa). No training required — cheapest high-reward feature in the project.</p>
+                <p class="text-xs text-[var(--ink-soft)] mt-1">Screens: #5 complete</p>
+              </div>
+              <div class="text-right shrink-0">
+                <label class="flex items-center gap-1.5 justify-end text-xs"><input type="checkbox" class="stage-check" data-weight="2"> in progress</label>
+                <p class="font-mono text-[10px] text-[var(--ink-soft)] mt-1">Weeks 6–7</p>
+                <div class="load-dots mt-1 justify-end flex"><span class="load-dot filled"></span><span class="load-dot filled"></span><span class="load-dot"></span><span class="load-dot"></span><span class="load-dot"></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step" data-load="2">
+          <div class="step-rail"><div class="step-dot">5</div><div class="step-line"></div></div>
+          <div class="bp-box p-4 flex-1">
+            <div class="flex items-start justify-between gap-3 flex-wrap">
+              <div>
+                <p class="font-semibold text-sm">Weather Intelligence <span class="tag tag-mvp ml-1">MVP</span></p>
+                <p class="text-xs text-[var(--ink-soft)] mt-1">Forecast API integration, severe-weather flag, weather alert trigger. Mostly API plumbing — safe to run in parallel with Stage 4 on a different team member.</p>
+                <p class="text-xs text-[var(--ink-soft)] mt-1">Screens: #8 · partial #10</p>
+              </div>
+              <div class="text-right shrink-0">
+                <label class="flex items-center gap-1.5 justify-end text-xs"><input type="checkbox" class="stage-check" data-weight="2"> in progress</label>
+                <p class="font-mono text-[10px] text-[var(--ink-soft)] mt-1">Weeks 6–8</p>
+                <div class="load-dots mt-1 justify-end flex"><span class="load-dot filled"></span><span class="load-dot filled"></span><span class="load-dot"></span><span class="load-dot"></span><span class="load-dot"></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step" data-load="5">
+          <div class="step-rail"><div class="step-dot">6</div><div class="step-line"></div></div>
+          <div class="bp-box p-4 flex-1" style="border-color:#C0392B;">
+            <div class="flex items-start justify-between gap-3 flex-wrap">
+              <div>
+                <p class="font-semibold text-sm">Disease Detection — highest risk <span class="tag tag-mvp ml-1">MVP</span></p>
+                <p class="text-xs text-[var(--ink-soft)] mt-1">CNN trained broad (South India) + supplemented with self-collected Kerala plantation-crop images (coconut, pepper, rubber). Longest lead time in the project — start early, don't let it slip.</p>
+                <p class="text-xs text-[var(--ink-soft)] mt-1">Screens: #6 · #7</p>
+              </div>
+              <div class="text-right shrink-0">
+                <label class="flex items-center gap-1.5 justify-end text-xs"><input type="checkbox" class="stage-check" data-weight="5"> in progress</label>
+                <p class="font-mono text-[10px] text-[var(--ink-soft)] mt-1">Weeks 6–10</p>
+                <div class="load-dots mt-1 justify-end flex"><span class="load-dot filled"></span><span class="load-dot filled"></span><span class="load-dot filled"></span><span class="load-dot filled"></span><span class="load-dot filled"></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step" data-load="4">
+          <div class="step-rail"><div class="step-dot">7</div><div class="step-line"></div></div>
+          <div class="bp-box p-4 flex-1" style="border-color:var(--advanced);">
+            <div class="flex items-start justify-between gap-3 flex-wrap">
+              <div>
+                <p class="font-semibold text-sm">Market Intelligence — Innovation #2 <span class="tag tag-advanced ml-1">Innovation</span></p>
+                <p class="text-xs text-[var(--ink-soft)] mt-1">Kerala mandi price (Agmarknet), trend graph, cross-state comparison, price alert. Deliberately sequenced <i>after</i> Disease Detection stabilizes — both are heavy, don't run concurrently.</p>
+                <p class="text-xs text-[var(--ink-soft)] mt-1">Screens: #9 · partial #10</p>
+              </div>
+              <div class="text-right shrink-0">
+                <label class="flex items-center gap-1.5 justify-end text-xs"><input type="checkbox" class="stage-check" data-weight="4"> in progress</label>
+                <p class="font-mono text-[10px] text-[var(--ink-soft)] mt-1">Weeks 9–12</p>
+                <div class="load-dots mt-1 justify-end flex"><span class="load-dot filled"></span><span class="load-dot filled"></span><span class="load-dot filled"></span><span class="load-dot filled"></span><span class="load-dot"></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step" data-load="3">
+          <div class="step-rail"><div class="step-dot">8</div><div class="step-line"></div></div>
+          <div class="bp-box p-4 flex-1">
+            <div class="flex items-start justify-between gap-3 flex-wrap">
+              <div>
+                <p class="font-semibold text-sm">Unified Alerts + Full Integration <span class="tag tag-mvp ml-1">MVP</span></p>
+                <p class="text-xs text-[var(--ink-soft)] mt-1">Merge weather / disease / price triggers into one alert feed with deep-linking. Integration work, not modeling — but where most last-minute bugs live.</p>
+                <p class="text-xs text-[var(--ink-soft)] mt-1">Screens: #10 complete</p>
+              </div>
+              <div class="text-right shrink-0">
+                <label class="flex items-center gap-1.5 justify-end text-xs"><input type="checkbox" class="stage-check" data-weight="3"> in progress</label>
+                <p class="font-mono text-[10px] text-[var(--ink-soft)] mt-1">Weeks 12–13</p>
+                <div class="load-dots mt-1 justify-end flex"><span class="load-dot filled"></span><span class="load-dot filled"></span><span class="load-dot filled"></span><span class="load-dot"></span><span class="load-dot"></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step" data-load="2">
+          <div class="step-rail"><div class="step-dot">9</div></div>
+          <div class="bp-box p-4 flex-1">
+            <div class="flex items-start justify-between gap-3 flex-wrap">
+              <div>
+                <p class="font-semibold text-sm">Stretch Polish <span class="tag tag-stretch ml-1">Stretch</span></p>
+                <p class="text-xs text-[var(--ink-soft)] mt-1">"Why this crop" explanation, disease severity meter, profit comparison, Profile/My Farms. Only touch this if Stages 1–8 are demo-stable — cut ruthlessly if behind schedule.</p>
+                <p class="text-xs text-[var(--ink-soft)] mt-1">Screens: #11 · enhancements to #5 / #7 / #9</p>
+              </div>
+              <div class="text-right shrink-0">
+                <label class="flex items-center gap-1.5 justify-end text-xs"><input type="checkbox" class="stage-check" data-weight="2"> in progress</label>
+                <p class="font-mono text-[10px] text-[var(--ink-soft)] mt-1">Weeks 13–15</p>
+                <div class="load-dots mt-1 justify-end flex"><span class="load-dot filled"></span><span class="load-dot filled"></span><span class="load-dot"></span><span class="load-dot"></span><span class="load-dot"></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ---- cumulative feature-set summary ---- -->
+      <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase mt-14">Maximum working feature set, by stage</p>
+      <div class="overflow-x-auto mt-4">
+        <table class="w-full text-sm border-collapse">
+          <thead>
+            <tr class="text-left border-b-2 border-[var(--ink)]">
+              <th class="py-2 pr-4">After Stage</th>
+              <th class="py-2 pr-4">Live &amp; Working</th>
+              <th class="py-2">Cumulative Load</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-b border-[var(--grid)]"><td class="py-2 pr-4 font-mono text-xs">3</td><td class="py-2 pr-4">Auth, Home, Soil score, Crop Recommendation, Yield</td><td class="py-2 font-mono text-xs">5 units</td></tr>
+            <tr class="border-b border-[var(--grid)]"><td class="py-2 pr-4 font-mono text-xs">5</td><td class="py-2 pr-4">+ Intercropping, Weather forecast</td><td class="py-2 font-mono text-xs">9 units</td></tr>
+            <tr class="border-b border-[var(--grid)]"><td class="py-2 pr-4 font-mono text-xs">6</td><td class="py-2 pr-4">+ Disease Detection (Kerala crops)</td><td class="py-2 font-mono text-xs">14 units</td></tr>
+            <tr class="border-b border-[var(--grid)]"><td class="py-2 pr-4 font-mono text-xs">8</td><td class="py-2 pr-4">+ Market Intelligence, Unified Alerts</td><td class="py-2 font-mono text-xs">21 units</td></tr>
+            <tr><td class="py-2 pr-4 font-mono text-xs">9</td><td class="py-2 pr-4">+ Stretch polish (full feature set)</td><td class="py-2 font-mono text-xs">23 units</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="devnote inline-block mt-10 max-w-lg">
+        The rule that matters: Disease Detection (load 5) and Market Intelligence (load 4) are your two
+        heaviest builds — never run them concurrently. Everything else can flex around a 3-person team,
+        but stagger those two or one of them will get rushed right before the demo.
+      </div>
+    </section>
+
+    <!-- ============ 08 ML MODELS ============ -->
+    <section id="mlmodels" class="px-6 lg:px-14 py-16 border-t border-[var(--grid)]">
+      <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">08</p>
+      <h2 class="font-display font-bold text-3xl mt-1">ML Models to Build</h2>
+      <p class="text-[var(--ink-soft)] mt-3 max-w-2xl">
+        Three real models, real free datasets, and where to start from instead of training from zero.
+        Intercropping isn't listed — it's a rule-based lookup table, not a trained model.
+      </p>
+
+      <div class="grid md:grid-cols-3 gap-5 mt-10">
+
+        <!-- Model 1: Crop Rec -->
+        <div class="model-card">
+          <span class="tag tag-mvp">Model 1 · Build First</span>
+          <p class="font-semibold mt-2">Crop Recommendation</p>
+          <p class="text-xs text-[var(--ink-soft)] mt-1">Classical ML · multi-class classification (Random Forest / Gradient Boosting)</p>
+
+          <p class="font-mono text-[10px] text-[var(--blue)] uppercase mt-4 mb-1">Dataset</p>
+          <div class="dataset-row">
+            Crop Recommendation Dataset (Kaggle)<br>
+            2,200 rows · 22 crops · N-P-K, temp, humidity, pH, rainfall<br>
+            <a href="https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset" target="_blank">kaggle.com/datasets/atharvaingle/crop-recommendation-dataset</a>
+          </div>
+
+          <p class="font-mono text-[10px] text-[var(--blue)] uppercase mt-4 mb-1">Pretrained model</p>
+          <p class="text-xs text-[var(--ink-soft)]">None needed — tabular data, trains from scratch in minutes.</p>
+
+          <details class="caveat mt-4">
+            <summary>⚠ Kerala crop-list gap</summary>
+            <div class="gap-flag">Dataset has rice, banana, coconut, coffee, cotton, jute — but no pepper, cardamom, rubber, tapioca, or arecanut. Either scope recommendations to the overlapping subset, or supplement with extra rows built from KAU package-of-practices ideal ranges.</div>
+          </details>
+        </div>
+
+        <!-- Model 2: Yield -->
+        <div class="model-card">
+          <span class="tag tag-mvp">Model 2 · Build Second</span>
+          <p class="font-semibold mt-2">Yield Prediction</p>
+          <p class="text-xs text-[var(--ink-soft)] mt-1">Classical ML · regression (Random Forest / XGBoost Regressor)</p>
+
+          <p class="font-mono text-[10px] text-[var(--blue)] uppercase mt-4 mb-1">Dataset</p>
+          <div class="dataset-row">
+            Agricultural Crop Yield in Indian States (Kaggle)<br>
+            1997–2020 · filter to Kerala rows<br>
+            <a href="https://www.kaggle.com/datasets/akshatgupta7/crop-yield-in-indian-states-dataset" target="_blank">kaggle.com/datasets/akshatgupta7/crop-yield-in-indian-states-dataset</a>
+          </div>
+
+          <p class="font-mono text-[10px] text-[var(--blue)] uppercase mt-4 mb-1">Pretrained model</p>
+          <p class="text-xs text-[var(--ink-soft)]">None needed — trains from scratch, reuses Model 1's data pipeline.</p>
+
+          <details class="caveat mt-4">
+            <summary>⚠ Small filtered sample</summary>
+            <div class="gap-flag">Filtering to Kerala-only rows shrinks the dataset a lot. Expect wider error margins — report a confidence range, not a single precise number.</div>
+          </details>
+        </div>
+
+        <!-- Model 3: Disease -->
+        <div class="model-card" style="border-color:#C0392B;">
+          <span class="tag" style="background:#FDEBEA;color:#8C2D25;border-color:#E9A5A0;">Model 3 · Longest Lead Time</span>
+          <p class="font-semibold mt-2">Disease Detection (CNN)</p>
+          <p class="text-xs text-[var(--ink-soft)] mt-1">Deep Learning · image classification, transfer learning</p>
+
+          <p class="font-mono text-[10px] text-[var(--blue)] uppercase mt-4 mb-1">Datasets</p>
+          <div class="dataset-row mb-2">
+            PlantVillage (Kaggle) · 38 classes, common crops<br>
+            <a href="https://www.kaggle.com/datasets/emmarex/plantdisease" target="_blank">kaggle.com/datasets/emmarex/plantdisease</a>
+          </div>
+          <div class="dataset-row mb-2">
+            New Plant Diseases Dataset (Augmented)<br>
+            <a href="https://www.kaggle.com/datasets/vipoooool/new-plant-diseases-dataset" target="_blank">kaggle.com/datasets/vipoooool/new-plant-diseases-dataset</a>
+          </div>
+          <div class="dataset-row">
+            Coconut Leaf Dataset for Pest ID (Kerala-relevant)<br>
+            <a href="https://www.kaggle.com/datasets/shravanatirtha/coconut-leaf-dataset-for-pest-identification" target="_blank">kaggle.com/datasets/shravanatirtha/coconut-leaf-dataset-for-pest-identification</a>
+          </div>
+
+          <p class="font-mono text-[10px] text-[var(--blue)] uppercase mt-4 mb-1">Pretrained model</p>
+          <div class="dataset-row mb-2">
+            Base: google/mobilenet_v2_1.0_224 (ImageNet)<br>
+            <a href="https://huggingface.co/google/mobilenet_v2_1.0_224" target="_blank">huggingface.co/google/mobilenet_v2_1.0_224</a>
+          </div>
+          <div class="dataset-row">
+            Shortcut: already PlantVillage-tuned checkpoint<br>
+            <a href="https://huggingface.co/linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification" target="_blank">huggingface.co/linkanjarad/…plant-disease-identification</a>
+          </div>
+
+          <details class="caveat mt-4">
+            <summary>⚠ No public pepper/rubber dataset</summary>
+            <div class="gap-flag">Pepper and rubber leaf-disease images don't exist as a clean public dataset. This is the self-collection work flagged since the Requirement Collection doc — budget real field-visit time for it.</div>
+          </details>
+        </div>
+      </div>
+
+      <!-- ---- model build order ---- -->
+      <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase mt-14">Order of building the models</p>
+      <div class="mt-6 overflow-x-auto pb-2">
+        <div class="flex items-center gap-2 min-w-[820px]">
+          <div class="bp-box px-4 py-3 text-sm text-center w-40 shrink-0">
+            <span class="tag tag-mvp block mb-1 w-fit mx-auto">1st</span>
+            Crop Recommendation<br><span class="text-[10px] text-[var(--ink-soft)]">~3–5 days · validates pipeline</span>
+          </div>
+          <div class="bp-arrow-h"></div>
+          <div class="bp-box px-4 py-3 text-sm text-center w-40 shrink-0">
+            <span class="tag tag-mvp block mb-1 w-fit mx-auto">2nd</span>
+            Yield Prediction<br><span class="text-[10px] text-[var(--ink-soft)]">~3–5 days · reuses pipeline</span>
+          </div>
+          <div class="bp-arrow-h"></div>
+          <div class="bp-box px-4 py-3 text-sm text-center w-44 shrink-0" style="border-color:#C0392B;">
+            <span class="tag" style="background:#FDEBEA;color:#8C2D25;border-color:#E9A5A0;" class="block mb-1 w-fit mx-auto">3rd</span>
+            Disease Detection CNN<br><span class="text-[10px] text-[var(--ink-soft)]">~3–4 weeks training + tuning</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="devnote inline-block mt-6 max-w-lg">
+        The order above is for actual model <i>training</i>. The Kerala leaf-photo collection for Model 3
+        needs to start in Week 1 regardless — it's the slowest-moving resource in the whole project, not
+        the model code itself.
+      </div>
+    </section>
+
+    <!-- ============ 09 RELEASE PHASES ============ -->
+    <section id="phases" class="px-6 lg:px-14 py-16 border-t border-[var(--grid)] pb-24">
+      <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">09</p>
+      <h2 class="font-display font-bold text-3xl mt-1">Release Phases — each one a working product</h2>
+      <p class="text-[var(--ink-soft)] mt-3 max-w-2xl">
+        Four phases. Each ends with something a farmer could actually use — not partial, internal-only progress.
+        If time runs out, whichever phase you finished last is still a demoable product.
+      </p>
+
+      <div class="grid md:grid-cols-2 gap-6 mt-10">
+
+        <div class="phase-card">
+          <div class="flex items-center justify-between">
+            <span class="phase-num">01</span>
+            <span class="tag tag-mvp">Weeks 1–6</span>
+          </div>
+          <p class="font-semibold text-lg">Foundation Release</p>
+          <p class="text-xs text-[var(--ink-soft)]">Login · Home · Soil Intelligence · Crop Recommendation (live model)</p>
+          <div class="farmer-can">🧑‍🌾 A farmer can log in, enter soil values, and get a real ML-backed crop suggestion.</div>
+        </div>
+
+        <div class="phase-card">
+          <div class="flex items-center justify-between">
+            <span class="phase-num">02</span>
+            <span class="tag tag-advanced">Weeks 7–10</span>
+          </div>
+          <p class="font-semibold text-lg">Innovation Release</p>
+          <p class="text-xs text-[var(--ink-soft)]">+ Yield Prediction · + Intercropping Suggestion · + Weather Intelligence</p>
+          <div class="farmer-can">🧑‍🌾 A farmer gets a full recommendation with expected yield <i>and</i> an intercropping plan, plus a weather check before planting.</div>
+        </div>
+
+        <div class="phase-card" style="border-color:#C0392B;">
+          <div class="flex items-center justify-between">
+            <span class="phase-num">03</span>
+            <span class="tag" style="background:#FDEBEA;color:#8C2D25;border-color:#E9A5A0;">Weeks 10–13</span>
+          </div>
+          <p class="font-semibold text-lg">Diagnosis + Market Release</p>
+          <p class="text-xs text-[var(--ink-soft)]">+ Disease Detection (Kerala crops) · + Market Intelligence (Kerala + cross-state) · + Unified Alerts</p>
+          <div class="farmer-can">🧑‍🌾 A farmer can diagnose a sick crop from a photo, check today's price before selling, and get notified automatically. <b>This is your true finish line</b> — full MVP + both innovation features, submission-ready.</div>
+        </div>
+
+        <div class="phase-card">
+          <div class="flex items-center justify-between">
+            <span class="phase-num">04</span>
+            <span class="tag tag-stretch">Weeks 13–16</span>
+          </div>
+          <p class="font-semibold text-lg">Polish Release</p>
+          <p class="text-xs text-[var(--ink-soft)]">+ "Why this crop" explanation · severity meter · profit comparison · Profile · final QA + deployment</p>
+          <div class="farmer-can">🧑‍🌾 Same product, refined — this is your final demo build, not a requirement to reach.</div>
+        </div>
+      </div>
+
+      <div class="devnote inline-block mt-10 max-w-lg">
+        If the timeline slips anywhere, protect Phase 3 above everything else. Phase 4 is genuinely optional
+        — a judge sees a complete, working, innovative app either way.
+      </div>
+    </section>
+
+    <footer class="px-6 lg:px-14 py-10 border-t border-[var(--grid)] text-xs text-[var(--ink-soft)]">
+      AI-Powered Smart Farming Assistant — App Flow Blueprint · Kerala-focused, mobile-first · Draft for team review
+    </footer>
+
+  </main>
+</div>
+
+<script>
+  // ---- scroll spy ----
+  const links = document.querySelectorAll('#navlinks .nav-link');
+  const sections = document.querySelectorAll('main section[id]');
+  const spy = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        links.forEach(l=>l.classList.remove('active'));
+        const active = document.querySelector('#navlinks .nav-link[href="#'+e.target.id+'"]');
+        if(active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-40% 0px -55% 0px', threshold: 0 });
+  sections.forEach(s=>spy.observe(s));
+
+  // ---- dev notes toggle ----
+  document.getElementById('notesToggle').addEventListener('change', (e)=>{
+    document.body.classList.toggle('hide-notes', !e.target.checked);
+  });
+
+  // ---- screen filter ----
+  const filterBtns = document.querySelectorAll('#filterBar button');
+  const screenCards = document.querySelectorAll('.screen-card');
+  filterBtns.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      filterBtns.forEach(b=>{ b.style.background=''; b.style.color=''; b.style.borderColor=''; });
+      const f = btn.dataset.filter;
+      btn.style.background = 'var(--ink)'; btn.style.color = '#fff'; btn.style.borderColor='var(--ink)';
+      screenCards.forEach(card=>{
+        if(f==='all' || card.dataset.priority===f){ card.classList.remove('filtered-out'); }
+        else { card.classList.add('filtered-out'); }
+      });
+    });
+  });
+
+  // ---- flow tabs ----
+  const flowTabs = document.querySelectorAll('.flow-tab');
+  const flowPanels = document.querySelectorAll('.flow-panel');
+  flowTabs.forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      flowTabs.forEach(t=>t.classList.remove('active'));
+      flowPanels.forEach(p=>p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('flow-'+tab.dataset.flow).classList.add('active');
+    });
+  });
+
+  // ---- build-order load simulator ----
+  const CAPACITY = 7;
+  const stageChecks = document.querySelectorAll('.stage-check');
+  const loadFill = document.getElementById('loadFill');
+  const loadReadout = document.getElementById('loadReadout');
+  const loadStatus = document.getElementById('loadStatus');
+
+  function recalcLoad(){
+    let total = 0;
+    stageChecks.forEach(c => { if(c.checked) total += parseInt(c.dataset.weight, 10); });
+    const pct = Math.min((total / CAPACITY) * 100, 100);
+    loadFill.style.width = pct + '%';
+    loadReadout.textContent = total + ' / ' + CAPACITY + ' load-units active';
+    loadFill.classList.remove('warn','over');
+    if(total > CAPACITY){
+      loadFill.classList.add('over');
+      loadStatus.textContent = '⚠ Overloaded — stagger these stages';
+      loadStatus.style.color = '#C0392B';
+    } else if(total === CAPACITY){
+      loadFill.classList.add('warn');
+      loadStatus.textContent = '⚠ At capacity — avoid adding more';
+      loadStatus.style.color = 'var(--stretch)';
+    } else {
+      loadStatus.textContent = '✓ Within safe capacity';
+      loadStatus.style.color = 'var(--mvp)';
+    }
+  }
+  stageChecks.forEach(c => c.addEventListener('change', recalcLoad));
+  recalcLoad();
+
+  // ---- highlight active step dots ----
+  stageChecks.forEach(c => {
+    c.addEventListener('change', () => {
+      const dot = c.closest('.step').querySelector('.step-dot');
+      dot.classList.toggle('on', c.checked);
+    });
+  });
+</script>
+</body>
+</html>

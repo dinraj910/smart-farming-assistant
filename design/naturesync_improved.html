@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NatureSync - Premium AgTech UI (Improved)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #0b1320;
+      color: #0f172a;
+    }
+    .font-display { font-family: 'Fraunces', serif; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    .glass-floating {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+    }
+    .glass-dark-floating {
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+  </style>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4', 100: '#dcfce7', 500: '#16a34a',
+              600: '#15803d', 700: '#166534', 800: '#114223', 900: '#0a2e18',
+            },
+            accent: {
+              300: '#f2c879', 400: '#e8ac3f', 500: '#d4941f', 600: '#b1780f',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-2 sm:p-6">
+
+  <div class="w-full max-w-6xl flex flex-col lg:flex-row gap-8 items-start justify-center">
+
+    <!-- Left Panel: Dev Control & Information -->
+    <div class="w-full lg:w-80 bg-slate-900/90 backdrop-blur-lg text-slate-100 p-6 rounded-[32px] border border-slate-800 shadow-2xl">
+      <div class="flex items-center gap-3 mb-5">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-green-400 flex items-center justify-center text-white shadow-lg shadow-emerald-600/30">
+          <i data-lucide="sprout" class="w-7 h-7"></i>
+        </div>
+        <div>
+          <h1 class="font-extrabold text-xl tracking-tight text-white">NatureSync</h1>
+          <p class="text-xs text-emerald-400 font-bold uppercase tracking-wider">Revised — Fixed &amp; Complete</p>
+        </div>
+      </div>
+
+      <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 mb-4">
+        <p class="text-[11px] text-amber-200 leading-relaxed">
+          <b>What changed:</b> readable font sizes, stronger photo contrast, renamed AI branding,
+          and two screens that were missing — <b>Intercropping</b> (your flagship feature) and <b>Alerts</b>.
+        </p>
+      </div>
+
+      <div class="space-y-2 pt-3 border-t border-slate-800">
+        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Switch Screen Prototype</span>
+
+        <button onclick="switchScreen('home-screen')" class="nav-btn-desktop w-full text-left px-3.5 py-3 rounded-2xl text-xs font-bold transition-all bg-emerald-600 text-white flex items-center justify-between shadow-lg shadow-emerald-600/20">
+          <span class="flex items-center gap-2.5"><i data-lucide="home" class="w-4 h-4"></i> 1. Home &amp; Crop AI</span>
+          <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        </button>
+
+        <button onclick="switchScreen('doctor-screen')" class="nav-btn-desktop w-full text-left px-3.5 py-3 rounded-2xl text-xs font-bold transition-all bg-slate-800/80 text-slate-300 hover:bg-slate-700 flex items-center justify-between">
+          <span class="flex items-center gap-2.5"><i data-lucide="scan" class="w-4 h-4"></i> 2. Leaf Doctor (Vision AI)</span>
+          <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        </button>
+
+        <button onclick="switchScreen('weather-screen')" class="nav-btn-desktop w-full text-left px-3.5 py-3 rounded-2xl text-xs font-bold transition-all bg-slate-800/80 text-slate-300 hover:bg-slate-700 flex items-center justify-between">
+          <span class="flex items-center gap-2.5"><i data-lucide="cloud-sun" class="w-4 h-4"></i> 3. Weather &amp; Monsoon</span>
+          <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        </button>
+
+        <button onclick="switchScreen('market-screen')" class="nav-btn-desktop w-full text-left px-3.5 py-3 rounded-2xl text-xs font-bold transition-all bg-slate-800/80 text-slate-300 hover:bg-slate-700 flex items-center justify-between">
+          <span class="flex items-center gap-2.5"><i data-lucide="trending-up" class="w-4 h-4"></i> 4. Kerala Market Radar</span>
+          <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        </button>
+
+        <button onclick="switchScreen('alerts-screen')" class="nav-btn-desktop w-full text-left px-3.5 py-3 rounded-2xl text-xs font-bold transition-all bg-slate-800/80 text-slate-300 hover:bg-slate-700 flex items-center justify-between">
+          <span class="flex items-center gap-2.5"><i data-lucide="bell" class="w-4 h-4"></i> 5. Alerts <span class="text-[9px] bg-emerald-500 text-white px-1.5 rounded-full ml-1">NEW</span></span>
+          <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        </button>
+
+        <button onclick="switchScreen('crop-result-screen')" class="nav-btn-desktop w-full text-left px-3.5 py-3 rounded-2xl text-xs font-bold transition-all bg-slate-800/80 text-slate-300 hover:bg-slate-700 flex items-center justify-between">
+          <span class="flex items-center gap-2.5"><i data-lucide="sparkles" class="w-4 h-4"></i> 6. Intercropping <span class="text-[9px] bg-amber-500 text-white px-1.5 rounded-full ml-1">FLAGSHIP</span></span>
+          <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Frame Mockup -->
+    <div class="relative mx-auto w-[385px] h-[820px] bg-slate-900 rounded-[54px] p-3 shadow-2xl border-4 border-slate-700/80 ring-1 ring-slate-800 flex flex-col justify-between overflow-hidden">
+
+      <div class="absolute top-0 left-1/2 -translate-x-1/2 w-36 h-5 bg-slate-900 rounded-b-xl z-50 flex items-center justify-center">
+        <div class="w-10 h-1 bg-slate-700 rounded-full"></div>
+      </div>
+
+      <div class="w-full h-full bg-slate-100 rounded-[44px] overflow-hidden flex flex-col relative pt-4 text-slate-900">
+
+        <div class="px-7 py-1 flex justify-between items-center text-slate-900 text-xs font-semibold z-40">
+          <span>9:41</span>
+          <div class="flex items-center gap-1.5">
+            <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+            <i data-lucide="battery" class="w-4 h-4"></i>
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- SCREEN 1: HOME & CROP AI -->
+        <!-- ========================================================= -->
+        <div id="home-screen" class="app-screen flex-1 overflow-y-auto no-scrollbar relative">
+
+          <div class="relative h-64 w-full">
+            <img src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-gradient-to-b from-black/70 via-black/45 to-slate-100"></div>
+
+            <div class="absolute top-3 inset-x-5 flex justify-between items-center text-white">
+              <div>
+                <span class="text-xs text-emerald-200 font-semibold block">Monday, 29 Jul 2026</span>
+                <h3 class="text-lg font-bold tracking-tight drop-shadow">Hello, Rajesh Nair 👋</h3>
+              </div>
+              <div class="w-10 h-10 rounded-full border-2 border-white/80 overflow-hidden shadow-md">
+                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80" class="w-full h-full object-cover">
+              </div>
+            </div>
+
+            <div class="absolute top-16 inset-x-5 text-white">
+              <h2 class="font-display text-xl font-semibold leading-tight drop-shadow">Farming Made Simple,<br>Smarter, and Sustainable</h2>
+            </div>
+
+            <div class="absolute bottom-12 inset-x-5 flex gap-2">
+              <div class="flex-1 bg-white/90 rounded-2xl px-3.5 py-2.5 flex items-center gap-2 border border-white/60 text-slate-700 shadow-sm">
+                <i data-lucide="search" class="w-4 h-4 text-slate-500"></i>
+                <input type="text" placeholder="Search crops, pests, market prices..." class="bg-transparent text-xs placeholder-slate-500 text-slate-800 focus:outline-none w-full">
+              </div>
+              <div class="w-10 h-10 rounded-2xl bg-white text-slate-800 flex items-center justify-center shadow-md shrink-0">
+                <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+              </div>
+            </div>
+
+            <div class="absolute -bottom-8 inset-x-5 glass-floating rounded-[24px] p-3.5 shadow-lg border border-white/60">
+              <div class="flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-2xl bg-amber-400/20 text-amber-600 flex items-center justify-center">
+                    <i data-lucide="sun" class="w-6 h-6"></i>
+                  </div>
+                  <div>
+                    <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Wayanad • 31°C</span>
+                    <h4 class="text-sm font-extrabold text-slate-900">Optimal Soil Moisture</h4>
+                  </div>
+                </div>
+                <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-bold">Stable Growth</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-5 pt-12 pb-24 space-y-5">
+
+            <div>
+              <div class="flex justify-between items-center mb-3">
+                <h3 class="text-sm font-extrabold text-slate-900">Primary Crops</h3>
+                <span class="text-xs font-bold text-emerald-700">Manage</span>
+              </div>
+
+              <div class="flex gap-2.5 overflow-x-auto no-scrollbar py-1">
+                <div class="bg-emerald-700 text-white px-3 py-1.5 rounded-full flex items-center gap-2 shadow-sm shrink-0">
+                  <img src="https://images.unsplash.com/photo-1599940824399-b87987ceb72a?auto=format&fit=crop&w=100&q=80" class="w-6 h-6 rounded-full object-cover">
+                  <span class="text-sm font-bold">Black Pepper</span>
+                </div>
+                <div class="bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-full flex items-center gap-2 shrink-0 shadow-sm">
+                  <img src="https://images.unsplash.com/photo-1528825871115-3581a5387919?auto=format&fit=crop&w=100&q=80" class="w-6 h-6 rounded-full object-cover">
+                  <span class="text-sm font-semibold">Nendran Banana</span>
+                </div>
+                <div class="bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-full flex items-center gap-2 shrink-0 shadow-sm">
+                  <img src="https://images.unsplash.com/photo-1611143669185-af224c5e3252?auto=format&fit=crop&w=100&q=80" class="w-6 h-6 rounded-full object-cover">
+                  <span class="text-sm font-semibold">Rubber</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-3">
+                <h3 class="text-sm font-extrabold text-slate-900">My Registered Plots</h3>
+                <a href="#" class="text-xs font-bold text-slate-500 hover:text-slate-900">See all &gt;</a>
+              </div>
+
+              <div class="relative h-48 rounded-[28px] overflow-hidden shadow-md border border-slate-200 group">
+                <img src="https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent"></div>
+
+                <div class="absolute top-3 left-3 bg-black/50 text-amber-300 font-bold px-2.5 py-1 rounded-full text-xs flex items-center gap-1 border border-white/20">
+                  <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-300"></i> 4.9 Health
+                </div>
+                <div class="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white border border-white/20">
+                  <i data-lucide="heart" class="w-4 h-4"></i>
+                </div>
+
+                <div class="absolute bottom-3 inset-x-3 flex justify-between items-end text-white">
+                  <div>
+                    <span class="text-xs font-medium text-slate-200 block">Meenangadi Plot #F3 • 2.4 Acres</span>
+                    <h4 class="text-base font-extrabold tracking-tight">Wayanad Black Pepper Field</h4>
+                  </div>
+                  <button class="w-9 h-9 rounded-full bg-white text-slate-900 flex items-center justify-center shadow-lg">
+                    <i data-lucide="arrow-up-right" class="w-5 h-5"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Yield Prediction Banner — now links to the Intercropping/Result screen -->
+            <button onclick="switchScreen('crop-result-screen')" class="w-full bg-gradient-to-r from-emerald-800 to-emerald-900 text-white rounded-[24px] p-4 flex justify-between items-center shadow-md text-left">
+              <div class="space-y-1">
+                <span class="text-[10px] font-bold text-emerald-300 uppercase tracking-wider">AI Yield Forecast</span>
+                <h4 class="text-sm font-extrabold">2.6 Tonnes Expected</h4>
+                <p class="text-xs text-emerald-200">Tap to view full recommendation &amp; intercropping plan</p>
+              </div>
+              <div class="px-3 py-2 bg-white/10 rounded-2xl border border-white/20 text-center shrink-0">
+                <span class="text-[10px] block text-emerald-200">Est. Profit</span>
+                <span class="text-sm font-extrabold text-amber-300">₹3.20 L</span>
+              </div>
+            </button>
+
+          </div>
+        </div>
+
+
+        <!-- ========================================================= -->
+        <!-- SCREEN 2: LEAF DOCTOR (renamed AI branding, larger type) -->
+        <!-- ========================================================= -->
+        <div id="doctor-screen" class="app-screen hidden flex-1 overflow-y-auto no-scrollbar relative">
+
+          <div class="relative h-72 w-full">
+            <img src="https://images.unsplash.com/photo-1592417817098-8f3d6eb16432?auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-slate-100"></div>
+
+            <div class="absolute top-3 inset-x-5 flex justify-between items-center text-white">
+              <button onclick="switchScreen('home-screen')" class="w-9 h-9 rounded-full bg-black/50 flex items-center justify-center border border-white/20">
+                <i data-lucide="chevron-left" class="w-5 h-5"></i>
+              </button>
+              <div class="bg-black/50 px-3 py-1 rounded-full border border-white/20 text-xs font-bold flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Krishi Vision Scanner
+              </div>
+              <button class="w-9 h-9 rounded-full bg-black/50 flex items-center justify-center border border-white/20">
+                <i data-lucide="zap" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+            <div class="absolute inset-16 border-2 border-emerald-400 rounded-2xl flex items-center justify-center">
+              <div class="w-full h-0.5 bg-emerald-400 shadow-[0_0_15px_#34d399] animate-bounce"></div>
+            </div>
+          </div>
+
+          <div class="px-5 -mt-10 relative z-20 pb-24 space-y-4">
+
+            <div class="bg-white rounded-[28px] p-5 shadow-xl border border-slate-200 space-y-3">
+              <div class="flex justify-between items-start">
+                <div>
+                  <span class="text-[10px] font-bold bg-rose-100 text-rose-700 px-2.5 py-0.5 rounded-full border border-rose-200">High Risk Detected</span>
+                  <h3 class="text-base font-extrabold text-slate-900 mt-1">Quick Wilt Disease (ദ്രുതവാട്ടം)</h3>
+                  <p class="text-xs text-slate-500 font-medium">Fungal Pathogen: Phytophthora capsici</p>
+                </div>
+                <div class="text-right shrink-0 pl-2">
+                  <span class="text-lg font-extrabold text-emerald-700 block">98%</span>
+                  <span class="text-[9px] text-slate-400 font-bold uppercase">Confidence</span>
+                </div>
+              </div>
+
+              <!-- Severity meter — was missing entirely before -->
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Severity</span>
+                  <span class="text-xs font-bold text-rose-600">High — act today</span>
+                </div>
+                <div class="h-2 rounded-full bg-slate-200 overflow-hidden">
+                  <div class="h-full w-[85%] bg-gradient-to-r from-amber-400 to-rose-500"></div>
+                </div>
+              </div>
+
+              <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-sm space-y-2">
+                <span class="font-extrabold text-slate-900 flex items-center gap-1.5 text-xs uppercase tracking-wider">
+                  <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i> Recommended Treatment
+                </span>
+                <p class="text-slate-700 text-sm leading-relaxed">
+                  <b>1. Spray:</b> Apply 1% Bordeaux Mixture (ബോർഡോ മിശ്രിതം) on leaves and soil base immediately.
+                </p>
+                <p class="text-slate-700 text-sm leading-relaxed">
+                  <b>2. Bio-Control:</b> Mix <i>Trichoderma viride</i> with organic compost around roots.
+                </p>
+              </div>
+
+              <p class="text-[11px] text-slate-400 flex items-center gap-1">
+                <i data-lucide="flag" class="w-3 h-3"></i> Not accurate? Report this result
+              </p>
+
+              <button onclick="openDiagnosisModal()" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-2xl text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-700/20">
+                <i data-lucide="camera" class="w-4 h-4"></i> Scan New Leaf Sample
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- ========================================================= -->
+        <!-- SCREEN 3: WEATHER & MONSOON (type bumped, advisory clarified) -->
+        <!-- ========================================================= -->
+        <div id="weather-screen" class="app-screen hidden flex-1 overflow-y-auto no-scrollbar p-5 pb-24 space-y-5">
+
+          <div class="flex justify-between items-center">
+            <div>
+              <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Palakkad District</span>
+              <h2 class="font-display text-xl font-semibold text-slate-900 tracking-tight">Weather Radar</h2>
+            </div>
+            <div class="w-10 h-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-700 shadow-sm">
+              <i data-lucide="cloud-rain" class="w-5 h-5 text-sky-600"></i>
+            </div>
+          </div>
+
+          <div class="bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 text-white rounded-[28px] p-5 shadow-lg space-y-4">
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="text-xs text-emerald-300 font-bold uppercase tracking-wider">Monsoon Status</span>
+                <h3 class="font-display text-3xl font-semibold mt-1">29°C</h3>
+                <p class="text-sm text-slate-300">Heavy rain expected at 3:30 PM</p>
+              </div>
+              <i data-lucide="cloud-lightning" class="w-10 h-10 text-amber-300"></i>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 pt-2 border-t border-white/10 text-center">
+              <div class="bg-white/10 p-2 rounded-2xl">
+                <span class="text-[10px] text-slate-300 block">Humidity</span>
+                <span class="text-sm font-bold">88%</span>
+              </div>
+              <div class="bg-white/10 p-2 rounded-2xl">
+                <span class="text-[10px] text-slate-300 block">Rain Risk</span>
+                <span class="text-sm font-bold text-sky-300">92%</span>
+              </div>
+              <div class="bg-white/10 p-2 rounded-2xl">
+                <span class="text-[10px] text-slate-300 block">Wind</span>
+                <span class="text-sm font-bold">24 km/h</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-amber-50 border border-amber-200 rounded-[24px] p-4 flex gap-3 items-start">
+            <i data-lucide="alert-circle" class="w-5 h-5 text-amber-600 shrink-0 mt-0.5"></i>
+            <div>
+              <h4 class="text-sm font-bold text-amber-900">Hold Spraying Fertilizers Today</h4>
+              <p class="text-xs text-amber-800 mt-0.5">Rainfall will wash away leaf sprays. Reschedule for Friday morning.</p>
+            </div>
+          </div>
+
+          <div class="bg-white border border-slate-200 rounded-[28px] p-4 shadow-sm space-y-2">
+            <h4 class="text-sm font-extrabold text-slate-900">7-Day Rainfall Forecast (mm)</h4>
+            <div class="h-32 w-full">
+              <canvas id="weatherChart"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+
+        <!-- ========================================================= -->
+        <!-- SCREEN 4: KERALA MARKET INTELLIGENCE (Set Price Alert added) -->
+        <!-- ========================================================= -->
+        <div id="market-screen" class="app-screen hidden flex-1 overflow-y-auto no-scrollbar p-5 pb-24 space-y-5">
+
+          <div class="flex justify-between items-center">
+            <div>
+              <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Live Mandi Prices</span>
+              <h2 class="font-display text-xl font-semibold text-slate-900 tracking-tight">Market Intelligence</h2>
+            </div>
+            <div class="w-10 h-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-amber-600 shadow-sm">
+              <i data-lucide="trending-up" class="w-5 h-5"></i>
+            </div>
+          </div>
+
+          <div class="bg-white border border-slate-200 rounded-[28px] p-4 shadow-sm space-y-3">
+            <div class="flex justify-between items-center">
+              <div>
+                <h3 class="text-sm font-extrabold text-slate-900">Rubber RSS-4 Price Index</h3>
+                <span class="text-xs text-emerald-700 font-bold">▲ +₹12.50 / kg in Kottayam</span>
+              </div>
+              <span class="text-sm font-extrabold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">₹198.50 / kg</span>
+            </div>
+            <div class="h-32 w-full">
+              <canvas id="marketChart"></canvas>
+            </div>
+            <button onclick="switchScreen('alerts-screen')" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 rounded-2xl text-sm flex items-center justify-center gap-2">
+              <i data-lucide="bell" class="w-4 h-4"></i> Set Price Alert
+            </button>
+          </div>
+
+          <div class="bg-emerald-900 text-white rounded-[24px] p-4 space-y-1.5 shadow-md">
+            <div class="flex items-center gap-2">
+              <i data-lucide="zap" class="w-4 h-4 text-amber-300"></i>
+              <h4 class="text-xs font-bold text-emerald-200 uppercase tracking-wider">AI Sell / Hold Advisory</h4>
+            </div>
+            <p class="text-sm text-slate-200 leading-relaxed">
+              <b>HOLD Black Pepper inventory for 8 days.</b> Export demand at Kochi port is predicted to raise prices by <b>+6%</b>.
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Kerala Mandi Rates Today</h3>
+
+            <div class="bg-white border border-slate-200 p-3.5 rounded-[20px] flex justify-between items-center shadow-sm">
+              <div class="flex items-center gap-3">
+                <span class="text-2xl">🥥</span>
+                <div>
+                  <h4 class="text-sm font-bold text-slate-900">Raw Coconut (നാളികേരം)</h4>
+                  <span class="text-xs text-slate-500">Nedumangad Market</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="text-sm font-extrabold text-slate-900 block">₹38.50 / kg</span>
+                <span class="text-xs text-emerald-600 font-bold">▲ +₹2.00</span>
+              </div>
+            </div>
+
+            <div class="bg-white border border-slate-200 p-3.5 rounded-[20px] flex justify-between items-center shadow-sm">
+              <div class="flex items-center gap-3">
+                <span class="text-2xl">🌱</span>
+                <div>
+                  <h4 class="text-sm font-bold text-slate-900">Green Cardamom (ഏലക്ക)</h4>
+                  <span class="text-xs text-slate-500">Spices Board Auction</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="text-sm font-extrabold text-slate-900 block">₹2,450 / kg</span>
+                <span class="text-xs text-rose-600 font-bold">▼ -₹35.00</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+
+        <!-- ========================================================= -->
+        <!-- SCREEN 5: ALERTS (NEW — was completely missing) -->
+        <!-- ========================================================= -->
+        <div id="alerts-screen" class="app-screen hidden flex-1 overflow-y-auto no-scrollbar p-5 pb-24 space-y-4">
+
+          <div class="flex justify-between items-center">
+            <h2 class="font-display text-xl font-semibold text-slate-900">Alerts</h2>
+            <span class="text-xs font-bold text-emerald-700">Mark all read</span>
+          </div>
+
+          <div class="flex gap-2 overflow-x-auto no-scrollbar">
+            <span class="text-xs font-bold text-white bg-slate-900 px-3.5 py-1.5 rounded-full shrink-0">All</span>
+            <span class="text-xs font-semibold text-slate-600 bg-white border border-slate-200 px-3.5 py-1.5 rounded-full shrink-0">Weather</span>
+            <span class="text-xs font-semibold text-slate-600 bg-white border border-slate-200 px-3.5 py-1.5 rounded-full shrink-0">Disease</span>
+            <span class="text-xs font-semibold text-slate-600 bg-white border border-slate-200 px-3.5 py-1.5 rounded-full shrink-0">Price</span>
+          </div>
+
+          <div class="space-y-2.5">
+            <div class="bg-white border border-slate-200 rounded-2xl p-3.5 flex gap-3 shadow-sm" style="border-left:4px solid #0284c7;">
+              <div class="w-9 h-9 rounded-xl bg-sky-50 flex items-center justify-center shrink-0">
+                <i data-lucide="cloud-rain" class="w-4 h-4 text-sky-600"></i>
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-semibold text-slate-900">Heavy rain expected at 3:30 PM today</p>
+                <p class="text-xs text-slate-400 mt-0.5">Palakkad District • 20 min ago</p>
+              </div>
+              <div class="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shrink-0"></div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-2xl p-3.5 flex gap-3 shadow-sm" style="border-left:4px solid #e11d48;">
+              <div class="w-9 h-9 rounded-xl bg-rose-50 flex items-center justify-center shrink-0">
+                <i data-lucide="scan" class="w-4 h-4 text-rose-600"></i>
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-semibold text-slate-900">Quick Wilt detected — Wayanad Field #F3</p>
+                <p class="text-xs text-slate-400 mt-0.5">High severity • 1 day ago</p>
+              </div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-2xl p-3.5 flex gap-3 shadow-sm" style="border-left:4px solid #d4941f;">
+              <div class="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
+                <i data-lucide="trending-up" class="w-4 h-4 text-amber-600"></i>
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-semibold text-slate-900">Black Pepper hit your target price ₹610/kg</p>
+                <p class="text-xs text-slate-400 mt-0.5">Kottayam Market • 2 days ago</p>
+              </div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-2xl p-3.5 flex gap-3 shadow-sm opacity-60" style="border-left:4px solid #94a3b8;">
+              <div class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
+                <i data-lucide="sparkles" class="w-4 h-4 text-slate-500"></i>
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-semibold text-slate-900">New intercropping suggestion available</p>
+                <p class="text-xs text-slate-400 mt-0.5">Meenangadi Plot #F3 • 4 days ago</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- ========================================================= -->
+        <!-- SCREEN 6: CROP RESULT + INTERCROPPING (NEW — the flagship feature) -->
+        <!-- ========================================================= -->
+        <div id="crop-result-screen" class="app-screen hidden flex-1 overflow-y-auto no-scrollbar p-5 pb-24 space-y-4">
+
+          <div class="flex items-center gap-3">
+            <button onclick="switchScreen('home-screen')" class="w-9 h-9 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm">
+              <i data-lucide="chevron-left" class="w-5 h-5 text-slate-700"></i>
+            </button>
+            <h2 class="font-display text-lg font-semibold text-slate-900">Your Recommendation</h2>
+          </div>
+
+          <div class="bg-gradient-to-br from-emerald-800 to-emerald-950 text-white rounded-[28px] p-5 shadow-lg">
+            <span class="text-[10px] font-bold text-emerald-300 uppercase tracking-wider">Recommended Crop</span>
+            <h3 class="font-display text-2xl font-semibold mt-1">Coconut (തെങ്ങ്)</h3>
+            <div class="flex items-center gap-2 mt-2">
+              <span class="bg-amber-400/20 text-amber-300 text-xs font-bold px-2.5 py-1 rounded-full border border-amber-400/30">92% match</span>
+              <span class="text-xs text-emerald-200">~ 8,200 nuts / acre / yr</span>
+            </div>
+          </div>
+
+          <details class="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-sm">
+            <summary class="text-sm font-semibold text-emerald-700 flex items-center gap-1.5 cursor-pointer">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Why this crop?
+            </summary>
+            <p class="text-sm text-slate-600 mt-2 leading-relaxed">Your soil pH (6.0) and average rainfall closely match coconut's ideal growing range for the Wayanad region.</p>
+          </details>
+
+          <div>
+            <div class="flex items-center gap-1.5 mb-2">
+              <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i>
+              <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Grow Together — Kerala Homestead Style</h3>
+            </div>
+            <p class="text-xs text-slate-500 mb-3">Traditional multi-tier intercropping used across Kerala homesteads — grow all four on the same plot.</p>
+
+            <div class="grid grid-cols-3 gap-2.5">
+              <div class="bg-white border border-amber-200 rounded-2xl p-3 text-center shadow-sm">
+                <span class="text-2xl block">🌶️</span>
+                <p class="text-xs font-bold text-slate-900 mt-1">Pepper</p>
+                <p class="text-[10px] text-slate-400">കുരുമുളക്</p>
+              </div>
+              <div class="bg-white border border-amber-200 rounded-2xl p-3 text-center shadow-sm">
+                <span class="text-2xl block">🍌</span>
+                <p class="text-xs font-bold text-slate-900 mt-1">Banana</p>
+                <p class="text-[10px] text-slate-400">വാഴ</p>
+              </div>
+              <div class="bg-white border border-amber-200 rounded-2xl p-3 text-center shadow-sm">
+                <span class="text-2xl block">🍫</span>
+                <p class="text-xs font-bold text-slate-900 mt-1">Cocoa</p>
+                <p class="text-[10px] text-slate-400">കൊക്കോ</p>
+              </div>
+            </div>
+          </div>
+
+          <button class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-2xl text-sm shadow-md shadow-emerald-700/20">
+            Save to My Fields
+          </button>
+        </div>
+
+
+        <!-- ========================================================= -->
+        <!-- FLOATING BOTTOM NAVIGATION BAR (5 tabs now) -->
+        <!-- ========================================================= -->
+        <div class="absolute bottom-4 inset-x-4 bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-full py-2.5 px-3 flex justify-around items-center shadow-xl z-50">
+          <button onclick="switchScreen('home-screen')" class="tab-item active-tab flex flex-col items-center gap-0.5 text-emerald-700">
+            <i data-lucide="home" class="w-5 h-5"></i>
+            <span class="text-[10px] font-extrabold">Home</span>
+          </button>
+          <button onclick="switchScreen('doctor-screen')" class="tab-item flex flex-col items-center gap-0.5 text-slate-400">
+            <i data-lucide="scan" class="w-5 h-5"></i>
+            <span class="text-[10px] font-bold">Doctor</span>
+          </button>
+          <button onclick="switchScreen('weather-screen')" class="tab-item flex flex-col items-center gap-0.5 text-slate-400">
+            <i data-lucide="cloud-sun" class="w-5 h-5"></i>
+            <span class="text-[10px] font-bold">Weather</span>
+          </button>
+          <button onclick="switchScreen('market-screen')" class="tab-item flex flex-col items-center gap-0.5 text-slate-400">
+            <i data-lucide="trending-up" class="w-5 h-5"></i>
+            <span class="text-[10px] font-bold">Market</span>
+          </button>
+          <button onclick="switchScreen('alerts-screen')" class="tab-item flex flex-col items-center gap-0.5 text-slate-400">
+            <i data-lucide="bell" class="w-5 h-5"></i>
+            <span class="text-[10px] font-bold">Alerts</span>
+          </button>
+        </div>
+
+      </div>
+
+      <div class="w-32 h-1 bg-slate-600 rounded-full mx-auto my-1"></div>
+    </div>
+
+  </div>
+
+  <!-- Camera Vision Modal — renamed away from third-party AI branding -->
+  <div id="diagnosis-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white border border-slate-200 rounded-[32px] max-w-sm w-full p-5 relative space-y-4 shadow-2xl">
+      <button onclick="closeDiagnosisModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="text-center">
+        <div class="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-2xl flex items-center justify-center mx-auto mb-2">
+          <i data-lucide="sparkles" class="w-6 h-6"></i>
+        </div>
+        <h3 class="font-extrabold text-slate-900 text-base">Krishi Vision AI</h3>
+        <p class="text-xs text-slate-500">Custom-trained model analyzing leaf tissue structure...</p>
+      </div>
+
+      <div class="relative w-full h-44 rounded-2xl overflow-hidden border-2 border-emerald-600">
+        <img src="https://images.unsplash.com/photo-1592417817098-8f3d6eb16432?auto=format&fit=crop&w=400&q=80" class="w-full h-full object-cover">
+        <div class="absolute inset-x-0 h-1 bg-emerald-500 top-1/2 animate-bounce"></div>
+      </div>
+
+      <button onclick="closeDiagnosisModal()" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-2xl text-sm transition-all shadow-md">
+        View AI Prescription
+      </button>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    const TAB_SCREENS = { 'home-screen': 0, 'doctor-screen': 1, 'weather-screen': 2, 'market-screen': 3, 'alerts-screen': 4 };
+
+    function switchScreen(screenId) {
+      document.querySelectorAll('.app-screen').forEach(s => s.classList.add('hidden'));
+      document.getElementById(screenId).classList.remove('hidden');
+
+      const tabs = document.querySelectorAll('.tab-item');
+      const desktopBtns = document.querySelectorAll('.nav-btn-desktop');
+
+      if (screenId in TAB_SCREENS) {
+        tabs.forEach(t => { t.classList.remove('text-emerald-700'); t.classList.add('text-slate-400'); });
+        tabs[TAB_SCREENS[screenId]].classList.add('text-emerald-700');
+        tabs[TAB_SCREENS[screenId]].classList.remove('text-slate-400');
+      } else {
+        // sub-screens (e.g. crop-result-screen) reached via a button, not a tab —
+        // leave whichever tab was already active as-is
+      }
+
+      desktopBtns.forEach((btn, idx) => {
+        const map = ['home-screen','doctor-screen','weather-screen','market-screen','alerts-screen','crop-result-screen'];
+        if (map[idx] === screenId) {
+          btn.className = "nav-btn-desktop w-full text-left px-3.5 py-3 rounded-2xl text-xs font-bold transition-all bg-emerald-600 text-white flex items-center justify-between shadow-lg shadow-emerald-600/20";
+        } else {
+          btn.className = "nav-btn-desktop w-full text-left px-3.5 py-3 rounded-2xl text-xs font-bold transition-all bg-slate-800/80 text-slate-300 hover:bg-slate-700 flex items-center justify-between";
+        }
+      });
+    }
+
+    function openDiagnosisModal() { document.getElementById('diagnosis-modal').classList.remove('hidden'); }
+    function closeDiagnosisModal() { document.getElementById('diagnosis-modal').classList.add('hidden'); }
+
+    window.onload = function() {
+      const ctxWeather = document.getElementById('weatherChart').getContext('2d');
+      new Chart(ctxWeather, {
+        type: 'bar',
+        data: {
+          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          datasets: [{ data: [15, 48, 30, 8, 65, 40, 12], backgroundColor: '#059669', borderRadius: 6 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } } },
+            y: { grid: { color: '#f1f5f9' }, ticks: { color: '#64748b', font: { size: 10 } } }
+          }
+        }
+      });
+
+      const ctxMarket = document.getElementById('marketChart').getContext('2d');
+      new Chart(ctxMarket, {
+        type: 'line',
+        data: {
+          labels: ['W1', 'W2', 'W3', 'W4', 'W5', 'Today'],
+          datasets: [{
+            data: [175, 180, 178, 186, 190, 198.5],
+            borderColor: '#15803d',
+            backgroundColor: 'rgba(21, 128, 61, 0.08)',
+            fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: '#15803d'
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } } },
+            y: { grid: { color: '#f1f5f9' }, ticks: { color: '#64748b', font: { size: 10 } } }
+          }
+        }
+      });
+    };
+  </script>
+</body>
+</html>
