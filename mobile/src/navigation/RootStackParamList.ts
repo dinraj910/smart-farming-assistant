@@ -1,10 +1,12 @@
 export type RootStackParamList = {
   Welcome: undefined;
+  Main: undefined;
+};
+
+export type MainTabParamList = {
   Home: undefined;
-  CropDetail: {
-    cropName?: string;
-    yieldData?: string;
-    harvestDate?: string;
-    imageUri?: string;
-  };
+  Doctor: undefined;
+  Weather: undefined;
+  Market: undefined;
+  Farms: undefined;
 };

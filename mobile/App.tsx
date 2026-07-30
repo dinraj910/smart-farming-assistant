@@ -3,10 +3,9 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './src/navigation/RootStackParamList';
 
-// Import Screens
+// Screens
 import WelcomeScreen from './src/screens/WelcomeScreen';
-import HomeScreen from './src/screens/HomeScreen';
-import CropDetailScreen from './src/screens/CropDetailScreen';
+import MainTabNavigator from './src/navigation/MainTabNavigator';
 
 import "./global.css";
 
@@ -15,16 +14,15 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator 
+      <Stack.Navigator
         initialRouteName="Welcome"
         screenOptions={{
           headerShown: false,
-          animation: 'fade', // professional smooth transition
+          animation: 'fade',
         }}
       >
         <Stack.Screen name="Welcome" component={WelcomeScreen} />
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="CropDetail" component={CropDetailScreen} />
+        <Stack.Screen name="Main"    component={MainTabNavigator} />
       </Stack.Navigator>
     </NavigationContainer>
   );
