@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 
 // ─── Hourly Weather Data ─────────────────────────────────────────────────────
 const HOURLY = [
@@ -90,8 +91,14 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     const humidity = 80.0;
     const rainfall = 200.0;
 
-    // Use 10.0.2.2 for Android emulator, localhost for web/iOS
-    const backendUrl = Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
+    // Dynamically resolve the backend URL (handles physical devices via Expo)
+    const hostUri = Constants?.expoConfig?.hostUri;
+    let backendUrl = 'http://localhost:8000';
+    if (hostUri) {
+      backendUrl = `http://${hostUri.split(':')[0]}:8000`;
+    } else if (Platform.OS === 'android') {
+      backendUrl = 'http://10.0.2.2:8000';
+    }
 
     try {
       const response = await fetch(`${backendUrl}/api/v1/crop-recommendation`, {
