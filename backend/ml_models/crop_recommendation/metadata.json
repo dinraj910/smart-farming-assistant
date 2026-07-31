@@ -1,0 +1,53 @@
+{
+  "model_name": "Random Forest",
+  "feature_order": [
+    "N",
+    "P",
+    "K",
+    "temperature",
+    "humidity",
+    "ph",
+    "rainfall"
+  ],
+  "test_accuracy": 0.9955,
+  "test_f1_weighted": 0.9955,
+  "n_classes": 22,
+  "classes": [
+    "apple",
+    "banana",
+    "blackgram",
+    "chickpea",
+    "coconut",
+    "coffee",
+    "cotton",
+    "grapes",
+    "jute",
+    "kidneybeans",
+    "lentil",
+    "maize",
+    "mango",
+    "mothbeans",
+    "mungbean",
+    "muskmelon",
+    "orange",
+    "papaya",
+    "pigeonpeas",
+    "pomegranate",
+    "rice",
+    "watermelon"
+  ],
+  "kerala_relevant_crops": [
+    "banana",
+    "coconut",
+    "coffee",
+    "cotton",
+    "grapes",
+    "jute",
+    "mango",
+    "muskmelon",
+    "orange",
+    "papaya",
+    "rice",
+    "watermelon"
+  ]
+}
