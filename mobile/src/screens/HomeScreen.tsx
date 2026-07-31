@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import {
   View, Text, ScrollView, ImageBackground, Image,
-  TextInput, TouchableOpacity, StyleSheet, Animated,
+  TextInput, TouchableOpacity, StyleSheet, Animated, Alert, Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -39,8 +39,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const [ph, setPh] = useState('6.2');
   const [cropResult, setCropResult] = useState({
     name: 'Black Pepper + Coconut Homestead',
-    yield: '2.6 Tonnes / Acre',
-    profit: '₹3,20,000 / Season',
+    yield: '96%',
+    profit: 'Best match based on your soil profile.',
+    alternatives: ['Cocoa', 'Nendran Banana']
   });
 
   const labels = {
@@ -78,12 +79,58 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     setLang(l => l === 'en' ? 'ml' : 'en');
   }
 
-  function runCropAI() {
+  async function runCropAI() {
     const nVal = parseFloat(n) || 0;
-    if (nVal > 80) {
-      setCropResult({ name: 'Black Pepper + Coconut Homestead', yield: '2.6 Tonnes / Acre', profit: '₹3,20,000 / Season' });
-    } else {
-      setCropResult({ name: 'Nendran Banana Plantation', yield: '12.4 Tonnes / Acre', profit: '₹2,80,000 / Season' });
+    const pVal = parseFloat(p) || 0;
+    const kVal = parseFloat(k) || 0;
+    const phVal = parseFloat(ph) || 6.5;
+
+    // Hardcoded weather values for Kerala context since UI doesn't have them
+    const temperature = 28.0;
+    const humidity = 80.0;
+    const rainfall = 200.0;
+
+    // Use 10.0.2.2 for Android emulator, localhost for web/iOS
+    const backendUrl = Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
+
+    try {
+      const response = await fetch(`${backendUrl}/api/v1/crop-recommendation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          nitrogen: nVal,
+          phosphorus: pVal,
+          potassium: kVal,
+          temperature,
+          humidity,
+          ph: phVal,
+          rainfall
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch recommendation');
+      }
+
+      const data = await response.json();
+      
+      setCropResult({
+        name: data.recommended_crop,
+        yield: `${(data.confidence_score * 100).toFixed(1)}%`,
+        profit: data.explanation,
+        alternatives: data.alternatives.map((alt: any) => alt.crop)
+      });
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "Could not connect to the backend AI service.");
+      // Fallback
+      if (nVal > 80) {
+        setCropResult({ name: 'Black Pepper + Coconut Homestead', yield: '96%', profit: 'Fallback match based on high N.', alternatives: ['Cocoa'] });
+      } else {
+        setCropResult({ name: 'Nendran Banana Plantation', yield: '85%', profit: 'Fallback match based on low N.', alternatives: ['Papaya'] });
+      }
     }
   }
 
@@ -262,18 +309,18 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
               </View>
               <View style={S.resultDivider} />
               <Text style={S.resultStat}>
-                <Text style={{ fontWeight: '700' }}>Expected Yield: </Text>{cropResult.yield}
+                <Text style={{ fontWeight: '700' }}>Confidence: </Text>{cropResult.yield}
               </Text>
               <Text style={S.resultStat}>
-                <Text style={{ fontWeight: '700' }}>Estimated Profit: </Text>
+                <Text style={{ fontWeight: '700' }}>AI Note: </Text>
                 <Text style={{ color: '#fcd34d', fontWeight: '700' }}>{cropResult.profit}</Text>
               </Text>
 
               {/* Intercrop matrix */}
               <View style={S.intercropBox}>
-                <Text style={S.intercropTitle}>🌱 Recommended Intercrops (തോട്ടവിളകൾ)</Text>
+                <Text style={S.intercropTitle}>🌱 Recommended Alternatives</Text>
                 <View style={S.intercropTags}>
-                  {['Black Pepper', 'Cocoa', 'Nendran Banana'].map(tag => (
+                  {cropResult.alternatives.map(tag => (
                     <View key={tag} style={S.intercropTag}>
                       <Text style={S.intercropTagText}>{tag}</Text>
                     </View>
