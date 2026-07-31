@@ -11,7 +11,11 @@ and Market Intelligence modules.
 
 ## Getting started
 ### Mobile
-    cd mobile && npm install && npx expo start
+    cd mobile 
+
+    npx expo start -c
 
 ### Backend
-    cd backend && source venv/bin/activate && uvicorn app.main:app --reload
+    cd backend 
+
+    uvicorn main:app --reload --host 0.0.0.0 --port 8000
