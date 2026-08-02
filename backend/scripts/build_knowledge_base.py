@@ -26,7 +26,7 @@ load_dotenv()
 
 async def main():
     # Extract text chunks from the KAU PDF
-    chunks = extract_and_chunk("data/kau_pop.pdf")
+    chunks = extract_and_chunk("data/pop2016.pdf")
 
     # Connect to the Neon PostgreSQL database
     database_url = os.getenv("DATABASE_URL")
