@@ -1,284 +1,539 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Agentic AI for Crop Recommendation — Proposal</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --paper:#FAFAF8; --grid:#E3E8EE; --ink:#19222D; --ink-soft:#54606F;
-    --blue:#2C4A6E; --blue-soft:#7C93AC;
-    --mvp:#0F766E; --mvp-bg:#E4F5F3;
-    --new:#6D28D9; --new-bg:#EEE7FC;
-    --verified:#0F766E; --verified-bg:#E4F5F3;
-    --reasoned:#B45309; --reasoned-bg:#FBECD9;
-  }
-  *{box-sizing:border-box;}
-  body{ background:var(--paper); background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px); background-size:28px 28px; color:var(--ink); font-family:'Inter',sans-serif; }
-  h1,h2,h3,.font-display{ font-family:'Space Grotesk',sans-serif; }
-  .font-mono{ font-family:'IBM Plex Mono',monospace; }
-  .nav-link{ display:block; padding:7px 10px; border-radius:6px; color:var(--ink-soft); font-size:13px; border-left:3px solid transparent; }
-  .nav-link:hover{ background:#fff; color:var(--ink); }
-  .nav-link.active{ background:#fff; color:var(--blue); border-left:3px solid var(--blue); font-weight:600; }
-  section{ scroll-margin-top:24px; }
-  .bp-box{ background:#fff; border:1.5px solid var(--ink); border-radius:10px; box-shadow:3px 3px 0 var(--blue-soft); }
-  .tag{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; padding:2px 8px; border-radius:999px; border:1px solid transparent; white-space:nowrap; }
-  .tag-new{ color:var(--new); background:var(--new-bg); border-color:#C9B6F5; }
-  .tag-mvp{ color:var(--mvp); background:var(--mvp-bg); border-color:#99D8D1; }
-  .tag-verified{ color:var(--verified); background:var(--verified-bg); border-color:#99D8D1; }
-  .tag-reasoned{ color:var(--reasoned); background:var(--reasoned-bg); border-color:#F0C48C; }
-  .bp-arrow-h{ position:relative; height:2px; background:var(--ink); flex:1; min-width:20px; }
-  .bp-arrow-h::after{ content:""; position:absolute; right:-1px; top:50%; transform:translateY(-50%); border:5px solid transparent; border-left-color:var(--ink); }
-  pre{ background:#151b24; color:#d9e4f0; border-radius:10px; padding:16px; font-size:12.5px; overflow-x:auto; line-height:1.6; }
-  code{ font-family:'IBM Plex Mono',monospace; }
-  ::-webkit-scrollbar{ width:9px; } ::-webkit-scrollbar-thumb{ background:#C7CED6; border-radius:6px; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentic AI for Crop Recommendation — Proposal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --paper: #FAFAF8;
+      --grid: #E3E8EE;
+      --ink: #19222D;
+      --ink-soft: #54606F;
+      --blue: #2C4A6E;
+      --blue-soft: #7C93AC;
+      --mvp: #0F766E;
+      --mvp-bg: #E4F5F3;
+      --new: #6D28D9;
+      --new-bg: #EEE7FC;
+      --verified: #0F766E;
+      --verified-bg: #E4F5F3;
+      --reasoned: #B45309;
+      --reasoned-bg: #FBECD9;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--paper);
+      background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size: 28px 28px;
+      color: var(--ink);
+      font-family: 'Inter', sans-serif;
+    }
+
+    h1,
+    h2,
+    h3,
+    .font-display {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .font-mono {
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .nav-link {
+      display: block;
+      padding: 7px 10px;
+      border-radius: 6px;
+      color: var(--ink-soft);
+      font-size: 13px;
+      border-left: 3px solid transparent;
+    }
+
+    .nav-link:hover {
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .nav-link.active {
+      background: #fff;
+      color: var(--blue);
+      border-left: 3px solid var(--blue);
+      font-weight: 600;
+    }
+
+    section {
+      scroll-margin-top: 24px;
+    }
+
+    .bp-box {
+      background: #fff;
+      border: 1.5px solid var(--ink);
+      border-radius: 10px;
+      box-shadow: 3px 3px 0 var(--blue-soft);
+    }
+
+    .tag {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10.5px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .tag-new {
+      color: var(--new);
+      background: var(--new-bg);
+      border-color: #C9B6F5;
+    }
+
+    .tag-mvp {
+      color: var(--mvp);
+      background: var(--mvp-bg);
+      border-color: #99D8D1;
+    }
+
+    .tag-verified {
+      color: var(--verified);
+      background: var(--verified-bg);
+      border-color: #99D8D1;
+    }
+
+    .tag-reasoned {
+      color: var(--reasoned);
+      background: var(--reasoned-bg);
+      border-color: #F0C48C;
+    }
+
+    .bp-arrow-h {
+      position: relative;
+      height: 2px;
+      background: var(--ink);
+      flex: 1;
+      min-width: 20px;
+    }
+
+    .bp-arrow-h::after {
+      content: "";
+      position: absolute;
+      right: -1px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: 5px solid transparent;
+      border-left-color: var(--ink);
+    }
+
+    pre {
+      background: #151b24;
+      color: #d9e4f0;
+      border-radius: 10px;
+      padding: 16px;
+      font-size: 12.5px;
+      overflow-x: auto;
+      line-height: 1.6;
+    }
+
+    code {
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    ::-webkit-scrollbar {
+      width: 9px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #C7CED6;
+      border-radius: 6px;
+    }
+
+    .tag-tradition {
+      color: #8A4B12;
+      background: #F5E6D3;
+      border-color: #E0B583;
+    }
+  </style>
 </head>
+
 <body>
 
-<div class="flex">
-  <aside class="hidden lg:block sticky top-0 h-screen overflow-y-auto border-r border-[var(--grid)] bg-[#F3F5F1]/70 backdrop-blur px-4 py-6 shrink-0" style="width:250px;">
-    <p class="font-mono text-[10px] tracking-widest text-[var(--blue)] uppercase">Proposal · For Guide Approval</p>
-    <h2 class="font-display font-bold text-base leading-tight mt-1">Agentic AI for<br>Crop Recommendation</h2>
-    <nav class="space-y-1 mt-6" id="navlinks">
-      <a href="#overview" class="nav-link">00 — Why This, Why Now</a>
-      <a href="#research" class="nav-link">01 — Research Foundation</a>
-      <a href="#architecture" class="nav-link">02 — Architecture</a>
-      <a href="#flow" class="nav-link">03 — How It Works</a>
-      <a href="#requirements" class="nav-link">04 — Requirements (Free)</a>
-      <a href="#phases" class="nav-link">05 — Build Phases</a>
-      <a href="#ui" class="nav-link">06 — UI Changes</a>
-      <a href="#prompts" class="nav-link">07 — Agent Prompts</a>
-      <a href="#feasibility" class="nav-link">08 — Honest Feasibility Notes</a>
-    </nav>
-  </aside>
+  <div class="flex">
+    <aside
+      class="hidden lg:block sticky top-0 h-screen overflow-y-auto border-r border-[var(--grid)] bg-[#F3F5F1]/70 backdrop-blur px-4 py-6 shrink-0"
+      style="width:250px;">
+      <p class="font-mono text-[10px] tracking-widest text-[var(--blue)] uppercase">Proposal · For Guide Approval</p>
+      <h2 class="font-display font-bold text-base leading-tight mt-1">Agentic AI for<br>Crop Recommendation</h2>
+      <nav class="space-y-1 mt-6" id="navlinks">
+        <a href="#overview" class="nav-link">00 — Why This, Why Now</a>
+        <a href="#research" class="nav-link">01 — Research Foundation</a>
+        <a href="#architecture" class="nav-link">02 — Architecture</a>
+        <a href="#flow" class="nav-link">03 — How It Works</a>
+        <a href="#requirements" class="nav-link">04 — Requirements (Free)</a>
+        <a href="#phases" class="nav-link">05 — Build Phases</a>
+        <a href="#ui" class="nav-link">06 — UI Changes</a>
+        <a href="#prompts" class="nav-link">07 — Agent Prompts</a>
+        <a href="#feasibility" class="nav-link">08 — Honest Feasibility Notes</a>
+        <a href="#cropcard" class="nav-link">09 — Full Crop Knowledge</a>
+        <a href="#calendar" class="nav-link">10 — Kerala Farming Calendar</a>
+        <a href="#companion" class="nav-link">11 — Natural Companion Rules</a>
+        <a href="#voice" class="nav-link">12 — Sound Like an Expert, Not an AI</a>
+      </nav>
+    </aside>
 
-  <main class="flex-1 min-w-0">
+    <main class="flex-1 min-w-0">
 
-    <!-- 00 OVERVIEW -->
-    <section id="overview" class="px-6 lg:px-14 pt-14 pb-16 max-w-4xl">
-      <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">Proposal</p>
-      <h1 class="font-display font-bold text-3xl md:text-4xl mt-2 leading-tight">From "a trained model behind a form" to an agent that reasons.</h1>
-      <p class="text-[var(--ink-soft)] mt-4 leading-relaxed">
-        Model 1 (Crop Recommendation) is trained and working. Model 2 (Yield Prediction) is being built.
-        Both are correct engineering — and both are also exactly what dozens of other student projects
-        submit every year. This proposal doesn't replace them; it wraps them in an <b>agentic reasoning
-        layer</b> that adds three things a single classifier structurally cannot do:
-      </p>
-      <div class="grid md:grid-cols-3 gap-4 mt-6">
-        <div class="bp-box p-4">
-          <p class="font-semibold text-sm">Cover crops outside the dataset</p>
-          <p class="text-xs text-[var(--ink-soft)] mt-1">Pepper, cardamom, rubber, tapioca — not in any public crop-recommendation dataset. An agent can fall back to real agronomic literature instead of just failing.</p>
-        </div>
-        <div class="bp-box p-4">
-          <p class="font-semibold text-sm">Reason over real-time context</p>
-          <p class="text-xs text-[var(--ink-soft)] mt-1">Weather, market price, and soil data together — not as separate screens, but combined into one grounded recommendation.</p>
-        </div>
-        <div class="bp-box p-4">
-          <p class="font-semibold text-sm">Explain itself</p>
-          <p class="text-xs text-[var(--ink-soft)] mt-1">Shows which tools it called and which source it used — transparency a black-box classifier can't offer, and reviewers notice the difference.</p>
-        </div>
-      </div>
-      <div class="bp-box p-4 mt-6 inline-block">
-        <span class="tag tag-new">Positioning</span>
-        <p class="text-sm mt-2 max-w-lg">Model 1 and Model 2 become <b>tools the agent calls</b>, not replaced work. Everything already built stays exactly as valuable — this is additive, not a restart.</p>
-      </div>
-    </section>
-
-    <!-- 01 RESEARCH -->
-    <section id="research" class="px-6 lg:px-14 py-16 max-w-5xl border-t border-[var(--grid)]">
-      <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">01</p>
-      <h2 class="font-display font-bold text-2xl mt-1">Research Foundation</h2>
-      <p class="text-[var(--ink-soft)] mt-3 max-w-2xl">This is a live 2025–2026 research area, not a buzzword. Six directly relevant papers, found and read before writing this plan:</p>
-
-      <div class="space-y-4 mt-8">
-        <div class="bp-box p-4">
-          <p class="font-semibold text-sm">Agentic AI with Large Language Models for Precision Farming <span class="text-[var(--ink-soft)] font-normal">(2026)</span></p>
-          <p class="text-xs text-[var(--ink-soft)] mt-1.5">Proposes an LLM as a high-level cognitive controller that processes soil/weather/growth-stage data alongside agronomic knowledge, then coordinates irrigation, fertilization, and crop-protection decisions — arguing that single-task ML models lack the contextual reasoning and multi-objective coordination needed for real farm decisions. Directly supports the core argument of this proposal.</p>
-        </div>
-        <div class="bp-box p-4">
-          <p class="font-semibold text-sm">Agentic AI-Based IoT Precision Agriculture Framework <span class="text-[var(--ink-soft)] font-normal">(AgriEngineering / MDPI, 2026)</span></p>
-          <p class="text-xs text-[var(--ink-soft)] mt-1.5">Describes AgroAskAI, a multi-agent reasoning framework for climate adaptation, and explicitly notes that most existing smart-agriculture decision-support systems remain a modular pipeline without real multi-agent coordination — precisely the gap this proposal closes for our project.</p>
-        </div>
-        <div class="bp-box p-4">
-          <p class="font-semibold text-sm">Agentic AI-Driven Autonomous Decision Support System for Smart Agriculture <span class="text-[var(--ink-soft)] font-normal">(Nature Scientific Reports, 2026)</span></p>
-          <p class="text-xs text-[var(--ink-soft)] mt-1.5">Combines deep learning, ensemble learning, and explainability techniques (SHAP/LIME) inside an agent-based framework that processes location, soil images, and nutrient levels into adaptive recommendations — validates the "explainable reasoning trace" element of this proposal's UI plan.</p>
-        </div>
-        <div class="bp-box p-4">
-          <p class="font-semibold text-sm">Evaluation of Learning-Based Models for Crop Recommendation <span class="text-[var(--ink-soft)] font-normal">(MDPI, 2025)</span></p>
-          <p class="text-xs text-[var(--ink-soft)] mt-1.5">Found that a GPT-2-based model matched or exceeded classical ML/DL accuracy on crop recommendation while also offering natural-language interaction — evidence that adding a language-reasoning layer doesn't have to trade off predictive accuracy.</p>
-        </div>
-        <div class="bp-box p-4">
-          <p class="font-semibold text-sm">AgriRegion — Region-Aware RAG for Agricultural Advisory <span class="text-[var(--ink-soft)] font-normal">(2025)</span></p>
-          <p class="text-xs text-[var(--ink-soft)] mt-1.5">Notes that general-purpose RAG frequently gives advice that's scientifically correct in one region but wrong in another due to soil/climate variation, and proposes geospatial metadata injection to keep retrieval region-locked — the exact justification for grounding our RAG layer specifically in Kerala Agricultural University documents rather than generic agricultural text.</p>
-        </div>
-        <div class="bp-box p-4">
-          <p class="font-semibold text-sm">Farmer.Chat — Scaling AI-Powered Agricultural Services for Smallholder Farmers <span class="text-[var(--ink-soft)] font-normal">(Digital Green, arXiv 2409.08916)</span></p>
-          <p class="text-xs text-[var(--ink-soft)] mt-1.5">A production RAG-based farmer advisory system built on extension documents and crop tables, with a feedback loop where farmer ratings refine the knowledge base over time — a real-world precedent this proposal's architecture closely mirrors, at much smaller scale.</p>
-        </div>
-      </div>
-      <p class="text-xs text-[var(--ink-soft)] mt-6">These six sources should be added to the Literature Study document — they directly support the innovation claim for a review panel.</p>
-    </section>
-
-    <!-- 02 ARCHITECTURE -->
-    <section id="architecture" class="px-6 lg:px-14 py-16 max-w-6xl border-t border-[var(--grid)]">
-      <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">02</p>
-      <h2 class="font-display font-bold text-2xl mt-1">Proposed Architecture</h2>
-      <p class="text-[var(--ink-soft)] mt-3 max-w-2xl">One new orchestration layer, five tools — two of which already exist.</p>
-
-      <div class="bp-box p-6 mt-8 overflow-x-auto">
-        <div class="flex items-start gap-2 min-w-[880px]">
-          <div class="bp-box px-3 py-3 text-xs text-center w-32 shrink-0 self-center">Mobile App<br>(existing)</div>
-          <div class="bp-arrow-h mt-5"></div>
-          <div class="bp-box px-3 py-3 text-xs text-center w-36 shrink-0 self-center" style="border-color:var(--new);background:var(--new-bg);">Agent Orchestrator<br><span class="font-mono text-[9px]">Groq · Llama 3.3 70B</span></div>
-          <div class="bp-arrow-h mt-5"></div>
-          <div class="flex flex-col gap-2 shrink-0">
-            <div class="bp-box px-3 py-2 text-xs text-center w-44"><span class="tag tag-verified">tool</span> Crop Recommendation Model <span class="font-mono text-[9px] text-[var(--ink-soft)]">(existing)</span></div>
-            <div class="bp-box px-3 py-2 text-xs text-center w-44"><span class="tag tag-verified">tool</span> Yield Prediction Model <span class="font-mono text-[9px] text-[var(--ink-soft)]">(in progress)</span></div>
-            <div class="bp-box px-3 py-2 text-xs text-center w-44"><span class="tag tag-mvp">tool</span> Weather Lookup <span class="font-mono text-[9px] text-[var(--ink-soft)]">(existing API)</span></div>
-            <div class="bp-box px-3 py-2 text-xs text-center w-44"><span class="tag tag-mvp">tool</span> Market Price Lookup <span class="font-mono text-[9px] text-[var(--ink-soft)]">(existing API)</span></div>
-            <div class="bp-box px-3 py-2 text-xs text-center w-44" style="border-color:var(--new);background:var(--new-bg);"><span class="tag tag-new">new tool</span> KAU Knowledge Search <span class="font-mono text-[9px] text-[var(--ink-soft)]">(RAG)</span></div>
+      <!-- 00 OVERVIEW -->
+      <section id="overview" class="px-6 lg:px-14 pt-14 pb-16 max-w-4xl">
+        <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">Proposal</p>
+        <h1 class="font-display font-bold text-3xl md:text-4xl mt-2 leading-tight">From "a trained model behind a form"
+          to an agent that reasons.</h1>
+        <p class="text-[var(--ink-soft)] mt-4 leading-relaxed">
+          Model 1 (Crop Recommendation) is trained and working. Model 2 (Yield Prediction) is being built.
+          Both are correct engineering — and both are also exactly what dozens of other student projects
+          submit every year. This proposal doesn't replace them; it wraps them in an <b>agentic reasoning
+            layer</b> that adds three things a single classifier structurally cannot do:
+        </p>
+        <div class="grid md:grid-cols-3 gap-4 mt-6">
+          <div class="bp-box p-4">
+            <p class="font-semibold text-sm">Cover crops outside the dataset</p>
+            <p class="text-xs text-[var(--ink-soft)] mt-1">Pepper, cardamom, rubber, tapioca — not in any public
+              crop-recommendation dataset. An agent can fall back to real agronomic literature instead of just failing.
+            </p>
+          </div>
+          <div class="bp-box p-4">
+            <p class="font-semibold text-sm">Reason over real-time context</p>
+            <p class="text-xs text-[var(--ink-soft)] mt-1">Weather, market price, and soil data together — not as
+              separate screens, but combined into one grounded recommendation.</p>
+          </div>
+          <div class="bp-box p-4">
+            <p class="font-semibold text-sm">Explain itself</p>
+            <p class="text-xs text-[var(--ink-soft)] mt-1">Shows which tools it called and which source it used —
+              transparency a black-box classifier can't offer, and reviewers notice the difference.</p>
           </div>
         </div>
-        <div class="flex justify-center mt-4">
-          <div class="bp-box px-4 py-2 text-xs text-center" style="border-color:var(--new);background:var(--new-bg);">
-            pgvector on existing Neon Postgres — KAU Package of Practices, embedded &amp; chunked
+        <div class="bp-box p-4 mt-6 inline-block">
+          <span class="tag tag-new">Positioning</span>
+          <p class="text-sm mt-2 max-w-lg">Model 1 and Model 2 become <b>tools the agent calls</b>, not replaced work.
+            Everything already built stays exactly as valuable — this is additive, not a restart.</p>
+        </div>
+      </section>
+
+      <!-- 01 RESEARCH -->
+      <section id="research" class="px-6 lg:px-14 py-16 max-w-5xl border-t border-[var(--grid)]">
+        <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">01</p>
+        <h2 class="font-display font-bold text-2xl mt-1">Research Foundation</h2>
+        <p class="text-[var(--ink-soft)] mt-3 max-w-2xl">This is a live 2025–2026 research area, not a buzzword. Six
+          directly relevant papers, found and read before writing this plan:</p>
+
+        <div class="space-y-4 mt-8">
+          <div class="bp-box p-4">
+            <p class="font-semibold text-sm">Agentic AI with Large Language Models for Precision Farming <span
+                class="text-[var(--ink-soft)] font-normal">(2026)</span></p>
+            <p class="text-xs text-[var(--ink-soft)] mt-1.5">Proposes an LLM as a high-level cognitive controller that
+              processes soil/weather/growth-stage data alongside agronomic knowledge, then coordinates irrigation,
+              fertilization, and crop-protection decisions — arguing that single-task ML models lack the contextual
+              reasoning and multi-objective coordination needed for real farm decisions. Directly supports the core
+              argument of this proposal.</p>
+          </div>
+          <div class="bp-box p-4">
+            <p class="font-semibold text-sm">Agentic AI-Based IoT Precision Agriculture Framework <span
+                class="text-[var(--ink-soft)] font-normal">(AgriEngineering / MDPI, 2026)</span></p>
+            <p class="text-xs text-[var(--ink-soft)] mt-1.5">Describes AgroAskAI, a multi-agent reasoning framework for
+              climate adaptation, and explicitly notes that most existing smart-agriculture decision-support systems
+              remain a modular pipeline without real multi-agent coordination — precisely the gap this proposal closes
+              for our project.</p>
+          </div>
+          <div class="bp-box p-4">
+            <p class="font-semibold text-sm">Agentic AI-Driven Autonomous Decision Support System for Smart Agriculture
+              <span class="text-[var(--ink-soft)] font-normal">(Nature Scientific Reports, 2026)</span>
+            </p>
+            <p class="text-xs text-[var(--ink-soft)] mt-1.5">Combines deep learning, ensemble learning, and
+              explainability techniques (SHAP/LIME) inside an agent-based framework that processes location, soil
+              images, and nutrient levels into adaptive recommendations — validates the "explainable reasoning trace"
+              element of this proposal's UI plan.</p>
+          </div>
+          <div class="bp-box p-4">
+            <p class="font-semibold text-sm">Evaluation of Learning-Based Models for Crop Recommendation <span
+                class="text-[var(--ink-soft)] font-normal">(MDPI, 2025)</span></p>
+            <p class="text-xs text-[var(--ink-soft)] mt-1.5">Found that a GPT-2-based model matched or exceeded
+              classical ML/DL accuracy on crop recommendation while also offering natural-language interaction —
+              evidence that adding a language-reasoning layer doesn't have to trade off predictive accuracy.</p>
+          </div>
+          <div class="bp-box p-4">
+            <p class="font-semibold text-sm">AgriRegion — Region-Aware RAG for Agricultural Advisory <span
+                class="text-[var(--ink-soft)] font-normal">(2025)</span></p>
+            <p class="text-xs text-[var(--ink-soft)] mt-1.5">Notes that general-purpose RAG frequently gives advice
+              that's scientifically correct in one region but wrong in another due to soil/climate variation, and
+              proposes geospatial metadata injection to keep retrieval region-locked — the exact justification for
+              grounding our RAG layer specifically in Kerala Agricultural University documents rather than generic
+              agricultural text.</p>
+          </div>
+          <div class="bp-box p-4">
+            <p class="font-semibold text-sm">Farmer.Chat — Scaling AI-Powered Agricultural Services for Smallholder
+              Farmers <span class="text-[var(--ink-soft)] font-normal">(Digital Green, arXiv 2409.08916)</span></p>
+            <p class="text-xs text-[var(--ink-soft)] mt-1.5">A production RAG-based farmer advisory system built on
+              extension documents and crop tables, with a feedback loop where farmer ratings refine the knowledge base
+              over time — a real-world precedent this proposal's architecture closely mirrors, at much smaller scale.
+            </p>
           </div>
         </div>
-      </div>
-      <p class="text-xs text-[var(--ink-soft)] mt-3">Two tools are brand new (agent orchestrator, KAU knowledge search). Three already exist and just get wrapped in a callable interface — no rework.</p>
-    </section>
+        <p class="text-xs text-[var(--ink-soft)] mt-6">These six sources should be added to the Literature Study
+          document — they directly support the innovation claim for a review panel.</p>
+      </section>
 
-    <!-- 03 HOW IT WORKS -->
-    <section id="flow" class="px-6 lg:px-14 py-16 max-w-5xl border-t border-[var(--grid)]">
-      <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">03</p>
-      <h2 class="font-display font-bold text-2xl mt-1">How It Works — Two Real Scenarios</h2>
+      <!-- 02 ARCHITECTURE -->
+      <section id="architecture" class="px-6 lg:px-14 py-16 max-w-6xl border-t border-[var(--grid)]">
+        <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">02</p>
+        <h2 class="font-display font-bold text-2xl mt-1">Proposed Architecture</h2>
+        <p class="text-[var(--ink-soft)] mt-3 max-w-2xl">One new orchestration layer, five tools — two of which already
+          exist.</p>
 
-      <div class="grid md:grid-cols-2 gap-6 mt-8">
-        <div class="bp-box p-5">
-          <span class="tag tag-verified">Scenario A — crop IS in the training set</span>
-          <p class="text-sm font-semibold mt-3">"What should I plant on my 1-acre plot? Soil N=40 P=30 K=35, pH 5.8."</p>
-          <ol class="text-xs text-[var(--ink-soft)] mt-3 space-y-1.5 list-decimal list-inside">
-            <li>Agent calls <b>Crop Recommendation Model</b> → coconut, 92% confidence</li>
-            <li>Agent calls <b>Weather Lookup</b> → no near-term risk flagged</li>
-            <li>Agent calls <b>KAU Knowledge Search</b> for "coconut intercropping Kerala" → retrieves pepper/banana/cocoa companion guidance</li>
-            <li>Final answer: ML-verified crop + KAU-grounded intercropping plan, both cited</li>
-          </ol>
+        <div class="bp-box p-6 mt-8 overflow-x-auto">
+          <div class="flex items-start gap-2 min-w-[880px]">
+            <div class="bp-box px-3 py-3 text-xs text-center w-32 shrink-0 self-center">Mobile App<br>(existing)</div>
+            <div class="bp-arrow-h mt-5"></div>
+            <div class="bp-box px-3 py-3 text-xs text-center w-36 shrink-0 self-center"
+              style="border-color:var(--new);background:var(--new-bg);">Agent Orchestrator<br><span
+                class="font-mono text-[9px]">Groq · Llama 3.3 70B</span></div>
+            <div class="bp-arrow-h mt-5"></div>
+            <div class="flex flex-col gap-2 shrink-0">
+              <div class="bp-box px-3 py-2 text-xs text-center w-44"><span class="tag tag-verified">tool</span> Crop
+                Recommendation Model <span class="font-mono text-[9px] text-[var(--ink-soft)]">(existing)</span></div>
+              <div class="bp-box px-3 py-2 text-xs text-center w-44"><span class="tag tag-verified">tool</span> Yield
+                Prediction Model <span class="font-mono text-[9px] text-[var(--ink-soft)]">(in progress)</span></div>
+              <div class="bp-box px-3 py-2 text-xs text-center w-44"><span class="tag tag-mvp">tool</span> Weather
+                Lookup <span class="font-mono text-[9px] text-[var(--ink-soft)]">(existing API)</span></div>
+              <div class="bp-box px-3 py-2 text-xs text-center w-44"><span class="tag tag-mvp">tool</span> Market Price
+                Lookup <span class="font-mono text-[9px] text-[var(--ink-soft)]">(existing API)</span></div>
+              <div class="bp-box px-3 py-2 text-xs text-center w-44"
+                style="border-color:var(--new);background:var(--new-bg);"><span class="tag tag-new">new tool</span> KAU
+                Knowledge Search <span class="font-mono text-[9px] text-[var(--ink-soft)]">(RAG)</span></div>
+            </div>
+          </div>
+          <div class="flex justify-center mt-4">
+            <div class="bp-box px-4 py-2 text-xs text-center" style="border-color:var(--new);background:var(--new-bg);">
+              pgvector on existing Neon Postgres — KAU Package of Practices, embedded &amp; chunked
+            </div>
+          </div>
         </div>
-        <div class="bp-box p-5" style="border-color:var(--reasoned);">
-          <span class="tag tag-reasoned">Scenario B — crop NOT in the training set</span>
-          <p class="text-sm font-semibold mt-3">"Is my land suitable for cardamom?"</p>
-          <ol class="text-xs text-[var(--ink-soft)] mt-3 space-y-1.5 list-decimal list-inside">
-            <li>Agent checks: cardamom isn't one of the 22 classes the trained model knows</li>
-            <li>Does <b>not</b> call the classifier — would be a meaningless guess</li>
-            <li>Calls <b>KAU Knowledge Search</b> directly for cardamom-specific agronomic requirements</li>
-            <li>Final answer labeled "AI-reasoned from agricultural literature," not "ML-verified" — an honest confidence distinction, not a fabricated one</li>
-          </ol>
-        </div>
-      </div>
-      <div class="bp-box p-4 mt-6 inline-block max-w-2xl">
-        <p class="text-sm"><b>This is the actual answer to "why can't local vegetables be covered."</b> They can — just not by the same mechanism, and the system says so instead of pretending otherwise.</p>
-      </div>
-    </section>
+        <p class="text-xs text-[var(--ink-soft)] mt-3">Two tools are brand new (agent orchestrator, KAU knowledge
+          search). Three already exist and just get wrapped in a callable interface — no rework.</p>
+      </section>
 
-    <!-- 04 REQUIREMENTS -->
-    <section id="requirements" class="px-6 lg:px-14 py-16 max-w-5xl border-t border-[var(--grid)]">
-      <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">04</p>
-      <h2 class="font-display font-bold text-2xl mt-1">Requirements — Everything Free</h2>
+      <!-- 03 HOW IT WORKS -->
+      <section id="flow" class="px-6 lg:px-14 py-16 max-w-5xl border-t border-[var(--grid)]">
+        <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">03</p>
+        <h2 class="font-display font-bold text-2xl mt-1">How It Works — Two Real Scenarios</h2>
 
-      <div class="overflow-x-auto mt-8">
-        <table class="w-full text-sm border-collapse">
-          <thead><tr class="text-left border-b-2 border-[var(--ink)]"><th class="py-2 pr-4">Component</th><th class="py-2 pr-4">What</th><th class="py-2 pr-4">Free Tier</th><th class="py-2">Note</th></tr></thead>
-          <tbody>
-            <tr class="border-b border-[var(--grid)]"><td class="py-2 pr-4 font-semibold">LLM</td><td class="py-2 pr-4">Groq API, Llama 3.3 70B</td><td class="py-2 pr-4 font-mono text-xs">30 req/min, no card, no expiry</td><td class="py-2">Confirmed current as of this proposal; supports tool/function calling natively</td></tr>
-            <tr class="border-b border-[var(--grid)]"><td class="py-2 pr-4 font-semibold">Agent framework</td><td class="py-2 pr-4">LangChain (optional) or direct function-calling</td><td class="py-2 pr-4 font-mono text-xs">Free, open source</td><td class="py-2">Direct calling = fewer dependencies, more control; LangChain = faster to build, more "recognized" name</td></tr>
-            <tr class="border-b border-[var(--grid)]"><td class="py-2 pr-4 font-semibold">Vector store</td><td class="py-2 pr-4">pgvector extension</td><td class="py-2 pr-4 font-mono text-xs">Free, on existing Neon DB</td><td class="py-2">No new service — one CREATE EXTENSION vector; on the DB already set up</td></tr>
-            <tr class="border-b border-[var(--grid)]"><td class="py-2 pr-4 font-semibold">Embedding model</td><td class="py-2 pr-4">sentence-transformers, all-MiniLM-L6-v2</td><td class="py-2 pr-4 font-mono text-xs">Free, runs locally, no API</td><td class="py-2">Small enough to run on Render's free CPU tier — no GPU needed</td></tr>
-            <tr class="border-b border-[var(--grid)]"><td class="py-2 pr-4 font-semibold">Knowledge source</td><td class="py-2 pr-4">KAU Package of Practices (2016 ed.)</td><td class="py-2 pr-4 font-mono text-xs">Free public PDF, kau.in</td><td class="py-2">Authoritative — published by Kerala Agricultural University itself</td></tr>
-            <tr><td class="py-2 pr-4 font-semibold">PDF processing</td><td class="py-2 pr-4">PyMuPDF or pdfplumber</td><td class="py-2 pr-4 font-mono text-xs">Free, open source</td><td class="py-2">For extracting/chunking the PoP text before embedding</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+        <div class="grid md:grid-cols-2 gap-6 mt-8">
+          <div class="bp-box p-5">
+            <span class="tag tag-verified">Scenario A — crop IS in the training set</span>
+            <p class="text-sm font-semibold mt-3">"What should I plant on my 1-acre plot? Soil N=40 P=30 K=35, pH 5.8."
+            </p>
+            <ol class="text-xs text-[var(--ink-soft)] mt-3 space-y-1.5 list-decimal list-inside">
+              <li>Agent calls <b>Crop Recommendation Model</b> → coconut, 92% confidence</li>
+              <li>Agent calls <b>Weather Lookup</b> → no near-term risk flagged</li>
+              <li>Agent calls <b>KAU Knowledge Search</b> for "coconut intercropping Kerala" → retrieves
+                pepper/banana/cocoa companion guidance</li>
+              <li>Final answer: ML-verified crop + KAU-grounded intercropping plan, both cited</li>
+            </ol>
+          </div>
+          <div class="bp-box p-5" style="border-color:var(--reasoned);">
+            <span class="tag tag-reasoned">Scenario B — crop NOT in the training set</span>
+            <p class="text-sm font-semibold mt-3">"Is my land suitable for cardamom?"</p>
+            <ol class="text-xs text-[var(--ink-soft)] mt-3 space-y-1.5 list-decimal list-inside">
+              <li>Agent checks: cardamom isn't one of the 22 classes the trained model knows</li>
+              <li>Does <b>not</b> call the classifier — would be a meaningless guess</li>
+              <li>Calls <b>KAU Knowledge Search</b> directly for cardamom-specific agronomic requirements</li>
+              <li>Final answer labeled "AI-reasoned from agricultural literature," not "ML-verified" — an honest
+                confidence distinction, not a fabricated one</li>
+            </ol>
+          </div>
+        </div>
+        <div class="bp-box p-4 mt-6 inline-block max-w-2xl">
+          <p class="text-sm"><b>This is the actual answer to "why can't local vegetables be covered."</b> They can —
+            just not by the same mechanism, and the system says so instead of pretending otherwise.</p>
+        </div>
+      </section>
 
-    <!-- 05 PHASES -->
-    <section id="phases" class="px-6 lg:px-14 py-16 max-w-5xl border-t border-[var(--grid)]">
-      <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">05</p>
-      <h2 class="font-display font-bold text-2xl mt-1">Build Phases</h2>
-      <p class="text-[var(--ink-soft)] mt-3">Sequenced so the app has a working fallback at every stage — nothing breaks what already works.</p>
+      <!-- 04 REQUIREMENTS -->
+      <section id="requirements" class="px-6 lg:px-14 py-16 max-w-5xl border-t border-[var(--grid)]">
+        <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">04</p>
+        <h2 class="font-display font-bold text-2xl mt-1">Requirements — Everything Free</h2>
 
-      <div class="space-y-3 mt-8">
-        <div class="bp-box p-4 flex items-start gap-4">
-          <span class="font-mono text-xs text-[var(--ink-soft)] pt-1 w-6">01</span>
-          <div><p class="font-semibold text-sm">Knowledge base construction</p><p class="text-xs text-[var(--ink-soft)] mt-1">Download KAU PoP PDFs for target crops → extract text → chunk (~500 tokens, overlap) → embed → store in pgvector.</p></div>
+        <div class="overflow-x-auto mt-8">
+          <table class="w-full text-sm border-collapse">
+            <thead>
+              <tr class="text-left border-b-2 border-[var(--ink)]">
+                <th class="py-2 pr-4">Component</th>
+                <th class="py-2 pr-4">What</th>
+                <th class="py-2 pr-4">Free Tier</th>
+                <th class="py-2">Note</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="border-b border-[var(--grid)]">
+                <td class="py-2 pr-4 font-semibold">LLM</td>
+                <td class="py-2 pr-4">Groq API, Llama 3.3 70B</td>
+                <td class="py-2 pr-4 font-mono text-xs">30 req/min, no card, no expiry</td>
+                <td class="py-2">Confirmed current as of this proposal; supports tool/function calling natively</td>
+              </tr>
+              <tr class="border-b border-[var(--grid)]">
+                <td class="py-2 pr-4 font-semibold">Agent framework</td>
+                <td class="py-2 pr-4">LangChain (optional) or direct function-calling</td>
+                <td class="py-2 pr-4 font-mono text-xs">Free, open source</td>
+                <td class="py-2">Direct calling = fewer dependencies, more control; LangChain = faster to build, more
+                  "recognized" name</td>
+              </tr>
+              <tr class="border-b border-[var(--grid)]">
+                <td class="py-2 pr-4 font-semibold">Vector store</td>
+                <td class="py-2 pr-4">pgvector extension</td>
+                <td class="py-2 pr-4 font-mono text-xs">Free, on existing Neon DB</td>
+                <td class="py-2">No new service — one CREATE EXTENSION vector; on the DB already set up</td>
+              </tr>
+              <tr class="border-b border-[var(--grid)]">
+                <td class="py-2 pr-4 font-semibold">Embedding model</td>
+                <td class="py-2 pr-4">sentence-transformers, all-MiniLM-L6-v2</td>
+                <td class="py-2 pr-4 font-mono text-xs">Free, runs locally, no API</td>
+                <td class="py-2">Small enough to run on Render's free CPU tier — no GPU needed</td>
+              </tr>
+              <tr class="border-b border-[var(--grid)]">
+                <td class="py-2 pr-4 font-semibold">Knowledge source</td>
+                <td class="py-2 pr-4">KAU Package of Practices (2016 ed.)</td>
+                <td class="py-2 pr-4 font-mono text-xs">Free public PDF, kau.in</td>
+                <td class="py-2">Authoritative — published by Kerala Agricultural University itself</td>
+              </tr>
+              <tr>
+                <td class="py-2 pr-4 font-semibold">PDF processing</td>
+                <td class="py-2 pr-4">PyMuPDF or pdfplumber</td>
+                <td class="py-2 pr-4 font-mono text-xs">Free, open source</td>
+                <td class="py-2">For extracting/chunking the PoP text before embedding</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        <div class="bp-box p-4 flex items-start gap-4">
-          <span class="font-mono text-xs text-[var(--ink-soft)] pt-1 w-6">02</span>
-          <div><p class="font-semibold text-sm">Tool wrapping</p><p class="text-xs text-[var(--ink-soft)] mt-1">Wrap Model 1, Model 2, Weather, Market as callable functions with clear JSON schemas — no changes to the models themselves.</p></div>
-        </div>
-        <div class="bp-box p-4 flex items-start gap-4">
-          <span class="font-mono text-xs text-[var(--ink-soft)] pt-1 w-6">03</span>
-          <div><p class="font-semibold text-sm">KAU retrieval tool</p><p class="text-xs text-[var(--ink-soft)] mt-1">Semantic search against the pgvector table, wrapped as a tool the agent can call.</p></div>
-        </div>
-        <div class="bp-box p-4 flex items-start gap-4">
-          <span class="font-mono text-xs text-[var(--ink-soft)] pt-1 w-6">04</span>
-          <div><p class="font-semibold text-sm">Agent orchestration loop</p><p class="text-xs text-[var(--ink-soft)] mt-1">Groq client + system prompt (Section 07) + tool-calling loop: LLM decides which tools to call, executes, reasons over results, produces final answer.</p></div>
-        </div>
-        <div class="bp-box p-4 flex items-start gap-4">
-          <span class="font-mono text-xs text-[var(--ink-soft)] pt-1 w-6">05</span>
-          <div><p class="font-semibold text-sm">New endpoint</p><p class="text-xs text-[var(--ink-soft)] mt-1"><code class="font-mono text-xs">POST /api/v1/agent/crop-advisory</code> — runs the full loop, returns recommendation + reasoning trace + sources. Existing <code class="font-mono text-xs">/crop-recommendation</code> endpoint stays untouched as a fallback.</p></div>
-        </div>
-        <div class="bp-box p-4 flex items-start gap-4">
-          <span class="font-mono text-xs text-[var(--ink-soft)] pt-1 w-6">06</span>
-          <div><p class="font-semibold text-sm">UI updates</p><p class="text-xs text-[var(--ink-soft)] mt-1">Reasoning trace panel, source citations, confidence-tier badges, free-text query box — see Section 06.</p></div>
-        </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- 06 UI CHANGES -->
-    <section id="ui" class="px-6 lg:px-14 py-16 max-w-5xl border-t border-[var(--grid)]">
-      <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">06</p>
-      <h2 class="font-display font-bold text-2xl mt-1">UI Changes Needed</h2>
-      <p class="text-[var(--ink-soft)] mt-3 max-w-2xl">Additive to the finalized design — no existing screen gets removed, three things get added to the Recommendation screen.</p>
+      <!-- 05 PHASES -->
+      <section id="phases" class="px-6 lg:px-14 py-16 max-w-5xl border-t border-[var(--grid)]">
+        <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">05</p>
+        <h2 class="font-display font-bold text-2xl mt-1">Build Phases</h2>
+        <p class="text-[var(--ink-soft)] mt-3">Sequenced so the app has a working fallback at every stage — nothing
+          breaks what already works.</p>
 
-      <div class="grid md:grid-cols-3 gap-4 mt-8">
-        <div class="bp-box p-4">
-          <p class="tag tag-new mb-2">Addition 1</p>
-          <p class="font-semibold text-sm">Confidence-tier badge</p>
-          <p class="text-xs text-[var(--ink-soft)] mt-1.5 mb-3">Every recommendation is visibly tagged, not just implied.</p>
-          <div class="flex gap-1.5"><span class="tag tag-verified">ML-Verified</span><span class="tag tag-reasoned">AI-Reasoned</span></div>
+        <div class="space-y-3 mt-8">
+          <div class="bp-box p-4 flex items-start gap-4">
+            <span class="font-mono text-xs text-[var(--ink-soft)] pt-1 w-6">01</span>
+            <div>
+              <p class="font-semibold text-sm">Knowledge base construction</p>
+              <p class="text-xs text-[var(--ink-soft)] mt-1">Download KAU PoP PDFs for target crops → extract text →
+                chunk (~500 tokens, overlap) → embed → store in pgvector.</p>
+            </div>
+          </div>
+          <div class="bp-box p-4 flex items-start gap-4">
+            <span class="font-mono text-xs text-[var(--ink-soft)] pt-1 w-6">02</span>
+            <div>
+              <p class="font-semibold text-sm">Tool wrapping</p>
+              <p class="text-xs text-[var(--ink-soft)] mt-1">Wrap Model 1, Model 2, Weather, Market as callable
+                functions with clear JSON schemas — no changes to the models themselves.</p>
+            </div>
+          </div>
+          <div class="bp-box p-4 flex items-start gap-4">
+            <span class="font-mono text-xs text-[var(--ink-soft)] pt-1 w-6">03</span>
+            <div>
+              <p class="font-semibold text-sm">KAU retrieval tool</p>
+              <p class="text-xs text-[var(--ink-soft)] mt-1">Semantic search against the pgvector table, wrapped as a
+                tool the agent can call.</p>
+            </div>
+          </div>
+          <div class="bp-box p-4 flex items-start gap-4">
+            <span class="font-mono text-xs text-[var(--ink-soft)] pt-1 w-6">04</span>
+            <div>
+              <p class="font-semibold text-sm">Agent orchestration loop</p>
+              <p class="text-xs text-[var(--ink-soft)] mt-1">Groq client + system prompt (Section 07) + tool-calling
+                loop: LLM decides which tools to call, executes, reasons over results, produces final answer.</p>
+            </div>
+          </div>
+          <div class="bp-box p-4 flex items-start gap-4">
+            <span class="font-mono text-xs text-[var(--ink-soft)] pt-1 w-6">05</span>
+            <div>
+              <p class="font-semibold text-sm">New endpoint</p>
+              <p class="text-xs text-[var(--ink-soft)] mt-1"><code
+                  class="font-mono text-xs">POST /api/v1/agent/crop-advisory</code> — runs the full loop, returns
+                recommendation + reasoning trace + sources. Existing <code
+                  class="font-mono text-xs">/crop-recommendation</code> endpoint stays untouched as a fallback.</p>
+            </div>
+          </div>
+          <div class="bp-box p-4 flex items-start gap-4">
+            <span class="font-mono text-xs text-[var(--ink-soft)] pt-1 w-6">06</span>
+            <div>
+              <p class="font-semibold text-sm">UI updates</p>
+              <p class="text-xs text-[var(--ink-soft)] mt-1">Reasoning trace panel, source citations, confidence-tier
+                badges, free-text query box — see Section 06.</p>
+            </div>
+          </div>
         </div>
-        <div class="bp-box p-4">
-          <p class="tag tag-new mb-2">Addition 2</p>
-          <p class="font-semibold text-sm">Expandable "How I decided" panel</p>
-          <p class="text-xs text-[var(--ink-soft)] mt-1.5">A collapsible section under the recommendation showing the tool-call sequence — e.g. "Checked trained model → Checked weather → Checked KAU guidance." Builds farmer trust and is a direct visual demo of the agent reasoning for your panel.</p>
-        </div>
-        <div class="bp-box p-4">
-          <p class="tag tag-new mb-2">Addition 3</p>
-          <p class="font-semibold text-sm">"Ask about any crop" free-text entry</p>
-          <p class="text-xs text-[var(--ink-soft)] mt-1.5">A new optional entry point alongside the existing structured soil-input form, for open-ended questions the fixed form can't capture — e.g. "should I intercrop pepper with my coconut?" This is what actually uses the RAG fallback.</p>
-        </div>
-      </div>
+      </section>
 
-      <div class="bp-box p-4 mt-6">
-        <p class="font-semibold text-sm mb-2">Source citation, inline</p>
-        <p class="text-xs text-[var(--ink-soft)] mb-3">Whenever KAU knowledge is used, cite it directly under the relevant text — small, not disruptive to the existing card layout:</p>
-        <div class="text-xs bg-[var(--reasoned-bg)] border border-[#F0C48C] rounded-lg p-3 inline-block">
-          <p style="color:#7A5A08;">Source: KAU Package of Practices — Coconut-based Cropping Systems, Ch. 4</p>
+      <!-- 06 UI CHANGES -->
+      <section id="ui" class="px-6 lg:px-14 py-16 max-w-5xl border-t border-[var(--grid)]">
+        <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">06</p>
+        <h2 class="font-display font-bold text-2xl mt-1">UI Changes Needed</h2>
+        <p class="text-[var(--ink-soft)] mt-3 max-w-2xl">Additive to the finalized design — no existing screen gets
+          removed, three things get added to the Recommendation screen.</p>
+
+        <div class="grid md:grid-cols-3 gap-4 mt-8">
+          <div class="bp-box p-4">
+            <p class="tag tag-new mb-2">Addition 1</p>
+            <p class="font-semibold text-sm">Confidence-tier badge</p>
+            <p class="text-xs text-[var(--ink-soft)] mt-1.5 mb-3">Every recommendation is visibly tagged, not just
+              implied.</p>
+            <div class="flex gap-1.5"><span class="tag tag-verified">ML-Verified</span><span
+                class="tag tag-reasoned">AI-Reasoned</span></div>
+          </div>
+          <div class="bp-box p-4">
+            <p class="tag tag-new mb-2">Addition 2</p>
+            <p class="font-semibold text-sm">Expandable "How I decided" panel</p>
+            <p class="text-xs text-[var(--ink-soft)] mt-1.5">A collapsible section under the recommendation showing the
+              tool-call sequence — e.g. "Checked trained model → Checked weather → Checked KAU guidance." Builds farmer
+              trust and is a direct visual demo of the agent reasoning for your panel.</p>
+          </div>
+          <div class="bp-box p-4">
+            <p class="tag tag-new mb-2">Addition 3</p>
+            <p class="font-semibold text-sm">"Ask about any crop" free-text entry</p>
+            <p class="text-xs text-[var(--ink-soft)] mt-1.5">A new optional entry point alongside the existing
+              structured soil-input form, for open-ended questions the fixed form can't capture — e.g. "should I
+              intercrop pepper with my coconut?" This is what actually uses the RAG fallback.</p>
+          </div>
         </div>
-      </div>
-    </section>
 
-    <!-- 07 PROMPTS -->
-    <section id="prompts" class="px-6 lg:px-14 py-16 max-w-5xl border-t border-[var(--grid)]">
-      <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">07</p>
-      <h2 class="font-display font-bold text-2xl mt-1">Agent Prompts &amp; Tool Schemas</h2>
+        <div class="bp-box p-4 mt-6">
+          <p class="font-semibold text-sm mb-2">Source citation, inline</p>
+          <p class="text-xs text-[var(--ink-soft)] mb-3">Whenever KAU knowledge is used, cite it directly under the
+            relevant text — small, not disruptive to the existing card layout:</p>
+          <div class="text-xs bg-[var(--reasoned-bg)] border border-[#F0C48C] rounded-lg p-3 inline-block">
+            <p style="color:#7A5A08;">Source: KAU Package of Practices — Coconut-based Cropping Systems, Ch. 4</p>
+          </div>
+        </div>
+      </section>
 
-      <p class="font-semibold text-sm mt-6 mb-2">System Prompt</p>
-      <pre><code>You are Krishi Sakhi, an agricultural reasoning assistant supporting Kerala
+      <!-- 07 PROMPTS -->
+      <section id="prompts" class="px-6 lg:px-14 py-16 max-w-5xl border-t border-[var(--grid)]">
+        <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">07</p>
+        <h2 class="font-display font-bold text-2xl mt-1">Agent Prompts &amp; Tool Schemas</h2>
+
+        <p class="font-semibold text-sm mt-6 mb-2">System Prompt</p>
+        <pre><code>You are Krishi Sakhi, an agricultural reasoning assistant supporting Kerala
 farmers. You have access to these tools: crop_recommendation_model,
 yield_prediction_model, weather_lookup, market_price_lookup, kau_knowledge_search.
 
@@ -300,8 +555,8 @@ Rules:
 9. Keep the final answer concise and actionable for a farmer with limited
    technical background.</code></pre>
 
-      <p class="font-semibold text-sm mt-6 mb-2">Tool Schema Example — KAU Knowledge Search</p>
-      <pre><code>{
+        <p class="font-semibold text-sm mt-6 mb-2">Tool Schema Example — KAU Knowledge Search</p>
+        <pre><code>{
   "name": "kau_knowledge_search",
   "description": "Semantic search over Kerala Agricultural University's Package of Practices for agronomic guidance on crops, intercropping, and cultivation practices not covered by the trained ML models.",
   "parameters": {
@@ -321,8 +576,8 @@ Rules:
   }
 }</code></pre>
 
-      <p class="font-semibold text-sm mt-6 mb-2">Tool Schema Example — Crop Recommendation Model</p>
-      <pre><code>{
+        <p class="font-semibold text-sm mt-6 mb-2">Tool Schema Example — Crop Recommendation Model</p>
+        <pre><code>{
   "name": "crop_recommendation_model",
   "description": "Trained Random Forest classifier. ONLY covers these 22 crops -- do not call for any other crop: rice, maize, chickpea, kidneybeans, pigeonpeas, mothbeans, mungbean, blackgram, lentil, pomegranate, banana, mango, grapes, watermelon, muskmelon, apple, orange, papaya, coconut, cotton, jute, coffee.",
   "parameters": {
@@ -335,41 +590,325 @@ Rules:
     "required": ["N","P","K","temperature","humidity","ph","rainfall"]
   }
 }</code></pre>
-    </section>
+      </section>
 
-    <!-- 08 FEASIBILITY -->
-    <section id="feasibility" class="px-6 lg:px-14 py-16 max-w-5xl border-t border-[var(--grid)] pb-24">
-      <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">08</p>
-      <h2 class="font-display font-bold text-2xl mt-1">Honest Feasibility Notes</h2>
-      <p class="text-[var(--ink-soft)] mt-3 max-w-2xl">What to tell your guide alongside the pitch, not instead of it.</p>
+      <!-- 08 FEASIBILITY -->
+      <section id="feasibility" class="px-6 lg:px-14 py-16 max-w-5xl border-t border-[var(--grid)] pb-24">
+        <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">08</p>
+        <h2 class="font-display font-bold text-2xl mt-1">Honest Feasibility Notes</h2>
+        <p class="text-[var(--ink-soft)] mt-3 max-w-2xl">What to tell your guide alongside the pitch, not instead of it.
+        </p>
 
-      <div class="space-y-3 mt-8">
-        <div class="bp-box p-4"><p class="font-semibold text-sm">Groq's free tier is real but bounded</p><p class="text-xs text-[var(--ink-soft)] mt-1">30 requests/minute is plenty for development and a live demo, not for production scale. Correct framing for a review: "sufficient for our project's scope," not "infinitely scalable."</p></div>
-        <div class="bp-box p-4"><p class="font-semibold text-sm">This is additional scope, not free</p><p class="text-xs text-[var(--ink-soft)] mt-1">Six new build phases on top of an already-full semester plan. Recommend this replaces some of the "Stretch" tier features from the earlier roadmap, not stack on top of everything else.</p></div>
-        <div class="bp-box p-4"><p class="font-semibold text-sm">Multi-agent does not mean multiple LLM calls stacked randomly</p><p class="text-xs text-[var(--ink-soft)] mt-1">The value is in the decision logic (when to trust the classifier vs. fall back to retrieval) -- not in adding LLM calls for their own sake. Keep the system prompt's rules as the actual design artifact to defend in a viva.</p></div>
-        <div class="bp-box p-4"><p class="font-semibold text-sm">Fallback if time runs short</p><p class="text-xs text-[var(--ink-soft)] mt-1">Ship the KAU RAG tool + free-text query as a standalone feature even without the full multi-tool agent loop -- still genuinely novel, still uses real research grounding, smaller build surface.</p></div>
-      </div>
-    </section>
+        <div class="space-y-3 mt-8">
+          <div class="bp-box p-4">
+            <p class="font-semibold text-sm">Groq's free tier is real but bounded</p>
+            <p class="text-xs text-[var(--ink-soft)] mt-1">30 requests/minute is plenty for development and a live demo,
+              not for production scale. Correct framing for a review: "sufficient for our project's scope," not
+              "infinitely scalable."</p>
+          </div>
+          <div class="bp-box p-4">
+            <p class="font-semibold text-sm">This is additional scope, not free</p>
+            <p class="text-xs text-[var(--ink-soft)] mt-1">Six new build phases on top of an already-full semester plan.
+              Recommend this replaces some of the "Stretch" tier features from the earlier roadmap, not stack on top of
+              everything else.</p>
+          </div>
+          <div class="bp-box p-4">
+            <p class="font-semibold text-sm">Multi-agent does not mean multiple LLM calls stacked randomly</p>
+            <p class="text-xs text-[var(--ink-soft)] mt-1">The value is in the decision logic (when to trust the
+              classifier vs. fall back to retrieval) -- not in adding LLM calls for their own sake. Keep the system
+              prompt's rules as the actual design artifact to defend in a viva.</p>
+          </div>
+          <div class="bp-box p-4">
+            <p class="font-semibold text-sm">Fallback if time runs short</p>
+            <p class="text-xs text-[var(--ink-soft)] mt-1">Ship the KAU RAG tool + free-text query as a standalone
+              feature even without the full multi-tool agent loop -- still genuinely novel, still uses real research
+              grounding, smaller build surface.</p>
+          </div>
+        </div>
+      </section>
 
-    <footer class="px-6 lg:px-14 py-10 border-t border-[var(--grid)] text-xs text-[var(--ink-soft)]">
-      Agentic AI for Crop Recommendation — Proposal for Guide Approval · Draft
-    </footer>
-  </main>
-</div>
+      <!-- 09 FULL CROP KNOWLEDGE -->
+      <section id="cropcard" class="px-6 lg:px-14 py-16 max-w-5xl border-t border-[var(--grid)]">
+        <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">09</p>
+        <h2 class="font-display font-bold text-2xl mt-1">Full Crop Knowledge, Not Just a Name</h2>
+        <p class="text-[var(--ink-soft)] mt-3 max-w-2xl">
+          "Grow coconut" is not an answer a farmer can act on. Every recommendation the agent gives
+          needs to expand into a full knowledge card — retrieved from KAU Package of Practices via
+          <code class="font-mono text-xs">kau_knowledge_search</code>, not written by the LLM from memory.
+        </p>
 
-<script>
-  const links = document.querySelectorAll('#navlinks .nav-link');
-  const sections = document.querySelectorAll('main section[id]');
-  const spy = new IntersectionObserver((entries)=>{
-    entries.forEach(e=>{
-      if(e.isIntersecting){
-        links.forEach(l=>l.classList.remove('active'));
-        const a = document.querySelector('#navlinks .nav-link[href="#'+e.target.id+'"]');
-        if(a) a.classList.add('active');
-      }
-    });
-  }, { rootMargin: '-40% 0px -55% 0px' });
-  sections.forEach(s=>spy.observe(s));
-</script>
+        <div class="bp-box p-5 mt-8">
+          <div class="flex items-center justify-between">
+            <p class="font-display font-semibold text-lg">Coconut <span
+                class="text-sm text-[var(--ink-soft)] font-normal">(തെങ്ങ്)</span></p>
+            <span class="tag tag-verified">ML-Verified crop</span>
+          </div>
+          <div class="grid md:grid-cols-2 gap-4 mt-4 text-xs">
+            <div class="bp-box p-3">
+              <p class="font-mono text-[10px] text-[var(--ink-soft)] uppercase mb-1">Best planting window</p>
+              <p>Edavam–Midhunam (mid-May to mid-July), start of southwest monsoon</p>
+            </div>
+            <div class="bp-box p-3">
+              <p class="font-mono text-[10px] text-[var(--ink-soft)] uppercase mb-1">Time to first yield</p>
+              <p>4–6 years to first bearing; full yield by year 8–10</p>
+            </div>
+            <div class="bp-box p-3">
+              <p class="font-mono text-[10px] text-[var(--ink-soft)] uppercase mb-1">Spacing</p>
+              <p>7.5m × 7.5m (about 175 palms/hectare)</p>
+            </div>
+            <div class="bp-box p-3">
+              <p class="font-mono text-[10px] text-[var(--ink-soft)] uppercase mb-1">Fertilizer schedule</p>
+              <p>FYM 25–50kg/palm basal (May–June); NPK split doses in two rounds (Sep–Oct, Feb–Mar)</p>
+            </div>
+            <div class="bp-box p-3">
+              <p class="font-mono text-[10px] text-[var(--ink-soft)] uppercase mb-1">Intercrops</p>
+              <p>Pepper, banana, cocoa — multi-tier Kerala homestead system</p>
+            </div>
+            <div class="bp-box p-3">
+              <p class="font-mono text-[10px] text-[var(--ink-soft)] uppercase mb-1">Harvest cycle</p>
+              <p>Every 45–60 days year-round once bearing starts; nut takes ~12 months to mature</p>
+            </div>
+          </div>
+          <div class="text-xs bg-[var(--reasoned-bg)] border border-[#F0C48C] rounded-lg p-3 mt-4 inline-block"
+            style="color:#7A5A08;">
+            Source: KAU Package of Practices — Coconut, Ch. 2
+          </div>
+        </div>
+
+        <p class="font-semibold text-sm mt-6 mb-2">Card Schema (what the agent must populate for any crop)</p>
+        <pre><code>{
+  "crop_name": "string", "malayalam_name": "string",
+  "cultivation_calendar": {
+    "traditional_months": ["Edavam", "Midhunam"],
+    "gregorian_range": "mid-May to mid-July",
+    "monsoon_relation": "start of southwest monsoon"
+  },
+  "duration_to_harvest": "string",
+  "land_preparation": "string",
+  "spacing": "string",
+  "fertilizer_schedule": [
+    {"stage": "basal", "timing": "string", "type": "string", "quantity": "string"}
+  ],
+  "intercrops": [
+    {"crop": "string", "reasoning": "string", "source": "KAU PoP | Traditional practice"}
+  ],
+  "harvesting": {"start": "string", "peak": "string", "indicators": "string"},
+  "source_citation": "string"
+}</code></pre>
+      </section>
+
+      <!-- 10 KERALA FARMING CALENDAR -->
+      <section id="calendar" class="px-6 lg:px-14 py-16 max-w-5xl border-t border-[var(--grid)]">
+        <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">10</p>
+        <h2 class="font-display font-bold text-2xl mt-1">The Kerala Farming Calendar — Tradition First, Weather Second
+        </h2>
+        <p class="text-[var(--ink-soft)] mt-3 max-w-2xl">
+          You're right that most Kerala farmers plan around the Malayalam calendar month, not a weather
+          model — and this is a documented, respected pattern in agricultural research, not something to
+          design around apologetically. Studies on integrating indigenous agricultural knowledge with
+          scientific methods consistently find that traditional seasonal calendars encode generations of
+          accumulated, locally-validated timing wisdom that raw meteorological data doesn't capture on its
+          own. The fix isn't choosing one over the other — it's layering them correctly.
+        </p>
+
+        <div class="bp-box p-5 mt-8">
+          <p class="font-semibold text-sm mb-3">Two-layer timing logic</p>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="bp-box p-4" style="border-color:var(--reasoned);background:var(--reasoned-bg);">
+              <span class="tag tag-tradition">Layer 1 — Primary</span>
+              <p class="text-sm font-semibold mt-2">Traditional Malayalam month window</p>
+              <p class="text-xs text-[var(--ink-soft)] mt-1.5">Looked up directly from a structured calendar table per
+                crop — not inferred by the LLM, not left to weather data alone. This is the answer that leads.</p>
+            </div>
+            <div class="bp-box p-4">
+              <span class="tag tag-mvp">Layer 2 — Sanity check</span>
+              <p class="text-sm font-semibold mt-2">Current weather validation</p>
+              <p class="text-xs text-[var(--ink-soft)] mt-1.5">Only used to flag a near-term exception — e.g. "right
+                time of year, but hold off about a week, heavy rain expected" — never to override the traditional window
+                entirely.</p>
+            </div>
+          </div>
+        </div>
+
+        <p class="font-semibold text-sm mt-8 mb-2">New tool — <code
+            class="font-mono text-xs">crop_calendar_lookup</code></p>
+        <p class="text-xs text-[var(--ink-soft)] mb-3">A structured lookup table, not semantic search — calendar facts
+          should be exact, not "probably retrieved."</p>
+        <pre><code>{
+  "name": "crop_calendar_lookup",
+  "description": "Returns the traditional Malayalam-calendar planting and harvesting window for a given crop. Always call this before weather_lookup when the question involves planting timing.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "crop_name": {"type": "string"}
+    },
+    "required": ["crop_name"]
+  }
+}
+
+// Example seed table (crop_calendar table in Postgres, not vector-embedded):
+// rice (Virippu)   -> Edavam-Midhunam sowing,  Chingam-Kanni harvest
+// rice (Mundakan)  -> Chingam-Kanni sowing,    Vrischikam-Dhanu harvest
+// rice (Puncha)    -> Dhanu-Makaram sowing,    Meenam-Medam harvest
+// coconut          -> Edavam-Midhunam planting (monsoon onset)
+// pepper           -> Edavam-Midhunam, with monsoon rains for establishment
+// banana           -> year-round, but Chingam-Kanni preferred for Onam-season harvest</code></pre>
+
+        <div class="bp-box p-4 mt-6 inline-block max-w-xl">
+          <p class="text-sm"><b>Why a table, not RAG, for this part:</b> calendar months are discrete facts a farmer
+            will hold you to. Semantic retrieval over a PDF can miss or blur an exact month range; a small structured
+            table (12 months × your covered crop list) is more reliable and dramatically cheaper to query than an
+            embedding search for something this precise.</p>
+        </div>
+      </section>
+
+      <!-- 11 NATURAL COMPANION RULES -->
+      <section id="companion" class="px-6 lg:px-14 py-16 max-w-5xl border-t border-[var(--grid)]">
+        <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">11</p>
+        <h2 class="font-display font-bold text-2xl mt-1">Natural Companion Rules</h2>
+        <p class="text-[var(--ink-soft)] mt-3 max-w-2xl">
+          "Bitter gourd, then beans" is folk knowledge every Kerala home gardener knows, but it's the kind
+          of association a formal KAU document may state indirectly or not at all — semantic search over a
+          PDF isn't guaranteed to surface it. So it gets its own curated table: a second, independent
+          knowledge source alongside RAG, not a replacement for it.
+        </p>
+
+        <div class="overflow-x-auto mt-8">
+          <table class="w-full text-sm border-collapse">
+            <thead>
+              <tr class="text-left border-b-2 border-[var(--ink)]">
+                <th class="py-2 pr-4">Primary Crop</th>
+                <th class="py-2 pr-4">Natural Companion</th>
+                <th class="py-2">Why It Works</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="border-b border-[var(--grid)]">
+                <td class="py-2 pr-4 font-semibold">Bitter gourd <span
+                    class="text-xs text-[var(--ink-soft)]">(Pavakka)</span></td>
+                <td class="py-2 pr-4">Yardlong beans / Cowpea <span
+                    class="text-xs text-[var(--ink-soft)]">(Payar)</span></td>
+                <td class="py-2 text-xs text-[var(--ink-soft)]">Shared trellis, beans fix nitrogen the gourd needs,
+                  staggered harvest timing</td>
+              </tr>
+              <tr class="border-b border-[var(--grid)]">
+                <td class="py-2 pr-4 font-semibold">Ridge gourd <span
+                    class="text-xs text-[var(--ink-soft)]">(Peechinga)</span></td>
+                <td class="py-2 pr-4">Amaranthus <span class="text-xs text-[var(--ink-soft)]">(Cheera)</span></td>
+                <td class="py-2 text-xs text-[var(--ink-soft)]">Fast-growing leafy crop fills ground space while the
+                  vine establishes overhead</td>
+              </tr>
+              <tr class="border-b border-[var(--grid)]">
+                <td class="py-2 pr-4 font-semibold">Ash gourd <span
+                    class="text-xs text-[var(--ink-soft)]">(Kumbalanga)</span></td>
+                <td class="py-2 pr-4">Cowpea <span class="text-xs text-[var(--ink-soft)]">(Payar)</span></td>
+                <td class="py-2 text-xs text-[var(--ink-soft)]">Same nitrogen-fixing logic; both tolerate similar
+                  watering schedules</td>
+              </tr>
+              <tr class="border-b border-[var(--grid)]">
+                <td class="py-2 pr-4 font-semibold">Okra <span class="text-xs text-[var(--ink-soft)]">(Vendakka)</span>
+                </td>
+                <td class="py-2 pr-4">Beans</td>
+                <td class="py-2 text-xs text-[var(--ink-soft)]">Complementary root depth — beans shallow, okra deep —
+                  reduces competition</td>
+              </tr>
+              <tr class="border-b border-[var(--grid)]">
+                <td class="py-2 pr-4 font-semibold">Coconut</td>
+                <td class="py-2 pr-4">Pepper, banana, cocoa</td>
+                <td class="py-2 text-xs text-[var(--ink-soft)]">Traditional multi-tier Kerala homestead system — already
+                  your flagship feature</td>
+              </tr>
+              <tr>
+                <td class="py-2 pr-4 font-semibold">Rice <span
+                    class="text-xs text-[var(--ink-soft)]">(Kuttanad-style)</span></td>
+                <td class="py-2 pr-4">Fish (integrated rice-fish)</td>
+                <td class="py-2 text-xs text-[var(--ink-soft)]">Traditional Kuttanad practice — fish control pests, add
+                  nutrients to paddy water</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="font-semibold text-sm mt-6 mb-2">New tool — <code
+            class="font-mono text-xs">companion_rules_lookup</code></p>
+        <pre><code>{
+  "name": "companion_rules_lookup",
+  "description": "Looks up traditional/folk companion-planting pairs for a crop from a curated rules table. Call this FIRST when suggesting intercrops -- it's faster and more reliable for well-known local pairings than semantic search. Call kau_knowledge_search afterward only to add supporting agronomic detail.",
+  "parameters": {
+    "type": "object",
+    "properties": { "crop_name": {"type": "string"} },
+    "required": ["crop_name"]
+  }
+}</code></pre>
+        <p class="text-xs text-[var(--ink-soft)] mt-3">Start this table with 15–20 pairs covering your Kerala crop list
+          — a half-day of research against agricultural extension sources, not a data-collection project.</p>
+      </section>
+
+      <!-- 12 VOICE / TONE -->
+      <section id="voice" class="px-6 lg:px-14 py-16 max-w-5xl border-t border-[var(--grid)] pb-24">
+        <p class="font-mono text-xs text-[var(--blue)] tracking-widest uppercase">12</p>
+        <h2 class="font-display font-bold text-2xl mt-1">Sound Like an Expert, Not an AI</h2>
+        <p class="text-[var(--ink-soft)] mt-3 max-w-2xl">
+          This is a prompt-engineering problem, not a model problem — the same underlying tool-calling
+          agent can sound like a printout or like an experienced local extension officer, purely based on
+          how the final answer is phrased.
+        </p>
+
+        <div class="grid md:grid-cols-2 gap-4 mt-8">
+          <div class="bp-box p-4" style="border-color:#B3432E;">
+            <p class="tag" style="background:#FDEBEA;color:#8C2D25;border-color:#E9A5A0;">Sounds like an AI</p>
+            <p class="text-sm mt-2 italic text-[var(--ink-soft)]">"Based on my analysis of your input parameters, I
+              recommend Coconut with 92% confidence."</p>
+          </div>
+          <div class="bp-box p-4" style="border-color:var(--mvp);">
+            <p class="tag tag-verified">Sounds like an expert</p>
+            <p class="text-sm mt-2 italic">"This land wants coconut. The soil and rain here match what it needs closely
+              — plant in Edavam-Midhunam, right as the monsoon settles in, same as it's always been done here."</p>
+          </div>
+        </div>
+
+        <p class="font-semibold text-sm mt-8 mb-2">Additional system prompt rules (append to Section 07's prompt)</p>
+        <pre><code>10. Never say "As an AI," "based on my analysis," or reference confidence
+    scores in the main answer text -- speak with the plain confidence of an
+    experienced local farmer or agricultural extension officer.
+11. Always call crop_calendar_lookup before weather_lookup when timing is
+    involved. Lead with the traditional Malayalam month window; use weather
+    only as a secondary caution, never as the primary timing driver.
+12. Always call companion_rules_lookup before kau_knowledge_search when
+    suggesting intercrops. Use the folk-wisdom pairing as the headline
+    suggestion; use KAU retrieval only to add supporting detail underneath.
+13. Reference Malayalam month names alongside the Gregorian range in every
+    timing-related answer (e.g. "Edavam-Midhunam (mid-May to mid-July)").
+14. Use concrete, sensory farmer language over statistics where possible --
+    "harvest when the pods snap easily" rather than "harvest at maturity."</code></pre>
+
+        <div class="bp-box p-4 mt-6 inline-block max-w-xl">
+          <p class="text-sm">The ML-Verified / AI-Reasoned confidence badges from Section 06 still show in the UI for
+            transparency — they just don't leak into the spoken answer text itself. Precision stays available to whoever
+            wants it; it doesn't get forced into every sentence.</p>
+        </div>
+      </section>
+
+      <footer class="px-6 lg:px-14 py-10 border-t border-[var(--grid)] text-xs text-[var(--ink-soft)]">
+        Agentic AI for Crop Recommendation — Proposal for Guide Approval · Draft
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    const links = document.querySelectorAll('#navlinks .nav-link');
+    const sections = document.querySelectorAll('main section[id]');
+    const spy = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          links.forEach(l => l.classList.remove('active'));
+          const a = document.querySelector('#navlinks .nav-link[href="#' + e.target.id + '"]');
+          if (a) a.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-40% 0px -55% 0px' });
+    sections.forEach(s => spy.observe(s));
+  </script>
 </body>
+
 </html>
