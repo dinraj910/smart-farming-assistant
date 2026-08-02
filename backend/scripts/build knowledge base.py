@@ -25,7 +25,12 @@ async def main():
     chunks = extract_and_chunk("data/kau_pop.pdf")
 
     # Connect to the Neon PostgreSQL database
-    conn = await asyncpg.connect(os.environ["DATABASE_URL"])
+    database_url = os.getenv("DATABASE_URL")
+
+    if not database_url:
+        raise ValueError("DATABASE_URL not found in .env file")
+
+    conn = await asyncpg.connect(database_url)
 
     # Clear old data if the script is re-run
     await conn.execute(
@@ -67,3 +72,12 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+
+
+
+
+
+
+
+
