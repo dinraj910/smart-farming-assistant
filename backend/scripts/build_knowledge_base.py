@@ -7,9 +7,13 @@ Usage:
     python scripts/build_knowledge_base.py
 """
 
-import asyncio
 import os
+import sys
 
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, PROJECT_ROOT)
+
+import asyncio
 import asyncpg
 from dotenv import load_dotenv
 
