@@ -1,5 +1,3 @@
-cd ..   # back to repo root
-cat > .gitignore << 'EOF'
 # Node / Expo
 node_modules/
 .expo/
@@ -25,6 +23,8 @@ mobile/.env
 backend/.env
 
 # ML
+backend/ml_models/**/*.pkl
+backend/ml_models/**/*.h5
 ml/**/*.h5
 ml/**/*.pkl
 ml/**/checkpoints/
@@ -34,4 +34,3 @@ ml/**/datasets/
 .DS_Store
 .vscode/
 *.log
-EOF
