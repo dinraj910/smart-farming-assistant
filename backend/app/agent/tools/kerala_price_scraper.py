@@ -1,21 +1,21 @@
 """
-Live scraper for commodityonline.com's Kerala mandi price pages -- this is
-the only source found so far with genuine Kerala DISTRICT-level pricing for
-plantation crops (coconut, pepper, cardamom, etc.) that Agmarknet doesn't
-cover for Kerala. See market_tool.py for how this fits as Tier 0, ahead of
-the Agmarknet-based tiers.
+Live scraper for acrop.app's Kerala commodity price pages. This aggregates
+Agmarknet data across recent reporting days per market -- unlike querying
+Agmarknet directly for "today only", which is why coconut/pepper kept
+coming back empty. This is now the PRIMARY source for market_tool.py;
+district data is included on the same page, so one fetch covers both a
+Kerala state average and a per-district breakdown.
 
-IMPORTANT: this is a private commercial site, not a government open-data
-API. There is no published data contract -- if they redesign their page,
-this scraper can silently return nothing (it's built to fail safe, not to
-crash). Treat this as a best-effort live source layered on top of the
-Agmarknet fallback chain, not a sole dependency.
+Parsing strategy: the page's <meta name="description"> tag is templated
+and far more stable than scraping visual layout, so that's the primary
+extraction point. District breakdown and trend info are parsed best-effort
+from the page body and can be None without breaking the tool.
 """
 import re
 import httpx
 from bs4 import BeautifulSoup
 
-BASE = "https://www.commodityonline.com/mandiprices"
+BASE = "https://acrop.app/prices"
 
 HEADERS = {
     "User-Agent": (
@@ -24,82 +24,96 @@ HEADERS = {
     )
 }
 
-# Our internal crop key -> commodityonline's URL slug. Verified against the
-# site's own "Select Commodity" list. Extend as you test more crops.
-COMMODITYONLINE_SLUGS = {
-    "coconut": "coconut",
-    "banana": "banana",
-    "pepper": "black-pepper",
-    "black pepper": "black-pepper",
-    "cardamom": "cardamom",
-    "rubber": "rubber",
-    "arecanut": "arecanut-betelnut-supari",
-    "cocoa": "cocoa",
-    "tapioca": "tapioca",
-    "cassava": "tapioca",
-    "jackfruit": "jack-fruit",
-    "ginger": "ginger-green",
-    "rice": "rice",
-    "maize": "maize",
-    "turmeric": "turmeric",
+# Our internal crop key -> acrop.app's URL slug. Ones marked "confirmed"
+# were seen directly on the site; others are best-effort guesses that fail
+# gracefully (empty result) if wrong -- fix by testing and correcting.
+ACROP_SLUGS = {
+    "coconut": "coconut",           # confirmed
+    "banana": "banana",             # confirmed
+    "banana - green": "bananagreen",
+    "raw banana": "bananagreen",
+    "arecanut": "arecanut",         # confirmed
+    "cocoa": "cocoa",               # confirmed
+    "copra": "copra",               # confirmed
+    "coffee": "coffee",             # confirmed
+    "ginger": "ginger",             # confirmed
+    "dried ginger": "dryginger",    # confirmed
+    "pepper": "blackpepper",        # confirmed
+    "black pepper": "blackpepper",  # confirmed
+    "pigeonpeas": "tur",            # confirmed
+    "chickpea": "chana",            # confirmed
+    "blackgram": "urad",            # confirmed
+    "mungbean": "moong",            # confirmed
+    "grapes": "grapes",             # confirmed
+    "rice": "rice",                 # guess
+    "maize": "maize",               # guess
+    "cardamom": "cardamom",         # guess
+    "rubber": "rubber",             # guess
+    "tapioca": "tapioca",           # guess
+    "cassava": "tapioca",           # guess
+    "jackfruit": "jackfruit",       # guess
+    "cotton": "cotton",             # guess
+    "mango": "mango",               # guess
+    "papaya": "papaya",             # guess
+    "watermelon": "watermelon",     # guess
+    "pomegranate": "pomegranate",   # guess
+    "kidneybeans": "rajma",         # guess
 }
 
-# Our internal district key (matches weather_tool.py's KERALA_DISTRICT_COORDS
-# keys) -> commodityonline's URL slug. Most are identical; a couple differ.
-KERALA_DISTRICT_SLUGS = {
-    "thiruvananthapuram": "thiruvananthapuram",
-    "kollam": "kollam",
-    "pathanamthitta": "pathanamthitta",
-    "alappuzha": "alappuzha",
-    "kottayam": "kottayam",
-    "idukki": "idukki",
-    "ernakulam": "ernakulam",
-    "thrissur": "thrissur",
-    "palakkad": "palakkad",
-    "malappuram": "malappuram",
-    "kozhikode": "kozhikode-calicut",
-    "wayanad": "wayanad",
-    "kannur": "kannur",
-    "kasaragod": "kasargod",
+KERALA_DISTRICTS = {
+    "thiruvananthapuram", "thrissur", "kollam", "ernakulam", "kottayam",
+    "malappuram", "palakkad", "pathanamthitta", "idukki", "alappuzha",
+    "kannur", "kozhikode", "wayanad", "kasaragod",
 }
 
-_PRICE_RE = re.compile(r"Rs\s*([\d,]+)\s*/\s*Quintal", re.IGNORECASE)
+_META_RE = re.compile(
+    r"₹([\d,]+)/qtl\s*\(₹([\d.]+)/kg\)\s*avg across (\d+) APMCs?\.\s*"
+    r"Highest ₹([\d,]+) at (.+?)\.",
+    re.IGNORECASE,
+)
+_TREND_RE = re.compile(
+    r"(up|down)\s*([\d.]+)%\s*from yesterday'?s\s*₹([\d,]+)",
+    re.IGNORECASE,
+)
+_WEEK_RE = re.compile(
+    r"7-day average:\s*₹([\d,]+)\s*\(([\d.]+)%\s*(above|below)\s*last week\)",
+    re.IGNORECASE,
+)
+_DISTRICT_ROW_RE = re.compile(
+    r"([A-Za-z][A-Za-z\s]*?)\s*(\d+)\s*APMCs?\s*reporting\s*·\s*"
+    r"(\d{1,2}\s+\w+\s+\d{4})\s*Best:\s*(.+?)\s*₹\s*([\d,]+)\s*₹\s*([\d,]+)\s*Avg\.",
+    re.IGNORECASE,
+)
 
 
 def _resolve_slug(commodity: str) -> str:
     key = commodity.lower().strip()
-    if key in COMMODITYONLINE_SLUGS:
-        return COMMODITYONLINE_SLUGS[key]
-    for k, v in COMMODITYONLINE_SLUGS.items():
+    if key in ACROP_SLUGS:
+        return ACROP_SLUGS[key]
+    for k, v in ACROP_SLUGS.items():
         if key in k or k in key:
             return v
-    # Best-effort generic fallback -- may or may not resolve to a real page.
-    return re.sub(r"[^a-z0-9]+", "-", key).strip("-")
+    return re.sub(r"[^a-z0-9]+", "", key)
 
 
-def _resolve_district_slug(district: str | None) -> str | None:
+def _resolve_district_key(district: str | None) -> str | None:
     if not district:
         return None
     key = district.lower().strip().replace(" ", "")
-    for k, v in KERALA_DISTRICT_SLUGS.items():
-        if key in k or k in key:
-            return v
+    for d in KERALA_DISTRICTS:
+        if key in d or d in key:
+            return d
     return None
 
 
-async def scrape_kerala_prices(commodity: str, district: str | None = None) -> list[dict] | None:
+async def fetch_kerala_price(commodity: str, district: str | None = None) -> dict | None:
     """
-    Returns a list of price records scraped live from commodityonline.com,
-    or None if the scrape failed/found nothing -- callers should treat None
-    as "this tier didn't work, fall through to the next one", not an error.
+    Returns a dict with Kerala state average + district breakdown, or None
+    if the fetch/parse failed -- callers should fall through to the next
+    tier, not treat None as a hard error.
     """
-    commodity_slug = _resolve_slug(commodity)
-    district_slug = _resolve_district_slug(district)
-
-    if district_slug:
-        url = f"{BASE}/district/kerala/{district_slug}/{commodity_slug}"
-    else:
-        url = f"{BASE}/{commodity_slug}/kerala"
+    slug = _resolve_slug(commodity)
+    url = f"{BASE}/{slug}/kerala"
 
     try:
         async with httpx.AsyncClient(timeout=20.0, headers=HEADERS, follow_redirects=True) as client:
@@ -115,40 +129,71 @@ async def scrape_kerala_prices(commodity: str, district: str | None = None) -> l
     except Exception:
         return None
 
-    records = []
-    # Every valid data row has a link to a district page -- use that as the
-    # anchor to reliably find real price rows amid all the site's other
-    # markup, rather than guessing at table/class names that may change.
-    district_links = soup.find_all("a", href=re.compile(r"/mandiprices/district/kerala/"))
+    meta = soup.find("meta", attrs={"name": "description"})
+    meta_content = meta.get("content", "") if meta else ""
+    match = _META_RE.search(meta_content)
+    if not match:
+        return None
 
-    for link in district_links:
-        row = link.find_parent("tr")
-        if row is None:
-            continue
-        cells = row.find_all("td")
-        if len(cells) < 8:
-            continue
+    state_price_qtl, state_price_kg, apmc_count, highest_price, highest_market = match.groups()
 
-        cell_texts = [c.get_text(strip=True) for c in cells]
-        prices = _PRICE_RE.findall(row.get_text())
-        if len(prices) < 3:
-            continue
+    page_text = soup.get_text(" ", strip=True)
 
-        try:
-            min_p, max_p, avg_p = (int(p.replace(",", "")) for p in prices[:3])
-        except ValueError:
-            continue
+    trend = None
+    trend_match = _TREND_RE.search(page_text)
+    if trend_match:
+        direction, pct, yesterday_price = trend_match.groups()
+        trend = {
+            "direction": direction.lower(),
+            "change_pct": float(pct),
+            "yesterday_price_per_quintal": int(yesterday_price.replace(",", "")),
+        }
 
-        records.append({
-            "commodity": cell_texts[0] if len(cell_texts) > 0 else commodity,
-            "arrival_date": cell_texts[1] if len(cell_texts) > 1 else None,
-            "variety": cell_texts[2] if len(cell_texts) > 2 else None,
-            "district": link.get_text(strip=True),
-            "market": cell_texts[5] if len(cell_texts) > 5 else None,
-            "min_price_per_quintal": min_p,
-            "max_price_per_quintal": max_p,
-            "modal_price_per_quintal": avg_p,
-            "modal_price_per_kg": round(avg_p / 100, 2),
+    week_trend = None
+    week_match = _WEEK_RE.search(page_text)
+    if week_match:
+        week_avg, week_pct, week_dir = week_match.groups()
+        week_trend = {
+            "seven_day_average_per_quintal": int(week_avg.replace(",", "")),
+            "change_pct": float(week_pct),
+            "direction": week_dir.lower(),
+        }
+
+    districts = []
+    for m in _DISTRICT_ROW_RE.finditer(page_text):
+        d_name, apmc_n, date, best_market, best_price, avg_price = m.groups()
+        districts.append({
+            "district": d_name.strip(),
+            "apmc_count": int(apmc_n),
+            "reporting_date": date.strip(),
+            "best_market": best_market.strip(),
+            "best_price_per_quintal": int(best_price.replace(",", "")),
+            "avg_price_per_quintal": int(avg_price.replace(",", "")),
         })
 
-    return records if records else None
+    result = {
+        "state_average_price_per_quintal": int(state_price_qtl.replace(",", "")),
+        "state_average_price_per_kg": float(state_price_kg),
+        "apmc_count": int(apmc_count),
+        "highest_price_per_quintal": int(highest_price.replace(",", "")),
+        "highest_price_market": highest_market.strip(),
+        "trend_vs_yesterday": trend,
+        "trend_vs_last_week": week_trend,
+        "district_breakdown": districts,
+    }
+
+    district_key = _resolve_district_key(district)
+    if district_key and districts:
+        match_row = next(
+            (d for d in districts if district_key in d["district"].lower().replace(" ", "")),
+            None,
+        )
+        if match_row:
+            result["requested_district_data"] = match_row
+        else:
+            result["requested_district_note"] = (
+                f"{district} isn't currently reporting for this crop -- "
+                f"showing the Kerala state average instead."
+            )
+
+    return result
