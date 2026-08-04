@@ -33,12 +33,12 @@ async def test_scenario(name: str, message: str):
 
 async def main():
     scenario_a_msg = (
-        "My soil has N=40 P=30 K=35 pH=5.8, 1 acre in Kottayam. "
-        "What should I plant, and what grows well alongside it?"
+        "My soil has N=40 P=30 K=35 pH=6.2, 1 acre in Kottayam. "
+        "Can i plant coconuts now? If not when should i plant it? what will be the price of the coconuts?"
     )
     
     scenario_b_msg = (
-        "Is my land in Wayanad suitable for growing cardamom, and when should I plant it?"
+        "What will be the price of paddy in December 2026?"
     )
 
     await test_scenario("Scenario A - Crop IN the training set", scenario_a_msg)
