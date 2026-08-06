@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
-  TextInput, Image, Platform
+  TextInput, Image, Platform, KeyboardAvoidingView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -55,7 +55,10 @@ export default function AgentSelectScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+    <KeyboardAvoidingView 
+      style={{ flex: 1, backgroundColor: '#f8fafc' }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       {/* Header */}
       <SafeAreaView edges={['top']} style={{ backgroundColor: '#fff' }}>
         <View style={styles.header}>
@@ -145,7 +148,7 @@ export default function AgentSelectScreen() {
           </Text>
         </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

@@ -64,8 +64,7 @@ export default function HomeScreen() {
   };
 
   const openFieldDetail = (fieldId: string) => {
-    // Navigate to field detail through the Farms tab or directly
-    (navigation as any).navigate('Main', { screen: 'Farms' });
+    (navigation as any).navigate('FieldDetail', { fieldId });
   };
 
   return (

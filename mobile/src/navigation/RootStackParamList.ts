@@ -2,6 +2,7 @@ export type RootStackParamList = {
   Welcome: undefined;
   Main: { screen?: string } | undefined;
   AgentChat: { fieldId: string };
+  FieldDetail: { fieldId: string };
 };
 
 export type MainTabParamList = {

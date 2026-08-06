@@ -7,6 +7,7 @@ import { RootStackParamList } from './src/navigation/RootStackParamList';
 import WelcomeScreen     from './src/screens/WelcomeScreen';
 import MainTabNavigator  from './src/navigation/MainTabNavigator';
 import AgentChatScreen   from './src/screens/AgentChatScreen';
+import FieldDetailScreen from './src/screens/FieldDetailScreen';
 
 import "./global.css";
 
@@ -25,6 +26,7 @@ export default function App() {
         <Stack.Screen name="Welcome"   component={WelcomeScreen}    />
         <Stack.Screen name="Main"      component={MainTabNavigator} options={{ animation: 'fade' }} />
         <Stack.Screen name="AgentChat" component={AgentChatScreen}  />
+        <Stack.Screen name="FieldDetail" component={FieldDetailScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

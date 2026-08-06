@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 // ─── Registered plots ─────────────────────────────────────────────────────────
 interface Plot {
@@ -45,6 +46,7 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; border: string }
 };
 
 export default function FarmsScreen() {
+  const navigation = useNavigation();
   const [plots, setPlots] = useState<Plot[]>(INITIAL_PLOTS);
   const [modalOpen, setModalOpen] = useState(false);
   const [plotName, setPlotName] = useState('');
@@ -146,7 +148,12 @@ export default function FarmsScreen() {
             {plots.map((plot) => {
               const st = STATUS_STYLES[plot.status] || STATUS_STYLES['Inspection Due'];
               return (
-                <TouchableOpacity key={plot.id} style={S.plotCard} activeOpacity={0.8}>
+                <TouchableOpacity 
+                  key={plot.id} 
+                  style={S.plotCard} 
+                  activeOpacity={0.8}
+                  onPress={() => (navigation as any).navigate('FieldDetail', { fieldId: plot.id })}
+                >
                   <Image source={{ uri: plot.image }} style={S.plotImage} />
                   <View style={{ flex: 1, gap: 4 }}>
                     <View style={S.plotTopRow}>
