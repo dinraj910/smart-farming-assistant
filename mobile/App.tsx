@@ -4,8 +4,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './src/navigation/RootStackParamList';
 
 // Screens
-import WelcomeScreen from './src/screens/WelcomeScreen';
-import MainTabNavigator from './src/navigation/MainTabNavigator';
+import WelcomeScreen     from './src/screens/WelcomeScreen';
+import MainTabNavigator  from './src/navigation/MainTabNavigator';
+import AgentChatScreen   from './src/screens/AgentChatScreen';
 
 import "./global.css";
 
@@ -18,11 +19,12 @@ export default function App() {
         initialRouteName="Welcome"
         screenOptions={{
           headerShown: false,
-          animation: 'fade',
+          animation: 'slide_from_right',
         }}
       >
-        <Stack.Screen name="Welcome" component={WelcomeScreen} />
-        <Stack.Screen name="Main"    component={MainTabNavigator} />
+        <Stack.Screen name="Welcome"   component={WelcomeScreen}    />
+        <Stack.Screen name="Main"      component={MainTabNavigator} options={{ animation: 'fade' }} />
+        <Stack.Screen name="AgentChat" component={AgentChatScreen}  />
       </Stack.Navigator>
     </NavigationContainer>
   );

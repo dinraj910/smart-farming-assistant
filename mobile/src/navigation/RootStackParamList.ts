@@ -1,12 +1,14 @@
 export type RootStackParamList = {
   Welcome: undefined;
-  Main: undefined;
+  Main: { screen?: string } | undefined;
+  AgentChat: { fieldId: string };
 };
 
 export type MainTabParamList = {
-  Home: undefined;
-  Doctor: undefined;
-  Weather: undefined;
-  Market: undefined;
-  Farms: undefined;
+  Home:      undefined;
+  Assistant: undefined;
+  Doctor:    undefined;
+  Weather:   undefined;
+  Market:    undefined;
+  Farms:     undefined;
 };

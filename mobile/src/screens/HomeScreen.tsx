@@ -1,555 +1,673 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
-  View, Text, ScrollView, ImageBackground, Image,
-  TextInput, TouchableOpacity, StyleSheet, Animated, Alert, Platform
+  View, Text, ScrollView, Image, TextInput,
+  TouchableOpacity, StyleSheet, Animated, Alert, Platform, FlatList
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
-import Constants from 'expo-constants';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/RootStackParamList';
 
 // ─── Hourly Weather Data ─────────────────────────────────────────────────────
 const HOURLY = [
-  { hour: '09', icon: 'cloud',      temp: '28°', active: false, color: '#64748b' },
-  { hour: '10', icon: 'cloud',      temp: '30°', active: false, color: '#64748b' },
-  { hour: '11', icon: 'sun',        temp: '32°', active: true,  color: '#f59e0b' },
-  { hour: '12', icon: 'sun',        temp: '36°', active: false, color: '#f59e0b' },
-  { hour: '13', icon: 'cloud-rain', temp: '35°', active: false, color: '#0ea5e9' },
-  { hour: '14', icon: 'cloud',      temp: '34°', active: false, color: '#64748b' },
+  { hour: '09', icon: 'cloud',      temp: '28°', active: false },
+  { hour: '10', icon: 'cloud',      temp: '30°', active: false },
+  { hour: '11', icon: 'sun',        temp: '32°', active: true  },
+  { hour: '12', icon: 'sun',        temp: '36°', active: false },
+  { hour: '13', icon: 'cloud-rain', temp: '35°', active: false },
+  { hour: '14', icon: 'cloud',      temp: '34°', active: false },
 ];
 
-// ─── Quick Actions ────────────────────────────────────────────────────────────
+// ─── Quick Action Grid ────────────────────────────────────────────────────────
 const QUICK_ACTIONS = [
-  { id: 'crop',    icon: 'feather',     label: 'Crop AI',      sub: 'Soil & Yield',   bg: '#dcfce7', color: '#15803d', tab: 'Home'    },
-  { id: 'doctor',  icon: 'camera',      label: 'Leaf Doctor',  sub: 'Disease Vision', bg: '#ffe4e6', color: '#be123c', tab: 'Doctor'  },
-  { id: 'weather', icon: 'cloud-rain',  label: 'Weather',      sub: 'Rain Alert',     bg: '#e0f2fe', color: '#0369a1', tab: 'Weather' },
-  { id: 'market',  icon: 'trending-up', label: 'Mandi Radar',  sub: 'Kerala & TN',    bg: '#fef3c7', color: '#b45309', tab: 'Market'  },
+  { id: 'agent',   icon: 'zap',         label: 'Farm Assistant', sub: 'Ask about a field',    bg: '#dcfce7', color: '#15803d', tab: 'AgentSelect' },
+  { id: 'doctor',  icon: 'camera',      label: 'Leaf Doctor',    sub: 'Disease Diagnosis',    bg: '#fee2e2', color: '#b91c1c', tab: 'Doctor'      },
+  { id: 'weather', icon: 'cloud-rain',  label: 'Rain Forecast',  sub: 'Spraying Radar',       bg: '#e0f2fe', color: '#0369a1', tab: 'Weather'     },
+  { id: 'market',  icon: 'trending-up', label: 'Mandi Prices',   sub: 'Rubber & Pepper',      bg: '#fef3c7', color: '#b45309', tab: 'Market'      },
 ];
 
-// ─── Soil result data ─────────────────────────────────────────────────────────
-type LangKey = 'en' | 'ml';
+// ─── My Fields Data ───────────────────────────────────────────────────────────
+const MY_FIELDS = [
+  {
+    id: 'F1',
+    name: 'Pepper & Hybrid Coconut Field',
+    tag: 'Wayanad Plot #F3 • 2.4 Acres',
+    monitoring: 'Continuous AI Monitoring: Active',
+    image: 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&w=800&q=80',
+    large: true,
+  },
+  {
+    id: 'F2',
+    name: 'Palakkad Nendran Banana Field',
+    tag: 'Palakkad #F2 • 1.8 Acres',
+    image: 'https://images.unsplash.com/photo-1528825871115-3581a5387919?auto=format&fit=crop&w=800&q=80',
+    large: false,
+  },
+];
 
-interface HomeScreenProps {
-  navigation: any;
-}
+export default function HomeScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const heroAnim = useRef(new Animated.Value(0)).current;
 
-export default function HomeScreen({ navigation }: HomeScreenProps) {
-  const [lang, setLang] = useState<LangKey>('en');
-  const [n, setN] = useState('85');
-  const [p, setP] = useState('42');
-  const [k, setK] = useState('140');
-  const [ph, setPh] = useState('6.2');
-  const [cropResult, setCropResult] = useState({
-    name: 'Black Pepper + Coconut Homestead',
-    yield: '96%',
-    profit: 'Best match based on your soil profile.',
-    alternatives: ['Cocoa', 'Nendran Banana']
-  });
-
-  const labels = {
-    en: {
-      greeting: 'Hello Rajesh Nair',
-      date: 'Monday, 30 Jul 2026',
-      slogan: 'Farming Made\nSimple, Smarter,\nand Sustainable',
-      langBtn: 'മലയാളം',
-      quickTitle: 'Quick Assistant Actions',
-      soilTitle: 'Soil Intelligence & Crop AI',
-      location: 'Wayanad Location',
-      runAi: 'Run Crop Recommendation Engine',
-      plotTitle: 'My Registered Plots',
-      weatherCondition: 'Bright and Sunny',
-      weatherStatus: 'Stable for plant growth',
-    },
-    ml: {
-      greeting: 'നമസ്കാരം, രാജേഷ് നായർ',
-      date: 'തിങ്കൾ, 30 ജൂലൈ 2026',
-      slogan: 'കൃഷി ഇനി\nലളിതവും, കാര്യക്ഷമവും,\nസുസ്ഥിരവുമാക്കാം',
-      langBtn: 'English',
-      quickTitle: 'പ്രധാന സേവനങ്ങൾ',
-      soilTitle: 'മണ്ണ് വിശകലനം & വിള ഉപദേശം',
-      location: 'വയനാട് ലൊക്കേഷൻ',
-      runAi: 'വിള നിർദ്ദേശം പരിശോധിക്കുക',
-      plotTitle: 'എന്റെ തോട്ടങ്ങൾ',
-      weatherCondition: 'നല്ല തെളിഞ്ഞ വെയിൽ',
-      weatherStatus: 'വിളവളർച്ചയ്ക്ക് അനുയോജ്യം',
-    },
+  // Navigate to the appropriate tab
+  const handleQuickAction = (tab: string) => {
+    if (tab === 'AgentSelect') {
+      (navigation as any).navigate('Main', { screen: 'Assistant' });
+    } else {
+      (navigation as any).navigate('Main', { screen: tab });
+    }
   };
 
-  const t = labels[lang];
+  const openAgentHub = () => {
+    (navigation as any).navigate('Main', { screen: 'Assistant' });
+  };
 
-  function toggleLang() {
-    setLang(l => l === 'en' ? 'ml' : 'en');
-  }
-
-  async function runCropAI() {
-    const nVal = parseFloat(n) || 0;
-    const pVal = parseFloat(p) || 0;
-    const kVal = parseFloat(k) || 0;
-    const phVal = parseFloat(ph) || 6.5;
-
-    // Hardcoded weather values for Kerala context since UI doesn't have them
-    const temperature = 28.0;
-    const humidity = 80.0;
-    const rainfall = 200.0;
-
-    // Dynamically resolve the backend URL (handles physical devices via Expo)
-    const hostUri = Constants?.expoConfig?.hostUri;
-    let backendUrl = 'http://localhost:8000';
-    if (hostUri) {
-      backendUrl = `http://${hostUri.split(':')[0]}:8000`;
-    } else if (Platform.OS === 'android') {
-      backendUrl = 'http://10.0.2.2:8000';
-    }
-
-    try {
-      const response = await fetch(`${backendUrl}/api/v1/crop-recommendation`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          nitrogen: nVal,
-          phosphorus: pVal,
-          potassium: kVal,
-          temperature,
-          humidity,
-          ph: phVal,
-          rainfall
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch recommendation');
-      }
-
-      const data = await response.json();
-      
-      setCropResult({
-        name: data.recommended_crop,
-        yield: `${(data.confidence_score * 100).toFixed(1)}%`,
-        profit: data.explanation,
-        alternatives: data.alternatives.map((alt: any) => alt.crop)
-      });
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Error", "Could not connect to the backend AI service.");
-      // Fallback
-      if (nVal > 80) {
-        setCropResult({ name: 'Black Pepper + Coconut Homestead', yield: '96%', profit: 'Fallback match based on high N.', alternatives: ['Cocoa'] });
-      } else {
-        setCropResult({ name: 'Nendran Banana Plantation', yield: '85%', profit: 'Fallback match based on low N.', alternatives: ['Papaya'] });
-      }
-    }
-  }
-
-  function goToTab(tabName: string) {
-    navigation.navigate(tabName);
-  }
+  const openFieldDetail = (fieldId: string) => {
+    // Navigate to field detail through the Farms tab or directly
+    (navigation as any).navigate('Main', { screen: 'Farms' });
+  };
 
   return (
-    <View style={S.root}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <View style={{ flex: 1, backgroundColor: '#f1f5f9' }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
+        {/* ── HERO BANNER ─────────────────────────────────── */}
+        <View style={styles.hero}>
+          <Image
+            source={{ uri: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80' }}
+            style={StyleSheet.absoluteFillObject}
+            resizeMode="cover"
+          />
+          {/* gradient overlay */}
+          <View style={styles.heroOverlay} />
 
-        {/* ── HERO SECTION ─────────────────────────────────────────────── */}
-        <ImageBackground
-          source={{ uri: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80' }}
-          style={S.hero}
-        >
-          {/* Gradient overlay */}
-          <View style={S.heroOverlay} />
-
-          <SafeAreaView edges={['top']} style={S.heroContent}>
-
-            {/* Top Row */}
-            <View style={S.topRow}>
-              <View>
-                <Text style={S.greetingText}>{t.greeting}</Text>
-                <Text style={S.dateText}>{t.date}</Text>
-              </View>
-              <View style={S.topRowRight}>
-                {/* Language toggle pill */}
-                <TouchableOpacity onPress={toggleLang} style={S.langPill}>
-                  <Feather name="globe" size={11} color="#6ee7b7" />
-                  <Text style={S.langPillText}>{t.langBtn}</Text>
-                </TouchableOpacity>
-                {/* Avatar */}
-                <View style={S.avatarRing}>
+          {/* Safe area inset + status */}
+          <SafeAreaView edges={['top']}>
+            <View style={styles.heroContent}>
+              {/* Top row */}
+              <View style={styles.heroTopRow}>
+                <View>
+                  <Text style={styles.greetingText}>Hello Rajesh Nair</Text>
+                  <Text style={styles.dateText}>Monday, 30 Jul 2026</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.avatarBtn}
+                  onPress={() => (navigation as any).navigate('Main', { screen: 'Farms' })}
+                >
                   <Image
                     source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80' }}
-                    style={S.avatar}
+                    style={styles.avatar}
                   />
-                </View>
-              </View>
-            </View>
-
-            {/* Headline Slogan */}
-            <Text style={S.slogan}>{t.slogan}</Text>
-
-            {/* Search Row */}
-            <View style={S.searchRow}>
-              <View style={S.searchPill}>
-                <Feather name="search" size={15} color="rgba(255,255,255,0.9)" />
-                <TextInput
-                  placeholder="Search places, crops, pests..."
-                  placeholderTextColor="rgba(255,255,255,0.75)"
-                  style={S.searchInput}
-                />
-              </View>
-              <TouchableOpacity style={S.mapBtn}>
-                <Feather name="map-pin" size={16} color="#1e293b" />
-              </TouchableOpacity>
-            </View>
-
-            {/* ── Glassmorphic Weather Widget ───────────────────────────── */}
-            <View style={S.weatherCard}>
-              {/* Hourly strip */}
-              <View style={S.hourlyRow}>
-                {HOURLY.map((h, i) => (
-                  <View key={i} style={[S.hourItem, h.active && S.hourItemActive]}>
-                    <Text style={[S.hourTime, h.active && S.hourTextActive]}>{h.hour}</Text>
-                    <Feather
-                      name={h.icon as any}
-                      size={13}
-                      color={h.active ? 'white' : h.color}
-                    />
-                    <Text style={[S.hourTemp, h.active && S.hourTextActive]}>{h.temp}</Text>
-                  </View>
-                ))}
+                </TouchableOpacity>
               </View>
 
-              {/* Weather details bottom */}
-              <View style={S.weatherBottom}>
-                <View>
-                  <Text style={S.weatherDate}>{t.date}</Text>
-                  <Text style={S.weatherTemp}>32°C</Text>
-                  <View style={S.weatherCondRow}>
-                    <Feather name="cloud" size={11} color="#64748b" />
-                    <Text style={S.weatherCondText}>Weather</Text>
-                  </View>
-                </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <View style={S.sunnyRow}>
-                    <Feather name="sun" size={13} color="#f59e0b" />
-                    <Text style={S.sunnyText}>{t.weatherCondition}</Text>
-                  </View>
-                  <View style={S.growthBadge}>
-                    <Feather name="feather" size={10} color="#15803d" />
-                    <Text style={S.growthText}>{t.weatherStatus}</Text>
-                  </View>
-                </View>
+              {/* Slogan */}
+              <Text style={styles.slogan}>{'Farming Made\nSimple, Smarter,\nand Sustainable'}</Text>
+
+              {/* Search / Agent launcher */}
+              <View style={styles.searchRow}>
+                <TouchableOpacity style={styles.searchBar} onPress={openAgentHub} activeOpacity={0.8}>
+                  <Feather name="zap" size={16} color="#34d399" />
+                  <Text style={styles.searchPlaceholder}>Ask about your farm...</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.micBtn} onPress={openAgentHub} activeOpacity={0.85}>
+                  <Feather name="mic" size={16} color="#fff" />
+                </TouchableOpacity>
               </View>
-            </View>
 
-          </SafeAreaView>
-        </ImageBackground>
-
-        {/* ── CONTENT BODY ─────────────────────────────────────────────── */}
-        <View style={S.body}>
-
-          {/* Quick Actions 2×2 Grid */}
-          <Text style={S.sectionTitle}>{t.quickTitle}</Text>
-          <View style={S.gridRow}>
-            {QUICK_ACTIONS.map((a) => (
-              <TouchableOpacity
-                key={a.id}
-                style={S.actionCard}
-                onPress={() => goToTab(a.tab)}
-                activeOpacity={0.8}
-              >
-                <View style={[S.actionIcon, { backgroundColor: a.bg }]}>
-                  <Feather name={a.icon as any} size={18} color={a.color} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={S.actionLabel}>{a.label}</Text>
-                  <Text style={S.actionSub}>{a.sub}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* ── Soil Intelligence & Crop AI Form ─────────────────────── */}
-          <View style={S.soilCard}>
-            <View style={S.soilHeader}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Feather name="sliders" size={14} color="#15803d" />
-                <Text style={S.soilTitle}>{t.soilTitle}</Text>
-              </View>
-              <View style={S.locationBadge}>
-                <Text style={S.locationBadgeText}>{t.location}</Text>
-              </View>
-            </View>
-
-            {/* NPK + pH inputs */}
-            <View style={S.inputGrid}>
-              {[
-                { label: 'Nitrogen (N)',    val: n,  set: setN  },
-                { label: 'Phosphorus (P)',  val: p,  set: setP  },
-                { label: 'Potassium (K)',   val: k,  set: setK  },
-                { label: 'Soil pH Level',  val: ph, set: setPh },
-              ].map((field) => (
-                <View key={field.label} style={S.inputBox}>
-                  <Text style={S.inputLabel}>{field.label}</Text>
-                  <TextInput
-                    value={field.val}
-                    onChangeText={field.set}
-                    keyboardType="numeric"
-                    style={S.inputField}
-                  />
-                </View>
-              ))}
-            </View>
-
-            <TouchableOpacity style={S.runBtn} onPress={runCropAI} activeOpacity={0.85}>
-              <Feather name="zap" size={15} color="white" />
-              <Text style={S.runBtnText}>{t.runAi}</Text>
-            </TouchableOpacity>
-
-            {/* AI Result Box */}
-            <View style={S.resultBox}>
-              <View style={S.resultTopRow}>
-                <View>
-                  <Text style={S.resultLabel}>AI Best Match</Text>
-                  <Text style={S.resultCropName}>{cropResult.name}</Text>
-                </View>
-                <View style={S.fitBadge}>
-                  <Text style={S.fitBadgeText}>96% Fit</Text>
-                </View>
-              </View>
-              <View style={S.resultDivider} />
-              <Text style={S.resultStat}>
-                <Text style={{ fontWeight: '700' }}>Confidence: </Text>{cropResult.yield}
-              </Text>
-              <Text style={S.resultStat}>
-                <Text style={{ fontWeight: '700' }}>AI Note: </Text>
-                <Text style={{ color: '#fcd34d', fontWeight: '700' }}>{cropResult.profit}</Text>
-              </Text>
-
-              {/* Intercrop matrix */}
-              <View style={S.intercropBox}>
-                <Text style={S.intercropTitle}>🌱 Recommended Alternatives</Text>
-                <View style={S.intercropTags}>
-                  {cropResult.alternatives.map(tag => (
-                    <View key={tag} style={S.intercropTag}>
-                      <Text style={S.intercropTagText}>{tag}</Text>
+              {/* Weather Glass Card */}
+              <View style={styles.weatherCard}>
+                {/* Hourly strip */}
+                <View style={styles.hourlyRow}>
+                  {HOURLY.map((h) => (
+                    <View key={h.hour} style={[styles.hourItem, h.active && styles.hourItemActive]}>
+                      <Text style={[styles.hourText, h.active && styles.hourTextActive]}>{h.hour}</Text>
+                      <Feather
+                        name={h.icon as any}
+                        size={13}
+                        color={h.active ? '#fff' : h.icon === 'cloud-rain' ? '#0ea5e9' : h.icon === 'sun' ? '#f59e0b' : '#64748b'}
+                      />
+                      <Text style={[styles.hourTemp, h.active && styles.hourTempActive]}>{h.temp}</Text>
                     </View>
                   ))}
                 </View>
+
+                {/* Bottom info */}
+                <View style={styles.weatherBottom}>
+                  <View>
+                    <Text style={styles.weatherDateLabel}>Monday, 30 Jul 2026</Text>
+                    <Text style={styles.weatherTemp}>32°C</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <Feather name="map-pin" size={11} color="#16a34a" />
+                      <Text style={styles.weatherLocation}>Wayanad District</Text>
+                    </View>
+                  </View>
+                  <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <Feather name="sun" size={13} color="#f59e0b" />
+                      <Text style={styles.weatherCondition}>Sunny & humid</Text>
+                    </View>
+                    <View style={styles.cropBadge}>
+                      <Feather name="droplet" size={10} color="#15803d" />
+                      <Text style={styles.cropBadgeText}>Good for Pepper & Palms</Text>
+                    </View>
+                  </View>
+                </View>
               </View>
+            </View>
+          </SafeAreaView>
+        </View>
+
+        {/* ── BODY CONTENT ──────────────────────────────────── */}
+        <View style={styles.body}>
+
+          {/* Agent Quick Launch Banner */}
+          <TouchableOpacity style={styles.agentBanner} onPress={openAgentHub} activeOpacity={0.9}>
+            <View style={{ flex: 1, paddingRight: 8 }}>
+              <View style={styles.agentBannerBadge}>
+                <Text style={styles.agentBannerBadgeText}>✨ Farm Assistant</Text>
+              </View>
+              <Text style={styles.agentBannerTitle}>Ask about any of your fields</Text>
+              <Text style={styles.agentBannerSub}>Pick a field, then ask in your own words.</Text>
+            </View>
+            <View style={styles.agentBannerArrow}>
+              <Feather name="arrow-right" size={20} color="#15803d" />
+            </View>
+          </TouchableOpacity>
+
+          {/* Quick Actions Grid */}
+          <View>
+            <Text style={styles.sectionTitle}>Quick Assistant Actions</Text>
+            <View style={styles.quickGrid}>
+              {QUICK_ACTIONS.map((action) => (
+                <TouchableOpacity
+                  key={action.id}
+                  style={styles.quickCard}
+                  onPress={() => handleQuickAction(action.tab)}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.quickIcon, { backgroundColor: action.bg }]}>
+                    <Feather name={action.icon as any} size={20} color={action.color} />
+                  </View>
+                  <View>
+                    <Text style={styles.quickLabel}>{action.label}</Text>
+                    <Text style={styles.quickSub}>{action.sub}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
 
-          {/* ── My Registered Plots ───────────────────────────────────── */}
-          <View style={S.plotsHeader}>
-            <Text style={S.sectionTitle}>{t.plotTitle}</Text>
-            <TouchableOpacity onPress={() => goToTab('Farms')}>
-              <Text style={S.manageLink}>Manage &gt;</Text>
-            </TouchableOpacity>
-          </View>
+          {/* My Fields Section */}
+          <View>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>My Fields (തോട്ടങ്ങൾ)</Text>
+              <TouchableOpacity onPress={() => (navigation as any).navigate('Main', { screen: 'Farms' })}>
+                <Text style={styles.viewAllBtn}>View All {'>'}</Text>
+              </TouchableOpacity>
+            </View>
 
-          {/* Field Photo Card */}
-          <TouchableOpacity style={S.fieldCard} activeOpacity={0.9} onPress={() => goToTab('Farms')}>
-            <ImageBackground
-              source={{ uri: 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&w=800&q=80' }}
-              style={S.fieldBg}
-              imageStyle={{ borderRadius: 20 }}
+            {/* Field Card #1 — Large */}
+            <TouchableOpacity
+              style={[styles.fieldCard, { height: 160 }]}
+              onPress={() => openFieldDetail('F1')}
+              activeOpacity={0.9}
             >
-              <View style={S.fieldOverlay} />
-              {/* Rating pill */}
-              <View style={S.ratingPill}>
-                <Feather name="star" size={11} color="#fcd34d" />
-                <Text style={S.ratingText}>4.9 Health</Text>
+              <Image
+                source={{ uri: MY_FIELDS[0].image }}
+                style={StyleSheet.absoluteFillObject}
+                resizeMode="cover"
+              />
+              <View style={styles.fieldGradient} />
+              {/* Tag badge */}
+              <View style={styles.fieldTagBadge}>
+                <View style={styles.fieldTagDot} />
+                <Text style={styles.fieldTagText}>{MY_FIELDS[0].tag}</Text>
               </View>
               {/* Bottom info */}
-              <View style={S.fieldBottom}>
+              <View style={styles.fieldBottom}>
                 <View>
-                  <Text style={S.fieldMeta}>Meenangadi Plot #F3 • 2.4 Acres</Text>
-                  <Text style={S.fieldName}>Wayanad Pepper & Coconut Field</Text>
+                  <Text style={styles.fieldName}>{MY_FIELDS[0].name}</Text>
+                  <Text style={styles.fieldMonitoring}>{MY_FIELDS[0].monitoring}</Text>
                 </View>
-                <View style={S.fieldArrowBtn}>
-                  <Feather name="arrow-up-right" size={16} color="#1e293b" />
+                <View style={styles.fieldChevron}>
+                  <Feather name="chevron-right" size={16} color="#fff" />
                 </View>
               </View>
-            </ImageBackground>
-          </TouchableOpacity>
+            </TouchableOpacity>
 
+            {/* Field Card #2 — Compact */}
+            <TouchableOpacity
+              style={[styles.fieldCard, { height: 110, marginTop: 10 }]}
+              onPress={() => openFieldDetail('F2')}
+              activeOpacity={0.9}
+            >
+              <Image
+                source={{ uri: MY_FIELDS[1].image }}
+                style={StyleSheet.absoluteFillObject}
+                resizeMode="cover"
+              />
+              <View style={styles.fieldGradient} />
+              <View style={styles.fieldBottom}>
+                <View>
+                  <View style={styles.fieldSmallTag}>
+                    <Text style={styles.fieldSmallTagText}>{MY_FIELDS[1].tag}</Text>
+                  </View>
+                  <Text style={[styles.fieldName, { marginTop: 4 }]}>{MY_FIELDS[1].name}</Text>
+                </View>
+                <View style={[styles.fieldChevron, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                  <Feather name="chevron-right" size={14} color="#fff" />
+                </View>
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
-        {/* bottom spacing for tab bar */}
-        <View style={{ height: 90 }} />
       </ScrollView>
     </View>
   );
 }
 
-// ─── Styles ──────────────────────────────────────────────────────────────────
-const S = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#f1f5f9' },
-
-  // HERO
-  hero: { minHeight: 460 },
+const styles = StyleSheet.create({
+  // ── Hero ──────────────────────────────────────────────
+  hero: {
+    minHeight: 450,
+    position: 'relative',
+    justifyContent: 'flex-end',
+    borderBottomLeftRadius: 36,
+    borderBottomRightRadius: 36,
+    overflow: 'hidden',
+  },
   heroOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.55)',
   },
-  heroContent: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 16, gap: 12 },
-
-  // Top row
-  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingTop: 4 },
-  greetingText: { color: 'white', fontWeight: '800', fontSize: 13, letterSpacing: -0.3 },
-  dateText: { color: 'rgba(255,255,255,0.8)', fontSize: 11, fontWeight: '500', marginTop: 2 },
-  topRowRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-
-  // Lang pill
-  langPill: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 10, paddingVertical: 5,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    borderRadius: 999, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
+  heroContent: {
+    padding: 16,
+    paddingBottom: 20,
+    gap: 14,
   },
-  langPillText: { color: '#6ee7b7', fontSize: 10, fontWeight: '800' },
-
-  // Avatar
-  avatarRing: { width: 38, height: 38, borderRadius: 99, borderWidth: 2, borderColor: 'rgba(255,255,255,0.85)', overflow: 'hidden' },
-  avatar: { width: '100%', height: '100%' },
-
-  // Slogan
-  slogan: { color: 'white', fontSize: 22, fontWeight: '900', lineHeight: 29, letterSpacing: -0.5 },
-
-  // Search
-  searchRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  searchPill: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderRadius: 999, paddingHorizontal: 14, paddingVertical: 10,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)',
+  heroTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
-  searchInput: { flex: 1, color: 'white', fontSize: 12, fontWeight: '500' },
-  mapBtn: {
-    width: 36, height: 36, borderRadius: 99,
-    backgroundColor: 'white', alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 4, elevation: 4,
+  greetingText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: -0.3,
   },
-
+  dateText: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.85)',
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  avatarBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#34d399',
+    overflow: 'hidden',
+  },
+  avatar: {
+    width: '100%',
+    height: '100%',
+  },
+  slogan: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#fff',
+    lineHeight: 30,
+    letterSpacing: -0.5,
+  },
+  // Search bar
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  searchBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.4)',
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+  },
+  searchPlaceholder: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.9)',
+    fontWeight: '500',
+    flex: 1,
+  },
+  micBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#16a34a',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#16a34a',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 6,
+  },
   // Weather card
   weatherCard: {
-    backgroundColor: 'rgba(255,255,255,0.88)',
-    borderRadius: 24, padding: 12,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.7)',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 6,
-  },
-  hourlyRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(15,23,42,0.08)' },
-  hourItem: { alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: 4, borderRadius: 99 },
-  hourItemActive: { backgroundColor: '#f59e0b', paddingHorizontal: 8, transform: [{ scale: 1.05 }] },
-  hourTime: { fontSize: 9, fontWeight: '700', color: '#64748b' },
-  hourTemp: { fontSize: 10, fontWeight: '800', color: '#1e293b' },
-  hourTextActive: { color: 'white' },
-
-  weatherBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', paddingTop: 10 },
-  weatherDate: { fontSize: 9, color: '#64748b', fontWeight: '600' },
-  weatherTemp: { fontSize: 26, fontWeight: '900', color: '#0f172a', lineHeight: 30 },
-  weatherCondRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-  weatherCondText: { fontSize: 10, color: '#64748b', fontWeight: '700' },
-  sunnyRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 6 },
-  sunnyText: { fontSize: 11, fontWeight: '800', color: '#1e293b' },
-  growthBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: '#dcfce7', borderRadius: 99,
-    paddingHorizontal: 8, paddingVertical: 3,
-    borderWidth: 1, borderColor: '#bbf7d0',
-  },
-  growthText: { fontSize: 9, fontWeight: '800', color: '#166534' },
-
-  // Body
-  body: { paddingHorizontal: 16, paddingTop: 16, gap: 14 },
-  sectionTitle: { fontSize: 11, fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 },
-
-  // Grid
-  gridRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  actionCard: {
-    width: '47.5%', backgroundColor: 'white',
-    borderRadius: 18, padding: 12,
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    borderWidth: 1, borderColor: '#e2e8f0',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
-  },
-  actionIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  actionLabel: { fontSize: 11, fontWeight: '800', color: '#0f172a' },
-  actionSub: { fontSize: 9, color: '#64748b', marginTop: 1 },
-
-  // Soil Card
-  soilCard: {
-    backgroundColor: 'white', borderRadius: 22, padding: 14,
-    borderWidth: 1, borderColor: '#e2e8f0',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderRadius: 24,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.8)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
     gap: 10,
   },
-  soilHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  soilTitle: { fontSize: 11, fontWeight: '800', color: '#0f172a' },
-  locationBadge: {
-    backgroundColor: '#f0fdf4', borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4,
-    borderWidth: 1, borderColor: '#bbf7d0',
+  hourlyRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
-  locationBadgeText: { fontSize: 9, fontWeight: '700', color: '#15803d' },
-
-  inputGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  inputBox: { width: '47.5%' },
-  inputLabel: { fontSize: 10, fontWeight: '700', color: '#64748b', marginBottom: 4 },
-  inputField: {
-    backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0',
-    borderRadius: 12, paddingHorizontal: 10, paddingVertical: 8,
-    fontSize: 13, fontWeight: '700', color: '#1e293b',
+  hourItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 2,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  hourItemActive: {
+    backgroundColor: '#f59e0b',
+    transform: [{ scale: 1.05 }],
+    shadowColor: '#f59e0b',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  hourText: {
+    fontSize: 9,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  hourTextActive: {
+    color: '#fff',
+    fontWeight: '800',
+  },
+  hourTemp: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#334155',
+  },
+  hourTempActive: {
+    color: '#fff',
+    fontWeight: '800',
+  },
+  weatherBottom: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(15,23,42,0.08)',
+  },
+  weatherDateLabel: {
+    fontSize: 9,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  weatherTemp: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#0f172a',
+    lineHeight: 30,
+    marginVertical: 2,
+  },
+  weatherLocation: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#334155',
+  },
+  weatherCondition: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#1e293b',
+  },
+  cropBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(220,252,231,0.9)',
+    borderWidth: 1,
+    borderColor: 'rgba(187,247,208,0.8)',
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  cropBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#166534',
   },
 
-  runBtn: {
-    backgroundColor: '#15803d', borderRadius: 14,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    paddingVertical: 12,
-    shadowColor: '#15803d', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 4,
+  // ── Body ──────────────────────────────────────────────
+  body: {
+    padding: 16,
+    paddingTop: 16,
+    gap: 16,
   },
-  runBtnText: { color: 'white', fontWeight: '800', fontSize: 12 },
 
-  // Result box
-  resultBox: { backgroundColor: '#052e16', borderRadius: 18, padding: 14, gap: 8 },
-  resultTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  resultLabel: { fontSize: 9, fontWeight: '700', color: '#6ee7b7', textTransform: 'uppercase', letterSpacing: 1 },
-  resultCropName: { fontSize: 13, fontWeight: '800', color: 'white', marginTop: 2 },
-  fitBadge: {
-    backgroundColor: 'rgba(251,191,36,0.2)', borderRadius: 99, paddingHorizontal: 8, paddingVertical: 4,
-    borderWidth: 1, borderColor: 'rgba(251,191,36,0.3)',
+  // Agent Banner
+  agentBanner: {
+    backgroundColor: '#1d4f30',
+    borderRadius: 24,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#166534',
+    shadowColor: '#15803d',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  fitBadgeText: { fontSize: 11, fontWeight: '800', color: '#fcd34d' },
-  resultDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.1)' },
-  resultStat: { fontSize: 11, color: '#cbd5e1', lineHeight: 18 },
-
-  intercropBox: {
-    backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 14, padding: 10,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
-  },
-  intercropTitle: { fontSize: 10, fontWeight: '700', color: '#a7f3d0', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
-  intercropTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  intercropTag: { backgroundColor: 'rgba(21,128,61,0.6)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
-  intercropTagText: { fontSize: 10, color: '#a7f3d0', fontWeight: '700' },
-
-  // Plots section
-  plotsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  manageLink: { fontSize: 12, fontWeight: '700', color: '#15803d' },
-
-  // Field card
-  fieldCard: { borderRadius: 22, overflow: 'hidden', height: 176 },
-  fieldBg: { width: '100%', height: '100%', padding: 12, justifyContent: 'space-between' },
-  fieldOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 20 },
-  ratingPill: {
+  agentBannerBadge: {
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 2,
     alignSelf: 'flex-start',
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 99,
-    paddingHorizontal: 8, paddingVertical: 4,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
+    marginBottom: 6,
   },
-  ratingText: { fontSize: 10, fontWeight: '700', color: '#fcd34d' },
-  fieldBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
-  fieldMeta: { fontSize: 9, color: '#cbd5e1', fontWeight: '500' },
-  fieldName: { fontSize: 13, fontWeight: '800', color: 'white', marginTop: 2 },
-  fieldArrowBtn: {
-    width: 32, height: 32, borderRadius: 99,
-    backgroundColor: 'white', alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 4, elevation: 3,
+  agentBannerBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#a7f3d0',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  agentBannerTitle: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#fff',
+    letterSpacing: -0.3,
+    marginBottom: 3,
+  },
+  agentBannerSub: {
+    fontSize: 10,
+    color: '#a7f3d0',
+  },
+  agentBannerArrow: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+
+  // Section headings
+  sectionTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#0f172a',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 10,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  viewAllBtn: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#15803d',
+  },
+
+  // Quick Actions Grid
+  quickGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  quickCard: {
+    width: '48%',
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  quickIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  quickLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#0f172a',
+  },
+  quickSub: {
+    fontSize: 9,
+    color: '#64748b',
+    marginTop: 1,
+  },
+
+  // My Fields
+  fieldCard: {
+    borderRadius: 22,
+    overflow: 'hidden',
+    position: 'relative',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  fieldGradient: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.0)',
+    // Simulated gradient via top/bottom approach
+  },
+  fieldTagBadge: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  fieldTagDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#22c55e',
+  },
+  fieldTagText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  fieldBottom: {
+    position: 'absolute',
+    bottom: 12,
+    left: 12,
+    right: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+  },
+  fieldName: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: -0.2,
+  },
+  fieldMonitoring: {
+    fontSize: 10,
+    color: '#86efac',
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  fieldChevron: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#16a34a',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fieldSmallTag: {
+    backgroundColor: 'rgba(245,158,11,0.9)',
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    alignSelf: 'flex-start',
+  },
+  fieldSmallTagText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#1c1917',
   },
 });
