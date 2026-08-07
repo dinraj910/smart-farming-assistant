@@ -1,3 +1,5 @@
+from backend import test_db
+from groq.types.chat import chat_completion_user_message_param
 TOOLS = [
     {
         "type": "function",
@@ -232,6 +234,10 @@ Rules:
 14. Cite the specific KAU source page whenever kau_knowledge_search is used.
 15. If no tool can answer confidently, say so plainly. Do not fabricate.
 16. Keep the final answer concise and actionable.
+17. This conversation may include earlier turns (and a summary of turns
+further back) — treat those as real prior context. Do not ask the farmer
+to repeat information already given earlier in this session.
+
 """
 
 
@@ -251,6 +257,14 @@ from app.agent.tools.companion_tool import lookup_companions
 from app.agent.tools.kau_search_tool import search_kau_knowledge
 from app.agent.tools.weather_tool import run_weather_lookup
 from app.agent.tools.market_tool import run_market_price_lookup
+
+from prisma import Prisma
+
+from app.agent.memory import (
+    load_context,
+    save_turn,
+    maybe_summarize,
+)
 
 
 
@@ -304,6 +318,8 @@ async def execute_tool_call(tool_name: str, arguments: dict, crop_model):
 
 
 async def run_agent(
+    db: Prisma,
+    session_id: str,
     user_message: str,
     crop_model,
     max_turns: int = 6,
@@ -316,16 +332,34 @@ async def run_agent(
     for the UI to display.
     """
 
+    memory_summary, recent_messages = await load_context(
+        db,
+        session_id,
+    )
+
+    system_content = SYSTEM_PROMPT
+
+    if memory_summary:
+        system_content += (
+            "\n\nContext from earlier in this conversation:\n"
+            + memory_summary
+        )
+
     messages = [
         {
             "role": "system",
-            "content": SYSTEM_PROMPT,
-        },
+            "content": system_content,
+        }
+    ]
+
+    messages.extend(recent_messages)
+
+    messages.append(
         {
             "role": "user",
             "content": user_message,
-        },
-    ]
+        }
+    )
 
     reasoning_trace = []
 
@@ -342,10 +376,8 @@ async def run_agent(
 
         # No more tools required.
         if not message.tool_calls:
-            return {
-                "answer": message.content,
-                "reasoning_trace": reasoning_trace,
-            }
+            final_answer = message.content
+            break
 
         # The LLM requested one or more tool calls.
         messages.append(message)
@@ -377,10 +409,28 @@ async def run_agent(
                 }
             )
 
+    if final_answer is None:
+        final_answer = (
+            "I wasn't able to reach a confident answer "
+            "within the available steps. "
+            "Please try rephrasing your question."
+        )
+
+    await save_turn(
+        db,
+        session_id,
+        user_message,
+        final_answer,
+    )
+
+    await maybe_summarize(
+        db,
+        session_id,
+    )
+
+
     return {
-        "answer": (
-            "I wasn't able to reach a confident answer within the "
-            "available steps. Please try rephrasing your question."
-        ),
+        "answer": final_answer,
         "reasoning_trace": reasoning_trace,
+        "session_id": session_id,
     }

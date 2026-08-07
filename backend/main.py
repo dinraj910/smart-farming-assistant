@@ -13,6 +13,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.ml.crop_model import CropRecommendationModel
 from app.routers import crop
 from app.routers import agent as agent_router
+from prisma import Prisma
+
 
 
 @asynccontextmanager
@@ -25,10 +27,19 @@ async def lifespan(app: FastAPI):
     )
 
     print("Model loaded. Ready to serve predictions.")
+    
+    # ---- STARTUP: Initialize Prisma DB Client ----
+    print("Connecting to database...")
+    db = Prisma()
+    await db.connect()
+    app.state.db = db
+    print("Database connected.")
 
     yield
 
     # ---- SHUTDOWN ----
+    print("Disconnecting from database...")
+    await app.state.db.disconnect()
     print("Shutting down.")
 
 
