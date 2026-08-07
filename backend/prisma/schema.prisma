@@ -1,3 +1,25 @@
+// Prisma schema for Smart Farming Assistant – chat memory layer
+//
+// This schema manages ONLY the chat session tables.
+// The KAU knowledge base (pgvector embeddings) lives in separate raw-SQL tables
+// managed by asyncpg and is NOT touched here.
+//
+// Note on farmId: ChatSession stores a farmId string for grouping sessions by
+// farm, but there is no Farm model yet in this project.  We use a plain String?
+// field (no @relation) to avoid inventing a fake model.  A DB-level FK can be
+// added once the Farm model is built.
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider             = "prisma-client-py"
+  interface            = "asyncio"
+  recursive_type_depth = 5
+}
+
 enum ChatRole {
   user
   assistant
@@ -5,12 +27,12 @@ enum ChatRole {
 
 model ChatSession {
   id            String   @id @default(uuid()) @db.Uuid
-  farmId        String   @map("farm_id") @db.Uuid
+  // Plain string — no FK to Farm (Farm model does not exist yet)
+  farmId        String?  @map("farm_id")
   memorySummary String?  @map("memory_summary")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  farm     Farm          @relation(fields: [farmId], references: [id], onDelete: Cascade)
   messages ChatMessage[]
 
   @@map("chat_sessions")
@@ -26,4 +48,16 @@ model ChatMessage {
   session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@map("chat_messages")
+}
+
+// We tell Prisma about the existing KAU pgvector table so it doesn't try to drop it.
+// The @@ignore attribute means Prisma Client won't generate CRUD for it (we use asyncpg)
+// and 'prisma db push' will leave it alone.
+model kau_chunks {
+  id          Int                    @id @default(autoincrement())
+  content     String
+  source_page Int?
+  embedding   Unsupported("vector")?
+
+  @@ignore
 }

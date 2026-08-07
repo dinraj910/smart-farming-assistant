@@ -20,16 +20,28 @@ def get_summarizer_client():
     return _summarizer_client
 
 
-async def get_or_create_session(db: Prisma, farm_id: str):
-    session = await db.chatsession.find_first(where={"farmId": farm_id})
+async def get_or_create_session(db: Prisma, farm_id: str | None):
+    # When farm_id is provided, look for an existing session for that farm.
+    # When it is None (anonymous request), always create a fresh session.
+    if farm_id is not None:
+        session = await db.chatsession.find_first(where={"farmId": farm_id})
+    else:
+        session = None  # anonymous — always create a new one
+
     if session is None:
-        session = await db.chatsession.create(data={"farmId": farm_id})
+        data = {"farmId": farm_id} if farm_id is not None else {}
+        session = await db.chatsession.create(data=data)
     return session
 
 
 async def load_context(db: Prisma, session_id: str):
     """Returns (memory_summary: str | None, recent_messages: list[dict])."""
     session = await db.chatsession.find_unique(where={"id": session_id})
+
+    # Session may not exist yet (first call) — return empty context.
+    if session is None:
+        return None, []
+
     all_messages = await db.chatmessage.find_many(
         where={"sessionId": session_id},
         order={"createdAt": "asc"},

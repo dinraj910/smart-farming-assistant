@@ -65,10 +65,17 @@ async def crop_advisory(
     crop_model = request.app.state.crop_model
     db = request.app.state.db
 
+    # If the caller didn't supply a session_id, create (or retrieve) one now.
+    # This guarantees run_agent always receives a valid UUID, never None.
+    session_id = payload.session_id
+    if session_id is None:
+        session = await get_or_create_session(db, payload.farm_id)
+        session_id = session.id
+
     try:
         result = await run_agent(
             db=db,
-            session_id=payload.session_id,
+            session_id=session_id,
             user_message=payload.message,
             crop_model=crop_model,
         )
