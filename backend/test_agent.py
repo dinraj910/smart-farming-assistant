@@ -1,5 +1,5 @@
 """
-Test script for the full Agent loop (Phase 8.2).
+Test script for the full Agent loop with Chat Memory.
 Run this script while the FastAPI server is running (e.g. uvicorn main:app --reload --host 0.0.0.0 --port 8000).
 """
 
@@ -7,42 +7,75 @@ import httpx
 import asyncio
 import json
 
-BASE_URL = "http://localhost:8000/api/v1/agent/crop-advisory"
+BASE_URL = "http://localhost:8000/api/v1"
 
-async def test_scenario(name: str, message: str):
+async def test_session():
     print(f"\n{'='*80}")
-    print(f"Testing Scenario: {name}")
-    print(f"Message: {message}")
+    print("Testing Multi-Turn Chat Session (Memory Feature)")
     print(f"{'='*80}")
     
     try:
         async with httpx.AsyncClient(timeout=120.0) as client:
-            response = await client.post(
-                BASE_URL,
-                json={"message": message}
+            # Turn 1: Initial query (No session_id, backend will create one)
+            msg_1 = "My soil has N=40 P=30 K=35 pH=6.2, 1 acre in Kottayam. What crop should I plant?"
+            print(f"\n[Turn 1] User: {msg_1}")
+            
+            resp_1 = await client.post(
+                f"{BASE_URL}/agent/crop-advisory",
+                json={"message": msg_1}
             )
-            response.raise_for_status()
+            resp_1.raise_for_status()
+            data_1 = resp_1.json()
             
-            data = response.json()
-            print("\nResponse from Agent:")
-            print(json.dumps(data, indent=2))
+            session_id = data_1.get("session_id")
+            print(f"\n[Turn 1] Agent Answer (Session ID: {session_id}):\n{data_1.get('answer')}")
             
+            if not session_id:
+                print("FAILED: No session_id returned by agent.")
+                return
+
+            # Turn 2: Follow-up query using the same session_id
+            msg_2 = "What is the traditional planting window for that crop, and what's the current price?"
+            print(f"\n[Turn 2] User: {msg_2}")
+            print(f"(Sending with session_id: {session_id})")
+            
+            resp_2 = await client.post(
+                f"{BASE_URL}/agent/crop-advisory",
+                json={
+                    "message": msg_2,
+                    "session_id": session_id
+                }
+            )
+            resp_2.raise_for_status()
+            data_2 = resp_2.json()
+            
+            print(f"\n[Turn 2] Agent Answer:\n{data_2.get('answer')}")
+
+            # Turn 3: Verify the sessions endpoint can fetch history
+            print(f"\n{'='*80}")
+            print("Testing /agent/sessions endpoint history retrieval")
+            print(f"{'='*80}")
+            
+            # Note: We didn't supply farm_id in the previous requests, so it created an anonymous session.
+            # We can't query by farm_id easily without supplying it first, so let's simulate a new session with farm_id
+            farm_id = "test-farm-123"
+            print(f"\nCreating/Fetching session for farm: {farm_id}")
+            
+            resp_3 = await client.post(
+                f"{BASE_URL}/agent/sessions",
+                json={"farm_id": farm_id}
+            )
+            resp_3.raise_for_status()
+            data_3 = resp_3.json()
+            
+            print(f"\nSession Endpoint Response:\n{json.dumps(data_3, indent=2)}")
+
     except Exception as e:
-        print(f"\nError connecting to the agent endpoint: {e}")
+        print(f"\nError connecting to the endpoints: {e}")
         print("Make sure the backend server is running (uvicorn main:app --reload)!")
 
 async def main():
-    scenario_a_msg = (
-        "My soil has N=40 P=30 K=35 pH=6.2, 1 acre in Kottayam. "
-        "Can i plant coconuts now? If not when should i plant it? what will be the price of the coconuts?"
-    )
-    
-    scenario_b_msg = (
-        "What will be the price of paddy in December 2026?"
-    )
-
-    await test_scenario("Scenario A - Crop IN the training set", scenario_a_msg)
-    await test_scenario("Scenario B - Crop OUTSIDE the training set", scenario_b_msg)
+    await test_session()
 
 if __name__ == "__main__":
     asyncio.run(main())
