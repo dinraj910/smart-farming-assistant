@@ -216,7 +216,9 @@ Rules:
 9. When crop_recommendation_model's confidence_score is below 0.5, say so
    explicitly and mention the top alternative from its `alternatives` list --
    do not present a low-confidence result with the same certainty as a
-   high-confidence one.
+   high-confidence one. Keep information from different tools clearly separated in your
+   answer -- never merge sentences from different sources into one run-on
+   sentence.    
 10. When kau_knowledge_search returns results, scan for fertilizer schedule,
     spacing, and planting method details specifically -- don't only report
     the first fact you notice (e.g. harvesting) while ignoring cultivation
@@ -234,10 +236,23 @@ Rules:
 15. If no tool can answer confidently, say so plainly. Do not fabricate.
 16. Keep the final answer concise and actionable.
 17. This conversation may include earlier turns (and a summary of turns
-further back) — treat those as real prior context. Do not ask the farmer
-to repeat information already given earlier in this session.
+    further back) — treat those as real prior context. Do not ask the farmer
+    to repeat information already given earlier in this session.
+18. Only call tools through the actual tool-calling mechanism provided to
+    you. NEVER write a tool call as visible text or XML-like syntax such as
+    <function=...>. If you have nothing further to call, give your plain
+    final answer with no tool syntax in it.
+19. If a tool returns an error (e.g. "Invalid argument", "Not found", or
+    any error JSON), DO NOT hide it. Show a short user-friendly explanation
+    of what went wrong and what the user should check/rephrase -- then
+    suggest what to try next. Do NOT pretend the tool succeeded, and do NOT
+    invent a workaround. An error is an answer: report it cleanly.
+20. When a user enters a value in Malayalam, Tamil, Kannada, or any other
+    language, convert it to English before passing it to any tool. Do NOT
+    pass non-English values to any tool function.
 
 """
+
 
 
 
@@ -256,6 +271,10 @@ from app.agent.tools.companion_tool import lookup_companions
 from app.agent.tools.kau_search_tool import search_kau_knowledge
 from app.agent.tools.weather_tool import run_weather_lookup
 from app.agent.tools.market_tool import run_market_price_lookup
+
+import re
+
+LEAKED_TOOL_CALL_PATTERN = re.compile(r'<function=([\w_]+)>\s*(\{.*?\})\s*</function>', re.DOTALL)
 
 from prisma import Prisma
 
@@ -369,44 +388,50 @@ async def run_agent(
             messages=messages,
             tools=TOOLS,
             tool_choice="auto",
+            temperature=0.3,
         )
 
         message = response.choices[0].message
 
         # No more tools required.
-        if not message.tool_calls:
+        message = response.choices[0].message
+        leaked_calls = LEAKED_TOOL_CALL_PATTERN.findall(message.content or "")
+
+        if not message.tool_calls and not leaked_calls:
             final_answer = message.content
             break
 
         # The LLM requested one or more tool calls.
         messages.append(message)
 
-        for tool_call in message.tool_calls:
+        if message.tool_calls:
+            for tool_call in message.tool_calls:
+                tool_name = tool_call.function.name
+                arguments = json.loads(tool_call.function.arguments)
+                result = await execute_tool_call(tool_name, arguments, crop_model)
+                reasoning_trace.append({"tool": tool_name, "arguments": arguments, "result_summary": str(result)[:200]})
+                messages.append({"role": "tool", "tool_call_id": tool_call.id, "content": json.dumps(result)})
 
-            tool_name = tool_call.function.name
-            arguments = json.loads(tool_call.function.arguments)
-
-            result = await execute_tool_call(
-                tool_name,
-                arguments,
-                crop_model,
-            )
-
-            reasoning_trace.append(
-                {
-                    "tool": tool_name,
-                    "arguments": arguments,
+        if leaked_calls:
+            # Model wrote a tool call as text instead of a real tool call -- salvage
+            # its intent (still call the tool for real) instead of showing raw
+            # syntax to the farmer or silently dropping it.
+            for tool_name, args_json in leaked_calls:
+                try:
+                    arguments = json.loads(args_json)
+                except json.JSONDecodeError:
+                    continue
+                result = await execute_tool_call(tool_name, arguments, crop_model)
+                reasoning_trace.append({
+                    "tool": tool_name, "arguments": arguments,
                     "result_summary": str(result)[:200],
-                }
-            )
-
-            messages.append(
-                {
-                    "role": "tool",
-                    "tool_call_id": tool_call.id,
-                    "content": json.dumps(result),
-                }
-            )
+                    "note": "recovered from malformed text output",
+                })
+                messages.append({
+                    "role": "user",
+                    "content": f"[System note: tool '{tool_name}' returned: {json.dumps(result)}. "
+                               f"Give your final answer now using this. Never write tool calls as visible text again.]"
+                })
 
     if final_answer is None:
         final_answer = (

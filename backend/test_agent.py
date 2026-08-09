@@ -17,7 +17,7 @@ async def test_session():
     try:
         async with httpx.AsyncClient(timeout=120.0) as client:
             # Turn 1: Initial query (No session_id, backend will create one)
-            msg_1 = "My soil has N=40 P=30 K=35 pH=6.2, 1 acre in Kottayam. What crop should I plant?"
+            msg_1 = "My soil has N=80 P=90 K=88 pH=9, 1 acre in Kottayam. what should i plant?  "
             print(f"\n[Turn 1] User: {msg_1}")
             
             resp_1 = await client.post(
@@ -28,6 +28,13 @@ async def test_session():
             data_1 = resp_1.json()
             
             session_id = data_1.get("session_id")
+            
+            trace_1 = data_1.get("reasoning_trace", [])
+            if trace_1:
+                print(f"\n[Turn 1] Tools Called:")
+                for t in trace_1:
+                    print(f"  - {t['tool']} {t['arguments']}")
+
             print(f"\n[Turn 1] Agent Answer (Session ID: {session_id}):\n{data_1.get('answer')}")
             
             if not session_id:
@@ -35,7 +42,7 @@ async def test_session():
                 return
 
             # Turn 2: Follow-up query using the same session_id
-            msg_2 = "What is the traditional planting window for that crop, and what's the current price?"
+            msg_2 = "What is the best fertilizer for this plant and what is the market price of it in 6 months?"
             print(f"\n[Turn 2] User: {msg_2}")
             print(f"(Sending with session_id: {session_id})")
             
@@ -49,6 +56,12 @@ async def test_session():
             resp_2.raise_for_status()
             data_2 = resp_2.json()
             
+            trace_2 = data_2.get("reasoning_trace", [])
+            if trace_2:
+                print(f"\n[Turn 2] Tools Called:")
+                for t in trace_2:
+                    print(f"  - {t['tool']} {t['arguments']}")
+
             print(f"\n[Turn 2] Agent Answer:\n{data_2.get('answer')}")
 
             # Turn 3: Verify the sessions endpoint can fetch history

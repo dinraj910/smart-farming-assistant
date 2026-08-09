@@ -48,7 +48,13 @@ async def load_context(db: Prisma, session_id: str):
     )
 
     recent = all_messages[-WINDOW_SIZE:]
-    recent_formatted = [{"role": str(m.role), "content": m.content} for m in recent]
+    recent_formatted = [
+        {
+            "role": m.role.value if hasattr(m.role, "value") else str(m.role).split(".")[-1],
+            "content": m.content,
+        }
+        for m in recent
+    ]
 
     return session.memorySummary, recent_formatted
 

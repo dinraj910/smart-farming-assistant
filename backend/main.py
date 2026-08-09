@@ -30,8 +30,18 @@ async def lifespan(app: FastAPI):
     
     # ---- STARTUP: Initialize Prisma DB Client ----
     print("Connecting to database...")
+    import asyncio
     db = Prisma()
-    await db.connect()
+    for attempt in range(5):
+        try:
+            await db.connect()
+            break
+        except Exception as e:
+            if attempt == 4:
+                raise e
+            print(f"Database connection dropped by Neon, retrying in 2 seconds... (Attempt {attempt+1}/5)")
+            await asyncio.sleep(2)
+            
     app.state.db = db
     print("Database connected.")
 
