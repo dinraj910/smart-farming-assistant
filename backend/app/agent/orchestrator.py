@@ -288,7 +288,7 @@ from app.agent.memory import (
 
 client = Groq()  # Reads GROQ_API_KEY from the environment automatically.
 
-MODEL_NAME = "llama-3.3-70b-versatile"
+MODEL_NAME = "openai/gpt-oss-120b"
 
 
 async def execute_tool_call(tool_name: str, arguments: dict, crop_model):
@@ -340,7 +340,7 @@ async def run_agent(
     session_id: str,
     user_message: str,
     crop_model,
-    max_turns: int = 6,
+    max_turns: int = 10,
 ):
     """
     The core agent loop.
@@ -378,22 +378,37 @@ async def run_agent(
             "content": user_message,
         }
     )
-
     reasoning_trace = []
+    final_answer = None
+    tool_calls_made = set()  # Avoid calling the same tool with same args twice
 
-    for _ in range(max_turns):
+    for turn in range(max_turns):
+
+        # On the last 2 turns, force the model to stop calling tools and give a final text answer.
+        is_final_push = turn >= max_turns - 2
+        current_tool_choice = "none" if is_final_push else "auto"
+
+        if is_final_push and turn == max_turns - 2:
+            # Inject a reminder message so the model knows to wrap up
+            messages.append({
+                "role": "user",
+                "content": (
+                    "[System: You have collected enough tool data. "
+                    "Stop calling tools now. Write your final, complete, "
+                    "actionable farming advice for the farmer using all "
+                    "the tool results above. Do NOT call any more tools.]"
+                )
+            })
 
         response = client.chat.completions.create(
             model=MODEL_NAME,
             messages=messages,
             tools=TOOLS,
-            tool_choice="auto",
+            tool_choice=current_tool_choice,
             temperature=0.3,
+            max_tokens=4096,
         )
 
-        message = response.choices[0].message
-
-        # No more tools required.
         message = response.choices[0].message
         leaked_calls = LEAKED_TOOL_CALL_PATTERN.findall(message.content or "")
 
@@ -407,15 +422,27 @@ async def run_agent(
         if message.tool_calls:
             for tool_call in message.tool_calls:
                 tool_name = tool_call.function.name
-                arguments = json.loads(tool_call.function.arguments)
+                try:
+                    arguments = json.loads(tool_call.function.arguments)
+                except json.JSONDecodeError:
+                    arguments = {}
+
+                # Deduplicate: skip if exact same call already made
+                call_key = f"{tool_name}:{json.dumps(arguments, sort_keys=True)}"
+                if call_key in tool_calls_made:
+                    messages.append({
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "content": json.dumps({"note": "Already called with same arguments. Use prior result."})
+                    })
+                    continue
+                tool_calls_made.add(call_key)
+
                 result = await execute_tool_call(tool_name, arguments, crop_model)
                 reasoning_trace.append({"tool": tool_name, "arguments": arguments, "result_summary": str(result)[:200]})
                 messages.append({"role": "tool", "tool_call_id": tool_call.id, "content": json.dumps(result)})
 
         if leaked_calls:
-            # Model wrote a tool call as text instead of a real tool call -- salvage
-            # its intent (still call the tool for real) instead of showing raw
-            # syntax to the farmer or silently dropping it.
             for tool_name, args_json in leaked_calls:
                 try:
                     arguments = json.loads(args_json)
@@ -434,11 +461,25 @@ async def run_agent(
                 })
 
     if final_answer is None:
-        final_answer = (
-            "I wasn't able to reach a confident answer "
-            "within the available steps. "
-            "Please try rephrasing your question."
-        )
+        # Force a final answer from whatever context has been built up
+        try:
+            force_response = client.chat.completions.create(
+                model=MODEL_NAME,
+                messages=messages + [{
+                    "role": "user",
+                    "content": "[System: Provide your final farming advice now based on all tool results above. No more tool calls.]"
+                }],
+                tools=TOOLS,
+                tool_choice="none",
+                temperature=0.3,
+                max_tokens=2048,
+            )
+            final_answer = force_response.choices[0].message.content
+        except Exception:
+            final_answer = (
+                "I collected the tool data but wasn't able to finalize an answer. "
+                "Please try again."
+            )
 
     await save_turn(
         db,

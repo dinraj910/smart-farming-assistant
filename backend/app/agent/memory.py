@@ -83,7 +83,7 @@ async def maybe_summarize(db: Prisma, session_id: str):
 
     client = get_summarizer_client()
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model="openai/gpt-oss-120b",
         messages=[
             {"role": "system", "content": (
                 "Summarize this farming conversation in 2-4 sentences. Keep concrete facts: "

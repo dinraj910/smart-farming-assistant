@@ -15,7 +15,7 @@ async def test_session():
     print(f"{'='*80}")
     
     try:
-        async with httpx.AsyncClient(timeout=120.0) as client:
+        async with httpx.AsyncClient(timeout=300.0) as client:
             # Turn 1: Initial query (No session_id, backend will create one)
             msg_1 = "My soil has N=80 P=90 K=88 pH=9, 1 acre in Kottayam. what should i plant?  "
             print(f"\n[Turn 1] User: {msg_1}")
@@ -83,8 +83,13 @@ async def test_session():
             
             print(f"\nSession Endpoint Response:\n{json.dumps(data_3, indent=2)}")
 
+    except httpx.HTTPStatusError as e:
+        print(f"\nServer returned HTTP {e.response.status_code}")
+        print(f"Error details from server: {e.response.text}")
     except Exception as e:
-        print(f"\nError connecting to the endpoints: {e}")
+        import traceback
+        print(f"\nError connecting to the endpoints:")
+        traceback.print_exc()
         print("Make sure the backend server is running (uvicorn main:app --reload)!")
 
 async def main():
