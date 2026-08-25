@@ -5,6 +5,8 @@ import { RootStackParamList } from './src/navigation/RootStackParamList';
 
 // Screens
 import WelcomeScreen     from './src/screens/WelcomeScreen';
+import LoginScreen       from './src/screens/Auth/LoginScreen';
+import RegisterScreen    from './src/screens/Auth/RegisterScreen';
 import MainTabNavigator  from './src/navigation/MainTabNavigator';
 import AgentChatScreen   from './src/screens/AgentChatScreen';
 import FieldDetailScreen from './src/screens/FieldDetailScreen';
@@ -24,6 +26,8 @@ export default function App() {
         }}
       >
         <Stack.Screen name="Welcome"   component={WelcomeScreen}    />
+        <Stack.Screen name="Login"     component={LoginScreen}      />
+        <Stack.Screen name="Register"  component={RegisterScreen}   />
         <Stack.Screen name="Main"      component={MainTabNavigator} options={{ animation: 'fade' }} />
         <Stack.Screen name="AgentChat" component={AgentChatScreen}  />
         <Stack.Screen name="FieldDetail" component={FieldDetailScreen} />

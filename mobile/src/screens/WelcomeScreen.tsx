@@ -39,7 +39,7 @@ export default function WelcomeScreen({ navigation }: Props) {
           {/* Get Started CTA */}
           <View>
             <TouchableOpacity
-              onPress={() => navigation.navigate('Main')}
+              onPress={() => navigation.navigate('Login')}
               style={styles.ctaBtn}
               activeOpacity={0.85}
             >

@@ -1,5 +1,7 @@
 export type RootStackParamList = {
   Welcome: undefined;
+  Login: undefined;
+  Register: undefined;
   Main: { screen?: string } | undefined;
   AgentChat: { fieldId: string };
   FieldDetail: { fieldId: string };
