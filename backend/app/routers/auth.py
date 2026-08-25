@@ -2,6 +2,46 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from pydantic import BaseModel, EmailStr
 from app.auth.security import get_password_hash, verify_password, create_access_token
 from app.auth.dependencies import get_current_user
+import asyncio
+
+async def safe_db_execute(request, coro_func_name, *args, **kwargs):
+    db = request.app.state.db
+    
+    try:
+        # Get the coroutine function dynamically from the current db instance
+        target_model, target_action = coro_func_name.split('.')
+        model_obj = getattr(db, target_model)
+        action_func = getattr(model_obj, target_action)
+        return await action_func(*args, **kwargs)
+    except Exception as e:
+        err_type = type(e).__name__
+        if err_type in ["UniqueViolationError", "RecordNotFoundError"]:
+            raise e
+        
+        print(f"Caught DB exception: {err_type} - {str(e)}")
+        print("Recreating Prisma instance to recover from Neon crash...")
+        
+        from prisma import Prisma
+        import asyncio
+        
+        try:
+            if db.is_connected():
+                await db.disconnect()
+        except:
+            pass
+        
+        await asyncio.sleep(1)
+        
+        # Create a brand new Prisma instance
+        new_db = Prisma()
+        await new_db.connect()
+        request.app.state.db = new_db
+        
+        # Retry with the new db instance
+        target_model, target_action = coro_func_name.split('.')
+        model_obj = getattr(new_db, target_model)
+        action_func = getattr(model_obj, target_action)
+        return await action_func(*args, **kwargs)
 
 router = APIRouter()
 
@@ -28,7 +68,7 @@ async def register(user_data: UserRegister, request: Request):
     db = request.app.state.db
     
     # Check if user exists
-    existing_user = await db.user.find_unique(where={"email": user_data.email})
+    existing_user = await safe_db_execute(request, "user.find_unique", where={"email": user_data.email})
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -38,7 +78,7 @@ async def register(user_data: UserRegister, request: Request):
     hashed_password = get_password_hash(user_data.password)
     
     # Create user
-    user = await db.user.create(
+    user = await safe_db_execute(request, "user.create",
         data={
             "name": user_data.name,
             "email": user_data.email,
@@ -47,7 +87,7 @@ async def register(user_data: UserRegister, request: Request):
     )
     
     # Create token
-    access_token = create_access_token(data={"sub": user.id})
+    access_token = create_access_token(data={"sub": str(user.id)})
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -55,7 +95,7 @@ async def register(user_data: UserRegister, request: Request):
 async def login(user_data: UserLogin, request: Request):
     db = request.app.state.db
     
-    user = await db.user.find_unique(where={"email": user_data.email})
+    user = await safe_db_execute(request, "user.find_unique", where={"email": user_data.email})
     if not user or not verify_password(user_data.password, user.passwordHash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -63,7 +103,7 @@ async def login(user_data: UserLogin, request: Request):
             headers={"WWW-Authenticate": "Bearer"},
         )
         
-    access_token = create_access_token(data={"sub": user.id})
+    access_token = create_access_token(data={"sub": str(user.id)})
     return {"access_token": access_token, "token_type": "bearer"}
 
 

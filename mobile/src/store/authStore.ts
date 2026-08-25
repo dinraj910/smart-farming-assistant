@@ -12,6 +12,7 @@ interface AuthState {
   user: User | null;
   token: string | null;
   isLoading: boolean;
+  isInitializing: boolean;
   error: string | null;
   
   // Actions
@@ -25,7 +26,8 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   token: null,
-  isLoading: true, // Initially true while checking auth
+  isLoading: false,
+  isInitializing: true, // Initially true while checking auth
   error: null,
 
   clearError: () => set({ error: null }),
@@ -44,8 +46,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const userResponse = await apiClient.get('/auth/me');
       set({ user: userResponse.data, isLoading: false });
     } catch (error: any) {
+      console.error('Login error:', error);
+      let errorMsg = 'Failed to login';
+      if (error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+        errorMsg = Array.isArray(detail) ? detail[0].msg : detail;
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+      
       set({ 
-        error: error.response?.data?.detail || 'Failed to login', 
+        error: errorMsg, 
         isLoading: false 
       });
       throw error;
@@ -66,8 +77,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const userResponse = await apiClient.get('/auth/me');
       set({ user: userResponse.data, isLoading: false });
     } catch (error: any) {
+      console.error('Register error:', error);
+      let errorMsg = 'Failed to register';
+      if (error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+        errorMsg = Array.isArray(detail) ? detail[0].msg : detail;
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+      
       set({ 
-        error: error.response?.data?.detail || 'Failed to register', 
+        error: errorMsg, 
         isLoading: false 
       });
       throw error;
@@ -85,11 +105,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   checkAuth: async () => {
     try {
-      set({ isLoading: true });
+      set({ isInitializing: true });
       const token = await SecureStore.getItemAsync('auth_token');
       
       if (!token) {
-        set({ isLoading: false, user: null, token: null });
+        set({ isInitializing: false, user: null, token: null });
         return;
       }
       
@@ -97,11 +117,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       
       // Try to fetch user data
       const response = await apiClient.get('/auth/me');
-      set({ user: response.data, isLoading: false });
+      set({ user: response.data, isInitializing: false });
     } catch (error) {
       // Token invalid or expired
       await SecureStore.deleteItemAsync('auth_token');
-      set({ user: null, token: null, isLoading: false });
+      set({ user: null, token: null, isInitializing: false });
     }
   },
 }));

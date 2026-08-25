@@ -18,13 +18,13 @@ import "./global.css";
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
-  const { token, isLoading, checkAuth } = useAuthStore();
+  const { token, isInitializing, checkAuth } = useAuthStore();
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
-  if (isLoading) {
+  if (isInitializing) {
     // You can return a custom splash/loading screen here
     return null;
   }

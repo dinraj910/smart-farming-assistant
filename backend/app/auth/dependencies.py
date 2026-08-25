@@ -21,7 +21,33 @@ async def get_current_user(request: Request, token: str = Depends(oauth2_scheme)
         raise credentials_exception
         
     db = request.app.state.db
-    user = await db.user.find_unique(where={"id": user_id})
+    
+    try:
+        user = await db.user.find_unique(where={"id": user_id})
+    except Exception as e:
+        err_type = type(e).__name__
+        if err_type in ["UniqueViolationError", "RecordNotFoundError"]:
+            raise credentials_exception
+            
+        import asyncio
+        print(f"Caught DB exception in auth dependencies: {err_type} - {str(e)}")
+        print("Recreating Prisma instance to recover from Neon crash...")
+        
+        from prisma import Prisma
+        
+        try:
+            if db.is_connected():
+                await db.disconnect()
+        except:
+            pass
+            
+        await asyncio.sleep(1)
+        
+        new_db = Prisma()
+        await new_db.connect()
+        request.app.state.db = new_db
+        
+        user = await new_db.user.find_unique(where={"id": user_id})
     if user is None:
         raise credentials_exception
         

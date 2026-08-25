@@ -2,13 +2,26 @@ import axios from 'axios';
 // Using standard axios as defined in package.json
 import * as SecureStore from 'expo-secure-store';
 
-// Default base URL for Expo running locally. 
-// For Android Emulator use http://10.0.2.2:8000
-// For physical device, use your machine's local IP (e.g., http://192.168.1.5:8000)
-import { Platform } from 'react-native';
+// IMPORTANT: If you are testing on a physical phone using Expo Go, 
+// 'localhost' will NOT work because it points to the phone itself.
+// You MUST replace 'localhost' below with your computer's local Wi-Fi IP address!
+// Example: const LOCALHOST = '192.168.1.15';
+import Constants from 'expo-constants';
 
-const LOCALHOST = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
-export const API_URL = `http://${LOCALHOST}:8000/api/v1`;
+// Dynamically get the host running the Metro bundler (same machine as our backend).
+// This works for physical devices, emulators, and Expo Go automatically.
+function getApiUrl() {
+  // In Expo Go / dev builds, the debuggerHost points to the Metro server on your machine.
+  const debuggerHost = Constants.expoConfig?.hostUri ?? Constants.manifest2?.extra?.expoGo?.debuggerHost;
+  if (debuggerHost) {
+    const host = debuggerHost.split(':')[0]; // strip the port from Metro's host
+    return `http://${host}:8000/api/v1`;
+  }
+  // Fallback for production builds
+  return 'http://localhost:8000/api/v1';
+}
+
+export const API_URL = getApiUrl();
 
 const apiClient = axios.create({
   baseURL: API_URL,
