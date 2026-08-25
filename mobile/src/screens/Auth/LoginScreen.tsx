@@ -8,6 +8,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootStackParamList';
 import { Feather } from '@expo/vector-icons';
 import Colors from '../../constants/colors';
+import { useAuthStore } from '../../store/authStore';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 
@@ -19,10 +20,16 @@ export default function LoginScreen({ navigation }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const { login, isLoading, error, clearError } = useAuthStore();
 
-  const handleLogin = () => {
-    // For now, bypass auth and go straight to Main
-    navigation.navigate('Main');
+  const handleLogin = async () => {
+    if (!email || !password) return;
+    try {
+      await login(email, password);
+      // MainTabNavigator routing is handled in App.tsx now
+    } catch (err) {
+      // Error is handled by store
+    }
   };
 
   return (
@@ -45,7 +52,7 @@ export default function LoginScreen({ navigation }: Props) {
         <View style={styles.content}>
           <View style={styles.titleContainer}>
             <View style={styles.iconContainer}>
-              <Feather name="leaf" size={32} color={Colors.brand[600]} />
+              <Feather name="feather" size={32} color={Colors.brand[600]} />
             </View>
             <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>Sign in to manage your farm and get AI insights.</Text>
@@ -93,19 +100,29 @@ export default function LoginScreen({ navigation }: Props) {
               <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
             </TouchableOpacity>
 
+            {error && (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            )}
+
             <TouchableOpacity 
-              style={styles.loginButton}
+              style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
               onPress={handleLogin}
               activeOpacity={0.8}
+              disabled={isLoading}
             >
-              <Text style={styles.loginButtonText}>Sign In</Text>
-              <Feather name="arrow-right" size={20} color={Colors.white} />
+              <Text style={styles.loginButtonText}>{isLoading ? 'Signing In...' : 'Sign In'}</Text>
+              {!isLoading && <Feather name="arrow-right" size={20} color={Colors.white} />}
             </TouchableOpacity>
           </View>
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+            <TouchableOpacity onPress={() => {
+              clearError();
+              navigation.navigate('Register');
+            }}>
               <Text style={styles.registerLink}>Sign Up</Text>
             </TouchableOpacity>
           </View>
@@ -223,11 +240,25 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
+  loginButtonDisabled: {
+    opacity: 0.7,
+  },
   loginButtonText: {
     color: Colors.white,
     fontSize: 16,
     fontWeight: '700',
     marginRight: 8,
+  },
+  errorContainer: {
+    backgroundColor: Colors.rose[50],
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  errorText: {
+    color: Colors.rose[600],
+    fontSize: 14,
+    textAlign: 'center',
   },
   footer: {
     flexDirection: 'row',

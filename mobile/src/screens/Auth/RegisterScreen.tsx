@@ -8,6 +8,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootStackParamList';
 import { Feather } from '@expo/vector-icons';
 import Colors from '../../constants/colors';
+import { useAuthStore } from '../../store/authStore';
 
 type RegisterScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Register'>;
 
@@ -21,10 +22,26 @@ export default function RegisterScreen({ navigation }: Props) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [localError, setLocalError] = useState('');
+  
+  const { register, isLoading, error, clearError } = useAuthStore();
 
-  const handleRegister = () => {
-    // For now, bypass auth and go straight to Main
-    navigation.navigate('Main');
+  const handleRegister = async () => {
+    setLocalError('');
+    if (!name || !email || !password || !confirmPassword) {
+      setLocalError('Please fill in all fields');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setLocalError('Passwords do not match');
+      return;
+    }
+    try {
+      await register(name, email, password);
+      // MainTabNavigator routing is handled in App.tsx now
+    } catch (err) {
+      // Error is handled by store
+    }
   };
 
   return (
@@ -120,19 +137,29 @@ export default function RegisterScreen({ navigation }: Props) {
               </View>
             </View>
 
+            {(error || localError) && (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{localError || error}</Text>
+              </View>
+            )}
+
             <TouchableOpacity 
-              style={styles.registerButton}
+              style={[styles.registerButton, isLoading && styles.registerButtonDisabled]}
               onPress={handleRegister}
               activeOpacity={0.8}
+              disabled={isLoading}
             >
-              <Text style={styles.registerButtonText}>Create Account</Text>
-              <Feather name="arrow-right" size={20} color={Colors.white} />
+              <Text style={styles.registerButtonText}>{isLoading ? 'Creating Account...' : 'Create Account'}</Text>
+              {!isLoading && <Feather name="arrow-right" size={20} color={Colors.white} />}
             </TouchableOpacity>
           </View>
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>Already have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+            <TouchableOpacity onPress={() => {
+              clearError();
+              navigation.navigate('Login');
+            }}>
               <Text style={styles.loginLink}>Sign In</Text>
             </TouchableOpacity>
           </View>
@@ -233,11 +260,26 @@ const styles = StyleSheet.create({
     elevation: 4,
     marginTop: 12,
   },
+  registerButtonDisabled: {
+    opacity: 0.7,
+  },
   registerButtonText: {
     color: Colors.white,
     fontSize: 16,
     fontWeight: '700',
     marginRight: 8,
+  },
+  errorContainer: {
+    backgroundColor: Colors.rose[50],
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    marginTop: 12,
+  },
+  errorText: {
+    color: Colors.rose[600],
+    fontSize: 14,
+    textAlign: 'center',
   },
   footer: {
     flexDirection: 'row',

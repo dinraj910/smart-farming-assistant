@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './src/navigation/RootStackParamList';
@@ -11,26 +11,45 @@ import MainTabNavigator  from './src/navigation/MainTabNavigator';
 import AgentChatScreen   from './src/screens/AgentChatScreen';
 import FieldDetailScreen from './src/screens/FieldDetailScreen';
 
+import { useAuthStore } from './src/store/authStore';
+
 import "./global.css";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
+  const { token, isLoading, checkAuth } = useAuthStore();
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  if (isLoading) {
+    // You can return a custom splash/loading screen here
+    return null;
+  }
+
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Welcome"
         screenOptions={{
           headerShown: false,
           animation: 'slide_from_right',
         }}
       >
-        <Stack.Screen name="Welcome"   component={WelcomeScreen}    />
-        <Stack.Screen name="Login"     component={LoginScreen}      />
-        <Stack.Screen name="Register"  component={RegisterScreen}   />
-        <Stack.Screen name="Main"      component={MainTabNavigator} options={{ animation: 'fade' }} />
-        <Stack.Screen name="AgentChat" component={AgentChatScreen}  />
-        <Stack.Screen name="FieldDetail" component={FieldDetailScreen} />
+        {token ? (
+          <>
+            <Stack.Screen name="Main"      component={MainTabNavigator} options={{ animation: 'fade' }} />
+            <Stack.Screen name="AgentChat" component={AgentChatScreen}  />
+            <Stack.Screen name="FieldDetail" component={FieldDetailScreen} />
+          </>
+        ) : (
+          <>
+            <Stack.Screen name="Welcome"   component={WelcomeScreen}    />
+            <Stack.Screen name="Login"     component={LoginScreen}      />
+            <Stack.Screen name="Register"  component={RegisterScreen}   />
+          </>
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );

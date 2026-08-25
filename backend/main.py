@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.ml.crop_model import CropRecommendationModel
 from app.routers import crop
 from app.routers import agent as agent_router
+from app.routers import auth as auth_router
 from prisma import Prisma
 
 
@@ -85,6 +86,13 @@ app.include_router(
     agent_router.router,
     prefix="/api/v1",
     tags=["Agent"],
+)
+
+# Authentication API
+app.include_router(
+    auth_router.router,
+    prefix="/api/v1/auth",
+    tags=["Auth"],
 )
 
 
