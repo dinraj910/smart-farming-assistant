@@ -8,6 +8,7 @@ import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootStackParamList';
+import { useAuthStore } from '../store/authStore';
 
 // ─── Hourly Weather Data ─────────────────────────────────────────────────────
 const HOURLY = [
@@ -48,6 +49,7 @@ const MY_FIELDS = [
 
 export default function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { user } = useAuthStore();
   const heroAnim = useRef(new Animated.Value(0)).current;
 
   // Navigate to the appropriate tab
@@ -90,7 +92,7 @@ export default function HomeScreen() {
               {/* Top row */}
               <View style={styles.heroTopRow}>
                 <View>
-                  <Text style={styles.greetingText}>Hello Rajesh Nair</Text>
+                  <Text style={styles.greetingText}>Hello {user?.name || 'Farmer'}</Text>
                   <Text style={styles.dateText}>Monday, 30 Jul 2026</Text>
                 </View>
                 <TouchableOpacity

@@ -38,6 +38,14 @@ export default function FarmsScreen() {
   const [plotAcres, setPlotAcres] = useState('');
   const [langMl, setLangMl] = useState(false);
 
+  const labels = {
+    sub:     langMl ? 'രജിസ്ട്ഡ് ഭൂമികൾ' : 'Registered Plots',
+    title:   langMl ? 'എന്റെ ഫാമുകൾ & ഭൂമികൾ' : 'My Farms & Plots',
+    addBtn:  langMl ? 'ഭൂമി ചേർക്കുക' : 'Add Plot',
+    modalTitle: langMl ? 'പുതിയ ഭൂമി ചേർക്കുക' : 'Register New Plot',
+    savePlot: langMl ? 'ഭൂമി സേവ് ചെയ്യുക' : 'Save Plot',
+  };
+
   useEffect(() => {
     fetchFarms();
   }, []);
