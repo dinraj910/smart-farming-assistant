@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  Modal, TextInput, Image, Alert,
+  Modal, TextInput, Image, Alert, ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useAuthStore } from '../store/authStore';
+import apiClient from '../api/client';
 
 // ─── Registered plots ─────────────────────────────────────────────────────────
 interface Plot {
@@ -18,26 +20,7 @@ interface Plot {
   image: string;
 }
 
-const INITIAL_PLOTS: Plot[] = [
-  {
-    id: 'F1',
-    name: 'Wayanad Pepper Homestead',
-    location: 'Meenangadi, Wayanad',
-    acres: '2.4 Acres',
-    npk: 'NPK: 85-42-140',
-    status: 'Healthy',
-    image: 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&w=400&q=80',
-  },
-  {
-    id: 'F2',
-    name: 'Palakkad Nendran Field',
-    location: 'Chittur, Palakkad',
-    acres: '1.8 Acres',
-    npk: 'NPK: 70-30-110',
-    status: 'Inspection Due',
-    image: 'https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?auto=format&fit=crop&w=400&q=80',
-  },
-];
+// Empty initial plots, fetched from API
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; border: string }> = {
   Healthy:        { bg: '#dcfce7', text: '#166534', border: '#bbf7d0' },
@@ -47,40 +30,57 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; border: string }
 
 export default function FarmsScreen() {
   const navigation = useNavigation();
-  const [plots, setPlots] = useState<Plot[]>(INITIAL_PLOTS);
+  const { user, logout } = useAuthStore();
+  const [plots, setPlots] = useState<Plot[]>([]);
+  const [loadingPlots, setLoadingPlots] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [plotName, setPlotName] = useState('');
   const [plotAcres, setPlotAcres] = useState('');
   const [langMl, setLangMl] = useState(false);
 
-  const labels = {
-    sub:     langMl ? 'രജിസ്ട്ഡ് ഭൂമികൾ' : 'Registered Plots',
-    title:   langMl ? 'എന്റെ ഫാമുകൾ & ഭൂമികൾ' : 'My Farms & Plots',
-    addBtn:  langMl ? 'ഭൂമി ചേർക്കുക' : 'Add Plot',
-    memberId:'Member ID: KL-WYD-8821 • Wayanad',
-    plotCount: `${plots.length} Plots Registered`,
-    modalTitle: langMl ? 'പുതിയ ഭൂമി ചേർക്കുക' : 'Register New Plot',
-    savePlot: langMl ? 'ഭൂമി സേവ് ചെയ്യുക' : 'Save Plot',
-  };
+  useEffect(() => {
+    fetchFarms();
+  }, []);
 
-  function addPlot() {
+  async function fetchFarms() {
+    try {
+      const res = await apiClient.get('/farms');
+      setPlots(res.data);
+    } catch (error) {
+      console.error('Failed to fetch farms:', error);
+    } finally {
+      setLoadingPlots(false);
+    }
+  }
+
+  async function addPlot() {
     if (!plotName.trim()) {
       Alert.alert('Error', 'Please enter a plot name');
       return;
     }
-    const newPlot: Plot = {
-      id: `F${plots.length + 1}`,
-      name: plotName,
-      location: 'Kerala, India',
-      acres: plotAcres ? `${plotAcres} Acres` : '1.0 Acres',
-      npk: 'NPK: --',
-      status: 'Inspection Due',
-      image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=400&q=80',
-    };
-    setPlots(p => [...p, newPlot]);
-    setPlotName('');
-    setPlotAcres('');
-    setModalOpen(false);
+    
+    try {
+      const res = await apiClient.post('/farms', {
+        name: plotName,
+        location: 'Kerala, India',
+        acres: plotAcres ? `${plotAcres} Acres` : '1.0 Acres',
+        npk: 'NPK: --',
+        status: 'Inspection Due'
+      });
+      setPlots(p => [res.data, ...p]);
+      setPlotName('');
+      setPlotAcres('');
+      setModalOpen(false);
+    } catch (error) {
+      console.error('Error creating plot:', error);
+      Alert.alert('Error', 'Failed to create plot');
+    }
+  }
+
+  async function handleQuickAction(actionLabel: string) {
+    if (actionLabel === 'Sign Out') {
+      logout();
+    }
   }
 
   return (
@@ -113,11 +113,11 @@ export default function FarmsScreen() {
               style={S.profileAvatar}
             />
             <View style={{ flex: 1 }}>
-              <Text style={S.profileName}>Rajesh Nair</Text>
-              <Text style={S.profileMeta}>{labels.memberId}</Text>
+              <Text style={S.profileName}>{user?.name || 'Farmer'}</Text>
+              <Text style={S.profileMeta}>{user?.email}</Text>
               <View style={S.plotCountBadge}>
                 <Feather name="map-pin" size={10} color="#15803d" />
-                <Text style={S.plotCountText}>{labels.plotCount}</Text>
+                <Text style={S.plotCountText}>{plots.length} Plots Registered</Text>
               </View>
             </View>
             <TouchableOpacity style={S.editBtn}>
@@ -145,36 +145,42 @@ export default function FarmsScreen() {
           {/* ── Plot Cards ───────────────────────────────────────────────── */}
           <View style={S.plotList}>
             <Text style={S.sectionTitle}>Registered Plots</Text>
-            {plots.map((plot) => {
-              const st = STATUS_STYLES[plot.status] || STATUS_STYLES['Inspection Due'];
-              return (
-                <TouchableOpacity 
-                  key={plot.id} 
-                  style={S.plotCard} 
-                  activeOpacity={0.8}
-                  onPress={() => (navigation as any).navigate('FieldDetail', { fieldId: plot.id })}
-                >
-                  <Image source={{ uri: plot.image }} style={S.plotImage} />
-                  <View style={{ flex: 1, gap: 4 }}>
-                    <View style={S.plotTopRow}>
-                      <Text style={S.plotId}>Plot #{plot.id}</Text>
-                      <View style={[S.statusBadge, { backgroundColor: st.bg, borderColor: st.border }]}>
-                        <Text style={[S.statusText, { color: st.text }]}>{plot.status}</Text>
+            {loadingPlots ? (
+              <ActivityIndicator size="small" color="#15803d" style={{ marginTop: 20 }} />
+            ) : plots.length === 0 ? (
+              <Text style={{ textAlign: 'center', color: '#64748b', marginTop: 20 }}>No plots registered yet. Click "Add Plot" to create one.</Text>
+            ) : (
+              plots.map((plot) => {
+                const st = STATUS_STYLES[plot.status] || STATUS_STYLES['Inspection Due'];
+                return (
+                  <TouchableOpacity 
+                    key={plot.id} 
+                    style={S.plotCard} 
+                    activeOpacity={0.8}
+                    onPress={() => (navigation as any).navigate('FieldDetail', { fieldId: plot.id })}
+                  >
+                    <Image source={{ uri: plot.image }} style={S.plotImage} />
+                    <View style={{ flex: 1, gap: 4 }}>
+                      <View style={S.plotTopRow}>
+                        <Text style={S.plotId}>Plot #{plot.id.substring(0,6)}</Text>
+                        <View style={[S.statusBadge, { backgroundColor: st.bg, borderColor: st.border }]}>
+                          <Text style={[S.statusText, { color: st.text }]}>{plot.status}</Text>
+                        </View>
+                      </View>
+                      <Text style={S.plotName}>{plot.name}</Text>
+                      <Text style={S.plotMeta}>{plot.acres} • {plot.npk}</Text>
+                      <View style={S.plotLocation}>
+                        <Feather name="map-pin" size={10} color="#94a3b8" />
+                        <Text style={S.plotLocationText}>{plot.location}</Text>
                       </View>
                     </View>
-                    <Text style={S.plotName}>{plot.name}</Text>
-                    <Text style={S.plotMeta}>{plot.acres} • {plot.npk}</Text>
-                    <View style={S.plotLocation}>
-                      <Feather name="map-pin" size={10} color="#94a3b8" />
-                      <Text style={S.plotLocationText}>{plot.location}</Text>
+                    <View style={S.arrowBtn}>
+                      <Feather name="arrow-up-right" size={14} color="#64748b" />
                     </View>
-                  </View>
-                  <View style={S.arrowBtn}>
-                    <Feather name="arrow-up-right" size={14} color="#64748b" />
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
+                  </TouchableOpacity>
+                );
+              })
+            )}
           </View>
 
           {/* ── Quick Actions ────────────────────────────────────────────── */}
@@ -184,9 +190,9 @@ export default function FarmsScreen() {
               { icon: 'bell',       label: 'Push Notifications', sub: '3 active alerts' },
               { icon: 'shield',     label: 'Data & Privacy',     sub: 'GDPR compliant' },
               { icon: 'help-circle', label: 'Help & Support',    sub: 'Contact Agri expert' },
-              { icon: 'log-out',    label: 'Sign Out',           sub: 'Rajesh Nair' },
+              { icon: 'log-out',    label: 'Sign Out',           sub: user?.name || 'User' },
             ].map((item, i) => (
-              <TouchableOpacity key={i} style={S.settingRow} activeOpacity={0.7}>
+              <TouchableOpacity key={i} style={S.settingRow} activeOpacity={0.7} onPress={() => handleQuickAction(item.label)}>
                 <View style={S.settingIcon}>
                   <Feather name={item.icon as any} size={15} color="#475569" />
                 </View>

@@ -5,9 +5,8 @@
 // managed by asyncpg and is NOT touched here.
 //
 // Note on farmId: ChatSession stores a farmId string for grouping sessions by
-// farm, but there is no Farm model yet in this project.  We use a plain String?
-// field (no @relation) to avoid inventing a fake model.  A DB-level FK can be
-// added once the Farm model is built.
+// farm. A Farm model has now been created and linked to User.
+// A DB-level FK has been added to link ChatSession to Farm.
 
 datasource db {
   provider = "postgresql"
@@ -34,14 +33,15 @@ model User {
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   sessions      ChatSession[]
+  farms         Farm[]
 
   @@map("users")
 }
 
 model ChatSession {
   id            String   @id @default(uuid()) @db.Uuid
-  // Plain string — no FK to Farm (Farm model does not exist yet)
-  farmId        String?  @map("farm_id")
+  farmId        String?  @map("farm_id") @db.Uuid
+  farm          Farm?    @relation(fields: [farmId], references: [id], onDelete: SetNull)
   memorySummary String?  @map("memory_summary")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
@@ -64,6 +64,26 @@ model ChatMessage {
   session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@map("chat_messages")
+}
+
+model Farm {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name          String
+  location      String
+  acres         String
+  npk           String?
+  status        String   @default("Inspection Due")
+  image         String?
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  sessions      ChatSession[]
+
+  @@map("farms")
 }
 
 // We tell Prisma about the existing KAU pgvector table so it doesn't try to drop it.

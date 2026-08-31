@@ -14,6 +14,7 @@ from app.ml.crop_model import CropRecommendationModel
 from app.routers import crop
 from app.routers import agent as agent_router
 from app.routers import auth as auth_router
+from app.routers import farm as farm_router
 from prisma import Prisma
 
 
@@ -86,6 +87,13 @@ app.include_router(
     agent_router.router,
     prefix="/api/v1",
     tags=["Agent"],
+)
+
+# Farm API
+app.include_router(
+    farm_router.router,
+    prefix="/api/v1",
+    tags=["Farm"],
 )
 
 # Authentication API
