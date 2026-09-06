@@ -4,7 +4,7 @@ an attempt at long-context memory: a sliding window of recent messages for
 active reasoning, plus a rolling summary for anything older -- similar in
 spirit to how ChatGPT bounds context per conversation.
 """
-from groq import Groq
+from google import genai
 from prisma import Prisma
 
 WINDOW_SIZE = 12          # most recent messages kept verbatim (~6 turns)
@@ -16,7 +16,7 @@ _summarizer_client = None
 def get_summarizer_client():
     global _summarizer_client
     if _summarizer_client is None:
-        _summarizer_client = Groq()
+        _summarizer_client = genai.Client()
     return _summarizer_client
 
 
@@ -82,18 +82,19 @@ async def maybe_summarize(db: Prisma, session_id: str):
     overflow_text = "\n".join(f"{m.role}: {m.content}" for m in overflow)
 
     client = get_summarizer_client()
-    response = client.chat.completions.create(
-        model="openai/gpt-oss-120b",
-        messages=[
-            {"role": "system", "content": (
-                "Summarize this farming conversation in 2-4 sentences. Keep concrete facts: "
-                "crops discussed, decisions made, numbers mentioned (prices, dates, quantities). "
-                "Merge with the previous summary if one is given -- describe the whole conversation "
-                "so far, not just the new part."
-            )},
-            {"role": "user", "content": f"Previous summary: {session.memorySummary or 'None'}\n\nConversation to fold in:\n{overflow_text}"},
-        ],
+    sys_prompt = (
+        "Summarize this farming conversation in 2-4 sentences. Keep concrete facts: "
+        "crops discussed, decisions made, numbers mentioned (prices, dates, quantities). "
+        "Merge with the previous summary if one is given -- describe the whole conversation "
+        "so far, not just the new part."
     )
-    new_summary = response.choices[0].message.content
+    user_msg = f"Previous summary: {session.memorySummary or 'None'}\n\nConversation to fold in:\n{overflow_text}"
+    
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=user_msg,
+        config=genai.types.GenerateContentConfig(system_instruction=sys_prompt),
+    )
+    new_summary = response.text
 
     await db.chatsession.update(where={"id": session_id}, data={"memorySummary": new_summary})

@@ -71,7 +71,7 @@ async def test_session():
             
             # Note: We didn't supply farm_id in the previous requests, so it created an anonymous session.
             # We can't query by farm_id easily without supplying it first, so let's simulate a new session with farm_id
-            farm_id = "test-farm-123"
+            farm_id = "123e4567-e89b-12d3-a456-426614174000"
             print(f"\nCreating/Fetching session for farm: {farm_id}")
             
             resp_3 = await client.post(

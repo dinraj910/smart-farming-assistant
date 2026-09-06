@@ -118,3 +118,224 @@ The price‑lookup tool could not retrieve current Kerala market prices for **Ur
 If you decide later to grow **banana** instead, the same three fertilizers are used but at higher total amounts (≈ 150 kg N + 75 kg P₂O₅ + 150 kg K₂O / ha, split three times).
 
 Feel free to ask if you need a detailed schedule for banana or any other crop!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+------------------------------------------------------------------------------------------------------
+
+
+
+
+PS D:\Mini Project\smart-farming-assistant\backend> python test_agent.py
+
+================================================================================
+Testing Multi-Turn Chat Session (Memory Feature)
+================================================================================
+
+[Turn 1] User: My soil has N=80 P=90 K=88 pH=9, 1 acre in Kottayam. what should i plant?  
+
+[Turn 1] Agent Answer (Session ID: 517ede6e-f1e0-440e-b339-c8b9ae097ded):
+Agent failed: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.6-flash for the latest features and improvements. We recommend you to use the Interactions API.', 'status': 'NOT_FOUND'}}
+
+[Turn 2] User: What is the best fertilizer for this plant and what is the market price of it in 6 months?
+(Sending with session_id: 517ede6e-f1e0-440e-b339-c8b9ae097ded)
+
+[Turn 2] Agent Answer:
+Agent failed: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.6-flash for the latest features and improvements. We recommend you to use the Interactions API.', 'status': 'NOT_FOUND'}}
+
+================================================================================
+Testing /agent/sessions endpoint history retrieval
+================================================================================
+
+Creating/Fetching session for farm: test-farm-123
+
+Server returned HTTP 500
+Error details from server: Internal Server Error
+PS D:\Mini Project\smart-farming-assistant\backend>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                    python test_agent.py
+
+================================================================================
+Testing Multi-Turn Chat Session (Memory Feature)
+================================================================================
+
+[Turn 1] User: My soil has N=80 P=90 K=88 pH=9, 1 acre in Kottayam. what should i plant?
+
+[Turn 1] Tools Called:
+  - weather_lookup {'forecast_days': 1, 'district': 'Kottayam'}
+  - crop_recommendation_model {'ph': 9, 'rainfall': 200, 'temperature': 27, 'humidity': 88, 'N': 80, 'K': 88, 'P': 90}
+  - crop_calendar_lookup {'crop_name': 'banana'}
+  - companion_rules_lookup {'crop_name': 'banana'}
+  - market_price_lookup {'district': 'Kottayam', 'commodity': 'banana'}        
+  - yield_prediction_model {'annual_rainfall': 3000, 'state': 'Kerala', 'farm_area': 0.4047, 'crop': 'banana', 'season': 'Whole Year'}
+  - kau_knowledge_search {'top_k': 3, 'query': 'banana cultivation spacing fertilizer soil pH management'}
+  - market_price_lookup {'district': 'Kottayam', 'commodity': 'nendran'}       
+
+[Turn 1] Agent Answer (Session ID: 9572a8c7-86ce-481d-9080-7fdb2941d42d):      
+### **Key Insights**
+
+* **Recommended Crop (ML-Verified):** **Banana** (Primary option).
+  * *Note on certainty:* The recommendation model shows lower certainty for this specific soil test, primarily due to the high soil pH of 9.0. **Jute** and **Chickpea** stand out as the top alternative crops under this classification.   
+* **Farm Size:** 1 Acre (0.4047 Hectares) in Kottayam.
+* **Expected Yield:** Approximately **3.01 tons** total harvest for 1 acre (7.44 tons/ha yield rate).
+* **Soil Consideration:** A pH of 9.0 is strongly alkaline. Bananas thrive best in slightly acidic to neutral soil (pH 6.0–7.5). Micronutrient management and organic amendments will be essential to lower effective alkalinity and unlock nutrients.
+
+---
+
+### **Actionable Advice**
+
+#### **1. Planting Calendar & Timing**
+* **Traditional Planting Window:** Plant during the Malayalam months of **Chingam** to **Kanni** (mid-August to mid-October). Planting in this window aligns the harvest with the high-demand Onam season 10 to 12 months later.
+* **Weather Context:** Current atmospheric conditions in Kottayam show high humidity (~88%) with light drizzle expected. Ensure field drainage is clear before planting pits are opened.
+
+---
+
+#### **2. Intercropping & Companion Planting**
+* **Primary Folk-Wisdom Companions:** **Turmeric**, **Ginger**, or **Cowpea**. 
+* **Agronomic Purpose:**
+  * **Turmeric & Ginger:** Excel in the shaded understory beneath the developing banana canopy.
+  * **Cowpea:** Functions as a nitrogen-fixing cover crop during the early growth stage before the leaves close in.
+
+---
+
+#### **3. Land Preparation & Management (KAU Package of Practices)**
+*(Sourced from Kerala Agricultural University PoP, Pages 218 & 394)*
+
+* **Spacing & Pit Preparation:**
+  * Standard spacing is **2 m × 2 m** (approx. 1,000 plants per acre / 2,500 per hectare).
+  * For high-density planting in varieties like Nendran, use **2 m × 3 m** with 2 plants per pit.
+* **Nutrient & Micronutrient Management:**
+  * High soil pH can cause micro-element binding (especially Iron and Zinc). Apply liberal amounts of compost or well-rotted farmyard manure during pit preparation.
+  * Apply **Banana Micromix** at **4 g per plant** (10 kg/ha) combined with the 2nd split dose of NPK. Alternatively, apply a 1% foliar spray (4 g dissolved in 400 ml water per plant) at 3 months after planting. *(KAU Source Page 394)*  
+
+---
+
+#### **4. Market Price Information**
+* **Lookup Result:** *Price data for banana in Kottayam mandi is currently unavailable from the Agmarknet feed.*
+* **Next Steps:** Please check directly with local wholesale fruit markets or agricultural co-operatives in Kottayam for real-time trade rates before finalizing market supply commitments.
+
+[Turn 2] User: What is the best fertilizer for this plant and what is the market price of it in 6 months?
+(Sending with session_id: 9572a8c7-86ce-481d-9080-7fdb2941d42d)
+
+[Turn 2] Tools Called:
+  - kau_knowledge_search {'top_k': 3, 'query': 'banana fertilizer application schedule dose NPK'}
+  - market_price_lookup {'commodity': 'banana', 'district': 'Kottayam'}        
+  - market_price_lookup {'commodity': 'plantain'}
+  - market_price_lookup {'commodity': 'banana - ripe'}
+  - kau_knowledge_search {'query': 'banana general fertilizer dose NPK per plant nendran palayankodan', 'top_k': 2}
+
+[Turn 2] Agent Answer:
+### **Key Insights**
+
+* **Source of Agronomic Advice:** AI-Reasoned from Kerala Agricultural University (KAU) Package of Practices literature *(Pages 217, 218, 394)*.
+* **Fertilizer Requirement:** Bananas are heavy feeders requiring substantial Potassium ($K_2O$) and Nitrogen ($N$), applied in multiple split doses to build strong pseudostems and healthy bunches.
+* **Market Price & 6-Month Outlook:** Live Agmarknet market price data for banana in Kerala mandis is currently unavailable in the feed. Bananas generally take 10 to 12 months from planting to harvest, so market prices 6 months from now will reflect mid-stage growth rather than harvest sales. Peak market demand in Kerala typically coincides with major festival seasons (such as Onam and Vishu).
+
+---
+
+### **Actionable Advice**
+
+#### **1. Fertilizer Dosage & Split Schedule**
+*(Sourced from KAU Package of Practices, Page 217)*
+
+* **Standard NPK Dose (cv. Nendran):**
+  * Base recommendation: **190 g N : 115 g $P_2O_5$ : 300 g $K_2O$ per plant per year**.
+  * When intercropped with cowpea as integrated nutrient management, reduce fertilizer to **143 g N : 85 g $P_2O_5$ : 225 g $K_2O$ per plant**.
+* **Timing of Split Doses:**
+  * **1st Split:** Apply 2 months after planting.
+  * **2nd Split:** Apply 4 months after planting.
+  * *Pro Tip for Nendran:* Splitting the recommended fertilizer into **6 smaller doses** throughout early-to-mid growth significantly improves finger length and overall bunch weight.
+  * **Irrigation:** Always water the basin thoroughly right after manuring so nutrients dissolve and reach the root zone without burning.
+
+---
+
+#### **2. Soil Conditioning for High pH Soil (pH 9.0)**
+*(Sourced from KAU Package of Practices, Page 218)*
+
+* **Green Manuring:** Sow **cowpea, sunn hemp, or daincha** at 50 kg/ha in the inter-spaces immediately after planting. Incorporate the green biomass into the soil 40 days after sowing. Repeat a second cycle of green manuring 40 days later.
+* **Organic Matter:** Organic acid release during green manure decomposition buffers high soil pH, improving nutrient uptake.
+
+---
+
+#### **3. Essential Micronutrient Management**
+*(Sourced from KAU Package of Practices, Page 394)*
+
+* **Banana Micromix:** In soils with high pH, key micronutrients (Iron, Zinc, Boron) become chemically bound. Apply **Banana Micromix @ 4 g per plant** (10 kg/ha) mixed into the soil along with the 2nd split dose of NPK.
+* **Foliar Option:** Alternatively, spray a 1% foliar solution (4 g dissolved in 400 ml water per plant) at 3 months after planting.
+
+================================================================================
+Testing /agent/sessions endpoint history retrieval
+================================================================================
+
+Creating/Fetching session for farm: 123e4567-e89b-12d3-a456-426614174000       
+
+Server returned HTTP 500
+Error details from server: Internal Server Error
+PS D:\Mini Project\smart-farming-assistant\backend> 
