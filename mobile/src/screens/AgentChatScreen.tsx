@@ -137,10 +137,19 @@ export default function AgentChatScreen() {
     </View>
   );
 
+  const formatTime = (isoString?: string) => {
+    if (!isoString) return '';
+    const d = new Date(isoString);
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   const renderUserMsg = (item: ChatMessage) => (
     <View style={styles.userRow}>
       <View style={[styles.userBubble, item.status === 'failed' && styles.userBubbleFailed]}>
         <Text style={styles.userBubbleText}>{item.text}</Text>
+        {item.createdAt && (
+          <Text style={styles.timeTextUser}>{formatTime(item.createdAt)}</Text>
+        )}
         {item.status === 'failed' && (
           <TouchableOpacity onPress={() => handleRetry(item.id)} style={styles.retryBtn}>
             <Feather name="refresh-cw" size={11} color="#dc2626" />
@@ -162,6 +171,9 @@ export default function AgentChatScreen() {
         <View style={{ flex: 1, gap: 6 }}>
           <View style={styles.assistantBubble}>
             <Text style={styles.assistantBubbleText}>{item.text}</Text>
+            {item.createdAt && (
+              <Text style={styles.timeTextAsst}>{formatTime(item.createdAt)}</Text>
+            )}
           </View>
           {sourceNames.length > 0 && (
             <View>
@@ -362,6 +374,7 @@ const styles = StyleSheet.create({
   userBubbleText: { fontSize: 12, color: '#fff', lineHeight: 18 },
   retryBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 },
   retryBtnText: { fontSize: 10, color: '#dc2626', fontWeight: '600' },
+  timeTextUser: { fontSize: 9, color: '#94a3b8', marginTop: 4, alignSelf: 'flex-end' },
 
   // Assistant
   assistantRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', marginBottom: 4 },
@@ -376,6 +389,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
   },
   assistantBubbleText: { fontSize: 12, color: '#1e293b', lineHeight: 18 },
+  timeTextAsst: { fontSize: 9, color: '#94a3b8', marginTop: 4, alignSelf: 'flex-start' },
 
   // Thinking
   thinkingBubble: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6 },

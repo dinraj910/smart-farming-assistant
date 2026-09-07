@@ -16,6 +16,7 @@ export interface ChatMessage {
   trace?: { tool: string }[];
   isThinking?: boolean;
   canRetry?: boolean;
+  createdAt?: string;
 }
 
 interface ChatState {
@@ -82,6 +83,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         role: m.role as 'user' | 'assistant',
         text: m.content,
         status: 'sent',
+        createdAt: m.created_at,
       }));
       set(state => ({
         sessions: { ...state.sessions, [fieldId]: session_id },
@@ -103,8 +105,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const userMsgId = `user-${Date.now()}`;
     const thinkingId = 'thinking';
 
-    const userMsg: ChatMessage = { id: userMsgId, role: 'user', text, status: 'sending' };
-    const thinkingMsg: ChatMessage = { id: thinkingId, role: 'assistant', text: '', isThinking: true };
+    const userMsg: ChatMessage = { id: userMsgId, role: 'user', text, status: 'sending', createdAt: new Date().toISOString() };
+    const thinkingMsg: ChatMessage = { id: thinkingId, role: 'assistant', text: '', isThinking: true, createdAt: new Date().toISOString() };
 
     set(state => ({
       isSending: true,
@@ -124,6 +126,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         text: data.answer,
         status: 'sent',
         trace: data.reasoning_trace || [],
+        createdAt: new Date().toISOString(),
       };
 
       set(state => {
