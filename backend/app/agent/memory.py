@@ -91,7 +91,7 @@ async def maybe_summarize(db: Prisma, session_id: str):
     user_msg = f"Previous summary: {session.memorySummary or 'None'}\n\nConversation to fold in:\n{overflow_text}"
     
     response = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-3.6-flash",
         contents=user_msg,
         config=genai.types.GenerateContentConfig(system_instruction=sys_prompt),
     )
