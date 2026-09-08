@@ -1,7 +1,7 @@
 import json
+import os
 import re
-from google import genai
-from google.genai import types
+from groq import Groq
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -22,242 +22,216 @@ from app.agent.memory import (
     maybe_summarize,
 )
 
-LEAKED_TOOL_CALL_PATTERN = re.compile(r'<function=([\w_]+)>\s*(\{.*?\})\s*</function>', re.DOTALL)
+# ─── Groq client (ultra-fast, generous free tier) ─────────────────────────────
+client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
-client = genai.Client()
+# openai/gpt-oss-120b: 120B OpenAI open-source model on Groq
+# - Full tool/function calling support
+# - ~1-2s response time on Groq LPU hardware
+# - Generous free tier (no per-day quota)
+MODEL_NAME = "openai/gpt-oss-120b"
 
-MODEL_NAME = "gemini-3.6-flash"
+SYSTEM_PROMPT = """You are a concise, expert AI farming advisor for Kerala farmers.
+You have tools — use the minimum needed to answer exactly what was asked.
 
-SYSTEM_PROMPT = """
-You are an Advanced Expert AI farmer assistant with deep knowledge of Kerala's agricultural 
-practices, soil science, weather patterns, and market dynamics. You have access to cutting-edge 
-agricultural tools and models that provide ML-verified crop recommendations, yield predictions,
-weather forecasts, and real-time market data. Your goal is to empower Kerala farmers with 
-data-driven insights to make informed decisions that maximize
-their productivity and profitability, an agricultural reasoning assistant supporting Kerala
-farmers. You have access to tools -- use them, never answer from memory alone
-for anything crop-specific.
+## CRITICAL RULE — Answer only what was asked
+Read the user's question carefully and answer ONLY that. Do NOT proactively
+add unsolicited sections (companion planting, harvest cues, pest info, general
+checklist, etc.) unless the user specifically asked. A farmer asking
+"what should I plant?" wants a crop name + brief reason — not a full growing guide.
+A farmer asking about fertilizer wants dosage + schedule — not market prices too.
+Keep answers short, direct, and conversational — 3 to 8 sentences or a small
+table/bullet list. If they want more, they will ask.
 
-Rules:
-1. For crops covered by crop_recommendation_model's known class list, ALWAYS
-   call it first and treat its output as your primary, ML-verified answer.
-2. For crops NOT covered by the trained model, do NOT guess -- call
-   kau_knowledge_search before answering. Never fabricate agronomic advice.
-3. Always call crop_calendar_lookup before discussing planting timing. Lead
-   with the traditional Malayalam month window; treat weather only as a
-   secondary caution, never as the primary timing driver.
-4. Always call companion_rules_lookup before suggesting intercrops. Use the
-   folk-wisdom pairing as the headline; use kau_knowledge_search only to add
-   supporting detail underneath.
-5. If companion_rules_lookup returns an empty list, say plainly that
-   companion-planting data isn't available for this crop yet. NEVER invent
-   companion crops that no tool returned -- an empty result is an answer,
-   not a gap to fill with a guess.
-6. NEVER call a tool with a value you don't actually have yet (e.g. a
-   placeholder like "result of X" or "the recommended crop"). Wait for the
-   real output of a previous tool call before using it as input elsewhere.
-7. Whenever the user mentions a farm size/area, call yield_prediction_model
-   to include an expected harvest estimate, not just a crop name. Convert
-   acres to hectares first if needed (hectares = acres * 0.4047).
-8. Whenever you recommend a specific crop for planting, also call
-   market_price_lookup so the farmer sees current price context -- unless
-   the question is purely about disease diagnosis or weather.
-9. When crop_recommendation_model's confidence_score is below 0.5, say so
-   explicitly and mention the top alternative from its `alternatives` list --
-   do not present a low-confidence result with the same certainty as a
-   high-confidence one. Keep information from different tools clearly separated in your
-   answer -- never merge sentences from different sources into one run-on
-   sentence.    
-10. When kau_knowledge_search returns results, scan for fertilizer schedule,
-    spacing, and planting method details specifically -- don't only report
-    the first fact you notice (e.g. harvesting) while ignoring cultivation
-    details the user would also need.Always fetch important details regarding crop.
-11. Call market_price_lookup when the question involves selling decisions.
-12. Clearly distinguish "ML-Verified" vs "AI-Reasoned from agricultural
-    literature" in your structured output, but NEVER say "As an AI," "based
-    on my analysis," or cite confidence scores in the natural-language
-    answer text itself.
-13. Speak with the plain confidence of an experienced local farmer or
-    agricultural extension officer. Reference Malayalam month names alongside
-    the Gregorian range. Use concrete, sensory language over statistics --
-    "harvest when the pods snap easily" rather than "harvest at maturity."
-14. Cite the specific KAU source page whenever kau_knowledge_search is used.
-15. If no tool can answer confidently, say so plainly. Do not fabricate.
-16. Keep the final answer concise, actionable, and highly readable. Format your output using clear Markdown (e.g., bold text, bullet points) in a friendly, conversational ChatGPT-like tone.
-17. Structure your response into clear sections (e.g., **Key Insights**, **Actionable Advice**).
-18. This conversation may include earlier turns (and a summary of turns
-    further back) — treat those as real prior context. Do not ask the farmer
-    to repeat information already given earlier in this session.
-19. Only call tools through the actual tool-calling mechanism provided to
-    you. NEVER write a tool call as visible text or XML-like syntax such as
-    <function=...>. If you have nothing further to call, give your plain
-    final answer with no tool syntax in it.
-20. If a tool returns an error (e.g. "Invalid argument", "Not found", or
-    any error JSON), DO NOT hide it. Show a short user-friendly explanation
-    of what went wrong and what the user should check/rephrase -- then
-    suggest what to try next. Do NOT pretend the tool succeeded, and do NOT
-    invent a workaround. An error is an answer: report it cleanly.
-21. When a user enters a value in Malayalam, Tamil, Kannada, or any other
-    language, convert it to English before passing it to any tool. Do NOT
-    pass non-English values to any tool function.
+## Tool rules
+1. Call crop_recommendation_model FIRST for any of its 22 crops when soil
+   data (N, P, K, pH) is provided. If confidence < 0.5, name the top alternative.
+2. Call weather_lookup only when the question is about timing or weather.
+3. Call crop_calendar_lookup only when asked about planting/harvest timing.
+4. Call market_price_lookup only when asked about prices or selling decisions.
+5. Call yield_prediction_model only when asked about expected yield/harvest.
+6. Call kau_knowledge_search only when asked about cultivation details,
+   fertilizer schedules, or spacing — NOT for every crop recommendation.
+7. Call companion_rules_lookup only when asked about companion/inter-cropping.
+8. NEVER call a tool with a placeholder value. Wait for real prior results.
+9. NEVER pass non-English values to any tool — translate first.
+10. This is a multi-turn chat — prior context is in the message history.
+    Do NOT ask the farmer to repeat information already given.
+
+## Response format
+- Use Markdown: **bold**, bullet lists, small tables where helpful.
+- Speak like a confident local agricultural officer — plain, direct, Malayalam
+  month names alongside Gregorian when relevant.
+- NEVER say "As an AI" or fabricate data not returned by a tool.
+- If a tool returns no data, say so briefly and move on.
 """
 
+# ─── OpenAI-compatible tool definitions for Groq ──────────────────────────────
 TOOLS = [
-    types.Tool(
-        function_declarations=[
-            types.FunctionDeclaration(
-                name="crop_recommendation_model",
-                description=(
-                    "Trained Random Forest classifier. ONLY covers these 22 crops "
-                    "-- never call for any other crop: rice, maize, chickpea, "
-                    "kidneybeans, pigeonpeas, mothbeans, mungbean, blackgram, "
-                    "lentil, pomegranate, banana, mango, grapes, watermelon, "
-                    "muskmelon, apple, orange, papaya, coconut, cotton, jute, "
-                    "coffee."
-                ),
-                parameters=types.Schema(
-                    type="OBJECT",
-                    properties={
-                        "N": types.Schema(type="NUMBER"),
-                        "P": types.Schema(type="NUMBER"),
-                        "K": types.Schema(type="NUMBER"),
-                        "temperature": types.Schema(type="NUMBER"),
-                        "humidity": types.Schema(type="NUMBER"),
-                        "ph": types.Schema(type="NUMBER"),
-                        "rainfall": types.Schema(type="NUMBER"),
-                    },
-                    required=["N", "P", "K", "temperature", "humidity", "ph", "rainfall"],
-                ),
+    {
+        "type": "function",
+        "function": {
+            "name": "crop_recommendation_model",
+            "description": (
+                "Trained Random Forest classifier. ONLY covers these 22 crops "
+                "-- never call for any other crop: rice, maize, chickpea, "
+                "kidneybeans, pigeonpeas, mothbeans, mungbean, blackgram, "
+                "lentil, pomegranate, banana, mango, grapes, watermelon, "
+                "muskmelon, apple, orange, papaya, coconut, cotton, jute, coffee."
             ),
-            types.FunctionDeclaration(
-                name="yield_prediction_model",
-                description="Predicts expected yield per hectare and total harvest for a given crop, season, and state, using annual rainfall. Only covers crops and states present in the training data -- check metadata.crops_covered and metadata.states_covered before calling; fall back to kau_knowledge_search if either is missing.",
-                parameters=types.Schema(
-                    type="OBJECT",
-                    properties={
-                        "crop": types.Schema(type="STRING"),
-                        "season": types.Schema(
-                            type="STRING",
-                            description="One of the dataset's season categories, e.g. 'Kharif', 'Rabi', 'Whole Year' -- call crop_calendar_lookup first if unsure which season applies."
-                        ),
-                        "state": types.Schema(type="STRING"),
-                        "annual_rainfall": types.Schema(
-                            type="NUMBER",
-                            description="Annual rainfall in mm for the region -- get this from weather_lookup if not already known."
-                        ),
-                        "farm_area": types.Schema(
-                            type="NUMBER",
-                            description="Farm area in HECTARES. If the user gave acres, convert first: hectares = acres * 0.4047."
-                        ),
-                    },
-                    required=["crop", "season", "state", "annual_rainfall", "farm_area"],
-                ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "N": {"type": "number"},
+                    "P": {"type": "number"},
+                    "K": {"type": "number"},
+                    "temperature": {"type": "number"},
+                    "humidity": {"type": "number"},
+                    "ph": {"type": "number"},
+                    "rainfall": {"type": "number"},
+                },
+                "required": ["N", "P", "K", "temperature", "humidity", "ph", "rainfall"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "yield_prediction_model",
+            "description": (
+                "Predicts expected yield per hectare and total harvest for a given crop, season, and state, "
+                "using annual rainfall. Only covers crops and states present in the training data. "
+                "Fall back to kau_knowledge_search if missing."
             ),
-            types.FunctionDeclaration(
-                name="crop_calendar_lookup",
-                description=(
-                    "Returns the traditional Malayalam-calendar planting and "
-                    "harvesting window for a crop. Always call this before "
-                    "discussing timing -- lead with tradition, not weather."
-                ),
-                parameters=types.Schema(
-                    type="OBJECT",
-                    properties={
-                        "crop_name": types.Schema(type="STRING"),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "crop": {"type": "string"},
+                    "season": {
+                        "type": "string",
+                        "description": "One of: 'Kharif', 'Rabi', 'Whole Year'",
                     },
-                    required=["crop_name"],
-                ),
+                    "state": {"type": "string"},
+                    "annual_rainfall": {
+                        "type": "number",
+                        "description": "Annual rainfall in mm for the region.",
+                    },
+                    "farm_area": {
+                        "type": "number",
+                        "description": "Farm area in HECTARES. If user gave acres, convert: hectares = acres * 0.4047.",
+                    },
+                },
+                "required": ["crop", "season", "state", "annual_rainfall", "farm_area"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "crop_calendar_lookup",
+            "description": (
+                "Returns the traditional Malayalam-calendar planting and harvesting window for a crop. "
+                "Always call this before discussing timing."
             ),
-            types.FunctionDeclaration(
-                name="companion_rules_lookup",
-                description=(
-                    "Looks up traditional/folk companion-planting pairs for a "
-                    "crop. Call this FIRST when suggesting intercrops, before "
-                    "kau_knowledge_search."
-                ),
-                parameters=types.Schema(
-                    type="OBJECT",
-                    properties={
-                        "crop_name": types.Schema(type="STRING"),
-                    },
-                    required=["crop_name"],
-                ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "crop_name": {"type": "string"},
+                },
+                "required": ["crop_name"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "companion_rules_lookup",
+            "description": (
+                "Looks up traditional/folk companion-planting pairs for a crop. "
+                "Call this FIRST when suggesting intercrops."
             ),
-            types.FunctionDeclaration(
-                name="kau_knowledge_search",
-                description=(
-                    "Semantic search over Kerala Agricultural University's "
-                    "Package of Practices. Use for any crop NOT covered by "
-                    "crop_recommendation_model, and to add supporting agronomic "
-                    "detail after companion_rules_lookup."
-                ),
-                parameters=types.Schema(
-                    type="OBJECT",
-                    properties={
-                        "query": types.Schema(type="STRING"),
-                        "top_k": types.Schema(type="INTEGER"),
-                    },
-                    required=["query"],
-                ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "crop_name": {"type": "string"},
+                },
+                "required": ["crop_name"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "kau_knowledge_search",
+            "description": (
+                "Semantic search over Kerala Agricultural University's Package of Practices. "
+                "Use for any crop NOT covered by crop_recommendation_model, and to add "
+                "supporting agronomic detail."
             ),
-            types.FunctionDeclaration(
-                name="weather_lookup",
-                description=(
-                    "Returns current weather conditions and a short-term "
-                    "forecast for a Kerala district. Call this whenever the question "
-                    "involves timing (planting, harvesting, spraying, irrigation) or "
-                    "asks about weather directly. Treat it as a secondary caution "
-                    "layered on top of crop_calendar_lookup -- never as the primary "
-                    "timing driver (see system prompt rule 3)."
-                ),
-                parameters=types.Schema(
-                    type="OBJECT",
-                    properties={
-                        "district": types.Schema(
-                            type="STRING",
-                            description="Kerala district name, e.g. 'Kottayam', 'Wayanad'."
-                        ),
-                        "forecast_days": types.Schema(
-                            type="INTEGER",
-                            description="How many days ahead to forecast (1-7)."
-                        ),
-                    },
-                    required=["district"],
-                ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string"},
+                    "top_k": {"type": "integer"},
+                },
+                "required": ["query"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "weather_lookup",
+            "description": (
+                "Returns current weather conditions and a short-term forecast for a Kerala district. "
+                "Call whenever the question involves timing or weather directly."
             ),
-            types.FunctionDeclaration(
-                name="market_price_lookup",
-                description=(
-                    "Returns recent Kerala mandi (wholesale market) prices "
-                    "for a commodity, sourced from Agmarknet -- min, max, and modal price "
-                    "per quintal, converted to per-kg. Call this whenever the question "
-                    "involves selling decisions, current prices, or 'is this a good time "
-                    "to sell'. If no district is given, returns a statewide average "
-                    "across the most recently reporting markets."
-                ),
-                parameters=types.Schema(
-                    type="OBJECT",
-                    properties={
-                        "commodity": types.Schema(
-                            type="STRING",
-                            description="Crop/commodity name, e.g. 'coconut', 'pepper', 'rice'."
-                        ),
-                        "district": types.Schema(
-                            type="STRING",
-                            description="Optional Kerala district to narrow results, e.g. 'Kottayam'."
-                        ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "district": {
+                        "type": "string",
+                        "description": "Kerala district name, e.g. 'Kottayam', 'Wayanad'.",
                     },
-                    required=["commodity"],
-                ),
-            )
-        ]
-    )
+                    "forecast_days": {
+                        "type": "integer",
+                        "description": "How many days ahead to forecast (1-7).",
+                    },
+                },
+                "required": ["district"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "market_price_lookup",
+            "description": (
+                "Returns recent Kerala mandi (wholesale market) prices for a commodity from Agmarknet. "
+                "Call whenever the question involves selling decisions, current prices, or price outlook."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "commodity": {
+                        "type": "string",
+                        "description": "Crop/commodity name, e.g. 'coconut', 'pepper', 'rice'.",
+                    },
+                    "district": {
+                        "type": "string",
+                        "description": "Optional Kerala district to narrow results.",
+                    },
+                },
+                "required": ["commodity"],
+            },
+        },
+    },
 ]
 
+
 async def execute_tool_call(db: Prisma, tool_name: str, arguments: dict, crop_model):
-    """
-    Routes a tool call from the LLM to the actual Python function.
-    """
+    """Routes a tool call from the LLM to the actual Python function."""
+    # Guard against placeholder arguments
     for key, value in arguments.items():
         if isinstance(value, str) and any(
             phrase in value.lower() for phrase in ["result of", "output of", "from the previous", tool_name.lower()]
@@ -276,11 +250,9 @@ async def execute_tool_call(db: Prisma, tool_name: str, arguments: dict, crop_mo
     elif tool_name == "companion_rules_lookup":
         return lookup_companions(arguments["crop_name"])
     elif tool_name == "kau_knowledge_search":
-        # Ensure top_k has a default if omitted by model
         top_k = arguments.get("top_k", 3)
         return await search_kau_knowledge(db, query=arguments.get("query", ""), top_k=top_k)
     elif tool_name == "weather_lookup":
-        # Provide default
         forecast_days = arguments.get("forecast_days", 3)
         return await run_weather_lookup(district=arguments.get("district", ""), forecast_days=forecast_days)
     elif tool_name == "market_price_lookup":
@@ -288,15 +260,17 @@ async def execute_tool_call(db: Prisma, tool_name: str, arguments: dict, crop_mo
     else:
         return {"error": f"Unknown tool: {tool_name}"}
 
+
 async def run_agent(
     db: Prisma,
     session_id: str,
     user_message: str,
     crop_model,
-    max_turns: int = 10,
+    max_turns: int = 6,
 ):
     """
-    The core agent loop using google-genai.
+    The core agent loop using Groq (llama-3.3-70b-versatile).
+    Groq provides blazing-fast inference with native OpenAI-compatible tool calling.
     """
     memory_summary, recent_messages = await load_context(db, session_id)
 
@@ -304,43 +278,49 @@ async def run_agent(
     if memory_summary:
         system_content += "\n\nContext from earlier in this conversation:\n" + memory_summary
 
-    # Convert past messages into Gemini's expected format (types.Content with roles 'user' and 'model')
-    gemini_messages = []
+    # Build OpenAI-compatible message list
+    messages = [{"role": "system", "content": system_content}]
+
+    # Add history
     for msg in recent_messages:
-        role = "user" if msg["role"] == "user" else "model"
-        gemini_messages.append(types.Content(role=role, parts=[types.Part.from_text(text=msg["content"])]))
-    
-    gemini_messages.append(types.Content(role="user", parts=[types.Part.from_text(text=user_message)]))
-    
+        role = "user" if msg["role"] == "user" else "assistant"
+        messages.append({"role": role, "content": msg["content"]})
+
+    # Add current user message
+    messages.append({"role": "user", "content": user_message})
+
     reasoning_trace = []
     final_answer = None
     tool_calls_made = set()
 
     for turn in range(max_turns):
         is_final_push = turn >= max_turns - 2
-        
-        # In the final push, we instruct the model via a user message to stop tools
+
+        # On final push, instruct model to stop calling tools
         if is_final_push and turn == max_turns - 2:
-            gemini_messages.append(types.Content(role="user", parts=[types.Part.from_text(text=(
-                "[System: You have collected enough tool data. "
-                "Stop calling tools now. Write your final, complete, "
-                "actionable farming advice for the farmer using all "
-                "the tool results above. Do NOT call any more tools.]"
-            ))]))
-            
-        current_tools = None if is_final_push else TOOLS
+            messages.append({
+                "role": "user",
+                "content": (
+                    "[System: You have collected enough tool data. "
+                    "Stop calling tools now. Write your final, complete, "
+                    "actionable farming advice for the farmer using all "
+                    "the tool results above. Do NOT call any more tools.]"
+                )
+            })
+
+        # Build kwargs — omit tools/tool_choice entirely on final push
+        completion_kwargs: dict = {
+            "model": MODEL_NAME,
+            "messages": messages,
+            "temperature": 0.3,
+            "max_tokens": 1500,
+        }
+        if not is_final_push:
+            completion_kwargs["tools"] = TOOLS
+            completion_kwargs["tool_choice"] = "auto"
 
         try:
-            config = types.GenerateContentConfig(
-                temperature=0.3,
-                tools=current_tools,
-                system_instruction=system_content,
-            )
-            response = client.models.generate_content(
-                model=MODEL_NAME,
-                contents=gemini_messages,
-                config=config,
-            )
+            response = client.chat.completions.create(**completion_kwargs)
         except Exception as e:
             return {
                 "answer": f"Agent failed: {str(e)}",
@@ -348,45 +328,64 @@ async def run_agent(
                 "session_id": session_id,
             }
 
-        # Check if the model called any tools
-        if not response.function_calls:
-            # Model replied with text (final answer)
-            final_answer = response.text
+        choice = response.choices[0]
+        msg = choice.message
+
+        # Check if the model made tool calls
+        if not msg.tool_calls:
+            # Model replied with plain text — final answer
+            final_answer = msg.content
             break
-            
-        # Append the model's function calls to the history
-        gemini_messages.append(response.candidates[0].content)
-        
-        # Execute all requested function calls
-        tool_responses = []
-        for function_call in response.function_calls:
-            tool_name = function_call.name
-            arguments = dict(function_call.args) if function_call.args else {}
-            
+
+        # Append the assistant's tool-call message to history
+        messages.append({"role": "assistant", "content": msg.content, "tool_calls": [
+            {
+                "id": tc.id,
+                "type": "function",
+                "function": {"name": tc.function.name, "arguments": tc.function.arguments},
+            }
+            for tc in msg.tool_calls
+        ]})
+
+        # Execute each tool call
+        for tc in msg.tool_calls:
+            tool_name = tc.function.name
+            try:
+                arguments = json.loads(tc.function.arguments)
+            except json.JSONDecodeError:
+                arguments = {}
+
             call_key = f"{tool_name}:{json.dumps(arguments, sort_keys=True)}"
             if call_key in tool_calls_made:
                 result = {"note": "Already called with same arguments. Use prior result."}
             else:
                 tool_calls_made.add(call_key)
                 result = await execute_tool_call(db, tool_name, arguments, crop_model)
-                reasoning_trace.append({"tool": tool_name, "arguments": arguments, "result_summary": str(result)[:200]})
-                
-            tool_responses.append(types.Part.from_function_response(
-                name=tool_name,
-                response={"result": result}
-            ))
-            
-        # Append tool results as a single user message containing all function responses
-        gemini_messages.append(types.Content(role="user", parts=tool_responses))
+                reasoning_trace.append({
+                    "tool": tool_name,
+                    "arguments": arguments,
+                    "result_summary": str(result)[:200],
+                })
+
+            # Append tool result as a "tool" role message
+            messages.append({
+                "role": "tool",
+                "tool_call_id": tc.id,
+                "content": json.dumps(result),
+            })
 
     if final_answer is None:
         try:
-            force_response = client.models.generate_content(
+            force_response = client.chat.completions.create(
                 model=MODEL_NAME,
-                contents=gemini_messages + [types.Content(role="user", parts=[types.Part.from_text(text="[System: Provide your final farming advice now based on all tool results above. No more tool calls.]")])],
-                config=types.GenerateContentConfig(temperature=0.3, system_instruction=system_content),
+                messages=messages + [{
+                    "role": "user",
+                    "content": "[System: Give your final concise answer now. No more tool calls.]"
+                }],
+                temperature=0.3,
+                max_tokens=1500,
             )
-            final_answer = force_response.text
+            final_answer = force_response.choices[0].message.content
         except Exception:
             final_answer = "I collected the tool data but wasn't able to finalize an answer. Please try again."
 

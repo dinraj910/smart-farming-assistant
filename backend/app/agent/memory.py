@@ -4,7 +4,8 @@ an attempt at long-context memory: a sliding window of recent messages for
 active reasoning, plus a rolling summary for anything older -- similar in
 spirit to how ChatGPT bounds context per conversation.
 """
-from google import genai
+import os
+from groq import Groq
 from prisma import Prisma
 
 WINDOW_SIZE = 12          # most recent messages kept verbatim (~6 turns)
@@ -16,7 +17,7 @@ _summarizer_client = None
 def get_summarizer_client():
     global _summarizer_client
     if _summarizer_client is None:
-        _summarizer_client = genai.Client()
+        _summarizer_client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
     return _summarizer_client
 
 
@@ -89,12 +90,16 @@ async def maybe_summarize(db: Prisma, session_id: str):
         "so far, not just the new part."
     )
     user_msg = f"Previous summary: {session.memorySummary or 'None'}\n\nConversation to fold in:\n{overflow_text}"
-    
-    response = client.models.generate_content(
-        model="gemini-3.6-flash",
-        contents=user_msg,
-        config=genai.types.GenerateContentConfig(system_instruction=sys_prompt),
+
+    response = client.chat.completions.create(
+        model="openai/gpt-oss-120b",
+        messages=[
+            {"role": "system", "content": sys_prompt},
+            {"role": "user", "content": user_msg},
+        ],
+        temperature=0.2,
+        max_tokens=512,
     )
-    new_summary = response.text
+    new_summary = response.choices[0].message.content
 
     await db.chatsession.update(where={"id": session_id}, data={"memorySummary": new_summary})

@@ -35,7 +35,7 @@ export async function sendAgentMessage(
   message: string,
   sessionId: string,
   farmId?: string,
-  timeoutMs = 90_000,
+  timeoutMs = 120_000,   // 2 minutes — Groq + multi-tool calls can take ~30-60s
 ): Promise<AgentResponse> {
   const controller = new AbortController();
   const timerId = setTimeout(() => controller.abort(), timeoutMs);
@@ -51,6 +51,11 @@ export async function sendAgentMessage(
       { signal: controller.signal as any },
     );
     return res.data;
+  } catch (err: any) {
+    if (err.name === 'AbortError' || err.code === 'ECONNABORTED' || controller.signal.aborted) {
+      throw new Error('Request timed out. The agent is still processing — please tap Retry in a moment.');
+    }
+    throw err;
   } finally {
     clearTimeout(timerId);
   }

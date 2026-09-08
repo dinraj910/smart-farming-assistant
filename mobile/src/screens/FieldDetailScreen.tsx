@@ -43,7 +43,14 @@ export default function FieldDetailScreen() {
           <Text style={styles.headerTitle}>Plot Details</Text>
           <TouchableOpacity
             style={styles.askBtn}
-            onPress={() => navigation.navigate('AgentChat', { fieldId })}
+            onPress={() => navigation.navigate('AgentChat', {
+              fieldId: field.id,
+              fieldName: field.name,
+              district: field.district || 'Kerala',
+              crop: cropType,
+              acres: parseFloat(acreage) || undefined,
+              farmId: field.id, // Assuming the ID is the DB UUID if it's dynamic
+            })}
           >
             <Text style={styles.askBtnText}>Ask Assistant</Text>
           </TouchableOpacity>
@@ -141,7 +148,14 @@ export default function FieldDetailScreen() {
           </Text>
           <TouchableOpacity 
             style={styles.openChatBtn}
-            onPress={() => navigation.navigate('AgentChat', { fieldId })}
+            onPress={() => navigation.navigate('AgentChat', {
+              fieldId: field.id,
+              fieldName: field.name,
+              district: field.district || 'Kerala',
+              crop: cropType,
+              acres: parseFloat(acreage) || undefined,
+              farmId: field.id,
+            })}
           >
             <Feather name="zap" size={16} color="#0f172a" />
             <Text style={styles.openChatBtnText}>Open Field Assistant</Text>
