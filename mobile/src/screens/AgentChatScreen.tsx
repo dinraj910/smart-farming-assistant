@@ -145,7 +145,7 @@ export default function AgentChatScreen() {
 
   const renderUserMsg = (item: ChatMessage) => (
     <View style={styles.userRow}>
-      <View style={[styles.userBubble, item.status === 'failed' && styles.userBubbleFailed]}>
+      <View style={[styles.userBubble, item.status === 'failed' && styles.userBubbleFailed]} testID={`agent-chat-user-msg-${item.id}`}>
         <Text style={styles.userBubbleText}>{item.text}</Text>
         {item.createdAt && (
           <Text style={styles.timeTextUser}>{formatTime(item.createdAt)}</Text>
@@ -169,7 +169,7 @@ export default function AgentChatScreen() {
           <Feather name="activity" size={14} color="#fff" />
         </View>
         <View style={{ flex: 1, gap: 6 }}>
-          <View style={styles.assistantBubble}>
+          <View style={styles.assistantBubble} testID={`agent-chat-assistant-msg-${item.id}`}>
             <Text style={styles.assistantBubbleText}>{item.text}</Text>
             {item.createdAt && (
               <Text style={styles.timeTextAsst}>{formatTime(item.createdAt)}</Text>
@@ -237,7 +237,7 @@ export default function AgentChatScreen() {
               <Feather name="activity" size={16} color="#fff" />
             </View>
             <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={styles.headerFieldName} numberOfLines={1}>{fieldName}</Text>
+              <Text style={styles.headerFieldName} numberOfLines={1} testID="agent-chat-field-name">{fieldName}</Text>
               <Text style={styles.headerFieldMeta}>
                 {district}{acres ? ` • ${acres} acres` : ''}
               </Text>
@@ -280,6 +280,7 @@ export default function AgentChatScreen() {
                   onPress={() => runScenario(p.id)}
                   activeOpacity={0.8}
                   disabled={isSending}
+                  testID={`agent-chat-quick-${p.id}`}
                 >
                   <Feather name={p.icon as any} size={13} color="#16a34a" />
                   <Text style={styles.quickPromptText}>{p.label}</Text>
@@ -303,11 +304,13 @@ export default function AgentChatScreen() {
             multiline
             returnKeyType="send"
             editable={!isSending}
+            testID="agent-chat-input"
           />
           <TouchableOpacity
             style={[styles.sendBtn, isSending && styles.sendBtnDisabled]}
             onPress={() => handleSend()}
             disabled={isSending}
+            testID="agent-chat-send-btn"
           >
             {isSending
               ? <ActivityIndicator size="small" color="#fff" />

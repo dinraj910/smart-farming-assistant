@@ -71,6 +71,7 @@ export default function LoginScreen({ navigation }: Props) {
                   onChangeText={setEmail}
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  testID="login-email-input"
                 />
               </View>
             </View>
@@ -86,6 +87,7 @@ export default function LoginScreen({ navigation }: Props) {
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
+                  testID="login-password-input"
                 />
                 <TouchableOpacity 
                   onPress={() => setShowPassword(!showPassword)}
@@ -101,7 +103,7 @@ export default function LoginScreen({ navigation }: Props) {
             </TouchableOpacity>
 
             {error && (
-              <View style={styles.errorContainer}>
+              <View style={styles.errorContainer} testID="login-error-box">
                 <Text style={styles.errorText}>{error}</Text>
               </View>
             )}
@@ -111,6 +113,7 @@ export default function LoginScreen({ navigation }: Props) {
               onPress={handleLogin}
               activeOpacity={0.8}
               disabled={isLoading}
+              testID="login-submit-btn"
             >
               <Text style={styles.loginButtonText}>{isLoading ? 'Signing In...' : 'Sign In'}</Text>
               {!isLoading && <Feather name="arrow-right" size={20} color={Colors.white} />}
@@ -122,7 +125,7 @@ export default function LoginScreen({ navigation }: Props) {
             <TouchableOpacity onPress={() => {
               clearError();
               navigation.navigate('Register');
-            }}>
+            }} testID="login-go-register-btn">
               <Text style={styles.registerLink}>Sign Up</Text>
             </TouchableOpacity>
           </View>

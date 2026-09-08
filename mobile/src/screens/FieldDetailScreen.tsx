@@ -40,10 +40,11 @@ export default function FieldDetailScreen() {
           >
             <Feather name="arrow-left" size={16} color="#475569" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Plot Details</Text>
+          <Text style={styles.headerTitle} testID="field-detail-title">Plot Details</Text>
           <TouchableOpacity
             style={styles.askBtn}
             onPress={() => navigation.navigate('AgentChat', { fieldId })}
+            testID="field-detail-ask-assistant-btn"
           >
             <Text style={styles.askBtnText}>Ask Assistant</Text>
           </TouchableOpacity>
@@ -142,6 +143,7 @@ export default function FieldDetailScreen() {
           <TouchableOpacity 
             style={styles.openChatBtn}
             onPress={() => navigation.navigate('AgentChat', { fieldId })}
+            testID="field-detail-open-chat-btn"
           >
             <Feather name="zap" size={16} color="#0f172a" />
             <Text style={styles.openChatBtnText}>Open Field Assistant</Text>

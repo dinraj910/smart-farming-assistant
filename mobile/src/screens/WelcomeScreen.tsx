@@ -42,6 +42,7 @@ export default function WelcomeScreen({ navigation }: Props) {
               onPress={() => navigation.navigate('Login')}
               style={styles.ctaBtn}
               activeOpacity={0.85}
+              testID="welcome-get-started-btn"
             >
               <View style={styles.ctaIconBox}>
                 <Feather name="arrow-right" size={22} color="#15803d" />

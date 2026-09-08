@@ -81,6 +81,7 @@ export default function RegisterScreen({ navigation }: Props) {
                   placeholderTextColor={Colors.slate[400]}
                   value={name}
                   onChangeText={setName}
+                  testID="register-name-input"
                 />
               </View>
             </View>
@@ -97,6 +98,7 @@ export default function RegisterScreen({ navigation }: Props) {
                   onChangeText={setEmail}
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  testID="register-email-input"
                 />
               </View>
             </View>
@@ -112,6 +114,7 @@ export default function RegisterScreen({ navigation }: Props) {
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
+                  testID="register-password-input"
                 />
                 <TouchableOpacity 
                   onPress={() => setShowPassword(!showPassword)}
@@ -133,12 +136,13 @@ export default function RegisterScreen({ navigation }: Props) {
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry={!showPassword}
+                  testID="register-confirm-password-input"
                 />
               </View>
             </View>
 
             {(error || localError) && (
-              <View style={styles.errorContainer}>
+              <View style={styles.errorContainer} testID="register-error-box">
                 <Text style={styles.errorText}>{localError || error}</Text>
               </View>
             )}
@@ -148,6 +152,7 @@ export default function RegisterScreen({ navigation }: Props) {
               onPress={handleRegister}
               activeOpacity={0.8}
               disabled={isLoading}
+              testID="register-submit-btn"
             >
               <Text style={styles.registerButtonText}>{isLoading ? 'Creating Account...' : 'Create Account'}</Text>
               {!isLoading && <Feather name="arrow-right" size={20} color={Colors.white} />}
@@ -159,7 +164,7 @@ export default function RegisterScreen({ navigation }: Props) {
             <TouchableOpacity onPress={() => {
               clearError();
               navigation.navigate('Login');
-            }}>
+            }} testID="register-go-login-btn">
               <Text style={styles.loginLink}>Sign In</Text>
             </TouchableOpacity>
           </View>

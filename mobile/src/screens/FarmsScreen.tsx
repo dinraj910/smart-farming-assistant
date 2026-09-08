@@ -107,7 +107,7 @@ export default function FarmsScreen() {
                 <Feather name="globe" size={12} color="#6ee7b7" />
                 <Text style={S.langBtnText}>{langMl ? 'EN' : 'ML'}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={S.addBtn} onPress={() => setModalOpen(true)}>
+              <TouchableOpacity style={S.addBtn} onPress={() => setModalOpen(true)} testID="farms-add-plot-btn">
                 <Feather name="plus" size={14} color="white" />
                 <Text style={S.addBtnText}>{labels.addBtn}</Text>
               </TouchableOpacity>
@@ -152,7 +152,7 @@ export default function FarmsScreen() {
 
           {/* ── Plot Cards ───────────────────────────────────────────────── */}
           <View style={S.plotList}>
-            <Text style={S.sectionTitle}>Registered Plots</Text>
+            <Text style={S.sectionTitle} testID="farms-registered-plots-title">Registered Plots</Text>
             {loadingPlots ? (
               <ActivityIndicator size="small" color="#15803d" style={{ marginTop: 20 }} />
             ) : plots.length === 0 ? (
@@ -166,6 +166,7 @@ export default function FarmsScreen() {
                     style={S.plotCard} 
                     activeOpacity={0.8}
                     onPress={() => (navigation as any).navigate('FieldDetail', { fieldId: plot.id })}
+                    testID={`farm-plot-card-${plot.id}`}
                   >
                     <Image source={{ uri: plot.image }} style={S.plotImage} />
                     <View style={{ flex: 1, gap: 4 }}>
@@ -200,7 +201,7 @@ export default function FarmsScreen() {
               { icon: 'help-circle', label: 'Help & Support',    sub: 'Contact Agri expert' },
               { icon: 'log-out',    label: 'Sign Out',           sub: user?.name || 'User' },
             ].map((item, i) => (
-              <TouchableOpacity key={i} style={S.settingRow} activeOpacity={0.7} onPress={() => handleQuickAction(item.label)}>
+              <TouchableOpacity key={i} style={S.settingRow} activeOpacity={0.7} onPress={() => handleQuickAction(item.label)} testID={item.label === 'Sign Out' ? 'farms-signout-btn' : undefined}>
                 <View style={S.settingIcon}>
                   <Feather name={item.icon as any} size={15} color="#475569" />
                 </View>
@@ -237,6 +238,7 @@ export default function FarmsScreen() {
                   placeholder="e.g. Coorg Border Estate"
                   placeholderTextColor="#cbd5e1"
                   style={S.textInput}
+                  testID="farms-plot-name-input"
                 />
               </View>
               <View>
@@ -248,11 +250,12 @@ export default function FarmsScreen() {
                   placeholderTextColor="#cbd5e1"
                   keyboardType="numeric"
                   style={S.textInput}
+                  testID="farms-plot-acres-input"
                 />
               </View>
             </View>
 
-            <TouchableOpacity style={S.saveBtn} onPress={addPlot} activeOpacity={0.85}>
+            <TouchableOpacity style={S.saveBtn} onPress={addPlot} activeOpacity={0.85} testID="farms-save-plot-btn">
               <Feather name="check" size={15} color="white" />
               <Text style={S.saveBtnText}>{labels.savePlot}</Text>
             </TouchableOpacity>

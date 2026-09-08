@@ -84,7 +84,7 @@ export default function AgentSelectScreen() {
             <Feather name="arrow-left" size={16} color="#475569" />
           </TouchableOpacity>
           <View>
-            <Text style={styles.headerTitle}>Farm Assistant</Text>
+            <Text style={styles.headerTitle} testID="agent-select-title">Farm Assistant</Text>
             <Text style={styles.headerSub}>Choose a field to continue</Text>
           </View>
         </View>
@@ -141,6 +141,7 @@ export default function AgentSelectScreen() {
             style={styles.fieldCard}
             onPress={() => selectFarm(farm)}
             activeOpacity={0.85}
+            testID={`agent-select-farm-card-${farm.id}`}
           >
             <View style={styles.fieldIconWrap}>
               <Feather name="map-pin" size={20} color="#15803d" />

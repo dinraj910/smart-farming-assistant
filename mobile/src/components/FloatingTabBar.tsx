@@ -50,6 +50,7 @@ export default function FloatingTabBar({ state, descriptors, navigation, lang = 
               onPress={onPress}
               activeOpacity={0.8}
               style={[styles.tabItem, isAssistant && styles.assistantTabItem]}
+              testID={`tab-${routeName.toLowerCase()}`}
               accessibilityRole="button"
               accessibilityState={isFocused ? { selected: true } : {}}
             >
