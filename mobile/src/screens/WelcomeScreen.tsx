@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ImageBackground, StatusBar, StyleSheet } 
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootStackParamList';
 import { Feather } from '@expo/vector-icons';
+import SlideButton from '../components/SlideButton';
 
 type WelcomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Welcome'>;
 
@@ -38,17 +39,7 @@ export default function WelcomeScreen({ navigation }: Props) {
 
           {/* Get Started CTA */}
           <View>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Login')}
-              style={styles.ctaBtn}
-              activeOpacity={0.85}
-            >
-              <View style={styles.ctaIconBox}>
-                <Feather name="arrow-right" size={22} color="#15803d" />
-              </View>
-              <Text style={styles.ctaText}>Get Started</Text>
-              <Feather name="chevrons-right" size={20} color="rgba(255,255,255,0.4)" style={{ marginRight: 20 }} />
-            </TouchableOpacity>
+            <SlideButton onSlideComplete={() => navigation.navigate('Login')} />
             <Text style={styles.ctaNote}>Free for all Kerala farmers</Text>
           </View>
         </View>
@@ -104,27 +95,6 @@ const styles = StyleSheet.create({
   sub: {
     fontSize: 14, color: 'rgba(255,255,255,0.75)',
     fontWeight: '500', lineHeight: 20,
-  },
-  ctaBtn: {
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-    borderRadius: 999,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 6,
-    paddingLeft: 6,
-  },
-  ctaIconBox: {
-    width: 52, height: 52,
-    backgroundColor: 'white',
-    borderRadius: 999,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  ctaText: {
-    color: 'white', fontSize: 17, fontWeight: '700',
-    flex: 1, textAlign: 'center',
   },
   ctaNote: {
     color: 'rgba(255,255,255,0.5)',

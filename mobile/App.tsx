@@ -25,7 +25,6 @@ export default function App() {
   }, [checkAuth]);
 
   if (isInitializing) {
-    // You can return a custom splash/loading screen here
     return null;
   }
 
@@ -39,15 +38,15 @@ export default function App() {
       >
         {token ? (
           <>
-            <Stack.Screen name="Main"      component={MainTabNavigator} options={{ animation: 'fade' }} />
-            <Stack.Screen name="AgentChat" component={AgentChatScreen}  />
+            <Stack.Screen name="Main"        component={MainTabNavigator} options={{ animation: 'fade' }} />
+            <Stack.Screen name="AgentChat"   component={AgentChatScreen}  />
             <Stack.Screen name="FieldDetail" component={FieldDetailScreen} />
           </>
         ) : (
           <>
-            <Stack.Screen name="Welcome"   component={WelcomeScreen}    />
-            <Stack.Screen name="Login"     component={LoginScreen}      />
-            <Stack.Screen name="Register"  component={RegisterScreen}   />
+            <Stack.Screen name="Welcome"  component={WelcomeScreen}  />
+            <Stack.Screen name="Login"    component={LoginScreen}    />
+            <Stack.Screen name="Register" component={RegisterScreen} />
           </>
         )}
       </Stack.Navigator>

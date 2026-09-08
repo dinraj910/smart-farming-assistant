@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { 
   View, Text, TextInput, TouchableOpacity, 
-  StyleSheet, SafeAreaView, KeyboardAvoidingView, 
+  StyleSheet, KeyboardAvoidingView, 
   Platform, StatusBar, ScrollView 
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootStackParamList';
 import { Feather } from '@expo/vector-icons';
