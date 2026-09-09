@@ -85,8 +85,10 @@ const QUICK_ACTIONS = [
 const FARM_IMAGES = [
   'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&w=800&q=80',
   'https://images.unsplash.com/photo-1528825871115-3581a5387919?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1596401057633-54a8fe8ef647?auto=format&fit=crop&w=800&q=80',
 ];
+
+const HERO_BANNER_IMAGE = require('../../assets/farm_hero_banner.jpg');
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function HomeScreen() {
@@ -205,7 +207,7 @@ export default function HomeScreen() {
         {/* ── HERO BANNER ─────────────────────────────────── */}
         <View style={styles.hero}>
           <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80' }}
+            source={HERO_BANNER_IMAGE}
             style={StyleSheet.absoluteFillObject}
             resizeMode="cover"
           />

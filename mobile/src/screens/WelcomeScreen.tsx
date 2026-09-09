@@ -11,12 +11,14 @@ interface Props {
   navigation: WelcomeScreenNavigationProp;
 }
 
+const BG_IMAGE = require('../../assets/farm_landing.jpg');
+
 export default function WelcomeScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
       <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
       <ImageBackground
-        source={{ uri: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=1000' }}
+        source={BG_IMAGE}
         style={styles.bg}
         resizeMode="cover"
       >

@@ -183,12 +183,16 @@ export default function LeafDoctorScreen() {
         token = await SecureStore.getItemAsync('auth_token');
       } catch (_) {}
 
+      // In React Native fetch with FormData, DO NOT set 'Content-Type': 'multipart/form-data'
+      // manually because it omits the boundary string. Fetch automatically sets it.
+      const headers: Record<string, string> = {
+        Accept: 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
+
       const response = await fetch(`${API_URL}/disease/detect`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers,
         body: formData,
       });
 

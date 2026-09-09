@@ -33,9 +33,12 @@ export const FIELDS = [
   },
 ];
 
+// Showcase hero banner image
+const HERO_BANNER_IMAGE = require('../../assets/farm_hero_banner.jpg');
+
 // Fallback high-res agricultural photography
 const FALLBACK_IMAGES = [
-  'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1596401057633-54a8fe8ef647?auto=format&fit=crop&w=800&q=80',
   'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&w=800&q=80',
   'https://images.unsplash.com/photo-1528825871115-3581a5387919?auto=format&fit=crop&w=800&q=80',
   'https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=800&q=80',
@@ -187,7 +190,7 @@ export default function AgentSelectScreen() {
         {/* ── Farm Assistant Showcase Card with Agricultural Photo ───────── */}
         <View style={styles.agentHeroCard}>
           <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80' }}
+            source={HERO_BANNER_IMAGE}
             style={StyleSheet.absoluteFillObject}
             resizeMode="cover"
           />

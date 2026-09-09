@@ -29,7 +29,7 @@ router = APIRouter()
 groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 HF_API_TOKEN = os.environ.get("HF_API_TOKEN", "")
 HF_MODEL_URL = (
-    "https://api-inference.huggingface.co/models/"
+    "https://router.huggingface.co/hf-inference/models/"
     "linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification"
 )
 
@@ -78,26 +78,50 @@ async def _call_huggingface(image_bytes: bytes, content_type: str) -> tuple[str,
     Call HuggingFace Inference API and return (top1_label, confidence).
     Raises HTTPException on failure.
     """
-    if not HF_API_TOKEN:
+    token = os.environ.get("HF_API_TOKEN") or HF_API_TOKEN
+    if not token:
+        load_dotenv(override=True)
+        token = os.environ.get("HF_API_TOKEN", "")
+
+    if not token:
         raise HTTPException(
             status_code=503,
             detail="HF_API_TOKEN not configured. Please add it to the backend .env file.",
         )
 
-    headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": content_type or "image/jpeg",
+    }
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        resp = await client.post(
-            HF_MODEL_URL,
-            headers=headers,
-            content=image_bytes,
+    try:
+        async with httpx.AsyncClient(timeout=35.0) as client:
+            resp = await client.post(
+                HF_MODEL_URL,
+                headers=headers,
+                content=image_bytes,
+            )
+    except httpx.ConnectError:
+        raise HTTPException(
+            status_code=502,
+            detail="Could not reach HuggingFace model server. Please check internet connection.",
+        )
+    except httpx.TimeoutException:
+        raise HTTPException(
+            status_code=504,
+            detail="Disease identification model request timed out. Please try again.",
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Network error during disease identification: {str(e)}",
         )
 
     if resp.status_code == 503:
-        # Model loading — try once more after a short period (model cold start)
+        # Model loading cold-start on Hugging Face
         raise HTTPException(
             status_code=503,
-            detail="Disease model is warming up. Please wait 20 seconds and try again.",
+            detail="Disease model is warming up on Hugging Face. Please wait ~15 seconds and try again.",
         )
 
     if resp.status_code != 200:
@@ -162,7 +186,9 @@ Rules:
 - Do NOT include any text outside the JSON object."""
 
     try:
-        response = groq_client.chat.completions.create(
+        gkey = os.environ.get("GROQ_API_KEY")
+        client_to_use = Groq(api_key=gkey) if gkey else groq_client
+        response = client_to_use.chat.completions.create(
             model=GROQ_MODEL,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
@@ -180,7 +206,7 @@ Rules:
         parsed.setdefault("treatment", ["Consult your local agricultural officer."])
         return parsed
 
-    except Exception as e:
+    except Exception:
         # Graceful fallback — never crash the endpoint
         return {
             "disease_name": _clean_label(label),
@@ -211,39 +237,54 @@ async def detect_disease(
     2. Sends top-1 label to Groq LLM for explanation + treatment.
     3. Returns structured DiseaseResult.
     """
-    # Validate file type
-    content_type = image.content_type or ""
-    if content_type not in ("image/jpeg", "image/jpg", "image/png", "image/webp"):
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported image type: {content_type}. Use JPEG or PNG.",
+    try:
+        # Validate file type
+        content_type = image.content_type or ""
+        fname = (image.filename or "").lower()
+        if content_type not in ("image/jpeg", "image/jpg", "image/png", "image/webp"):
+            # Check filename extension if content_type is generic or octet-stream
+            if any(fname.endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".webp")):
+                content_type = "image/png" if fname.endswith(".png") else "image/jpeg"
+            else:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Unsupported image type: {content_type}. Please upload a JPEG or PNG image.",
+                )
+
+        # Read image bytes (limit to 10MB)
+        image_bytes = await image.read()
+        if len(image_bytes) > 10 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="Image too large. Maximum size is 10MB.")
+
+        # 1. Classify with HuggingFace
+        raw_label, confidence = await _call_huggingface(image_bytes, content_type)
+        is_healthy = "healthy" in raw_label.lower()
+
+        # 2. Get LLM explanation + treatment
+        llm_data = _call_groq_for_explanation(raw_label, confidence)
+
+        # 3. Determine severity
+        severity, severity_score = _severity_from_label(raw_label)
+
+        confidence_pct = f"{round(confidence * 100)}%"
+
+        return DiseaseResult(
+            raw_label=raw_label,
+            disease_name=llm_data["disease_name"],
+            is_healthy=is_healthy,
+            confidence=confidence,
+            confidence_pct=confidence_pct,
+            explanation=llm_data["explanation"],
+            severity=severity,
+            severity_score=severity_score,
+            treatment=llm_data["treatment"],
         )
-
-    # Read image bytes (limit to 10MB)
-    image_bytes = await image.read()
-    if len(image_bytes) > 10 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="Image too large. Maximum size is 10MB.")
-
-    # 1. Classify with HuggingFace
-    raw_label, confidence = await _call_huggingface(image_bytes, content_type)
-    is_healthy = "healthy" in raw_label.lower()
-
-    # 2. Get LLM explanation + treatment
-    llm_data = _call_groq_for_explanation(raw_label, confidence)
-
-    # 3. Determine severity
-    severity, severity_score = _severity_from_label(raw_label)
-
-    confidence_pct = f"{round(confidence * 100)}%"
-
-    return DiseaseResult(
-        raw_label=raw_label,
-        disease_name=llm_data["disease_name"],
-        is_healthy=is_healthy,
-        confidence=confidence,
-        confidence_pct=confidence_pct,
-        explanation=llm_data["explanation"],
-        severity=severity,
-        severity_score=severity_score,
-        treatment=llm_data["treatment"],
-    )
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Plant disease detection failed: {str(e)}",
+        )
