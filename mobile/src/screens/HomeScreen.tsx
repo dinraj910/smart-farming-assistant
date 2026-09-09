@@ -1,7 +1,7 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
-  View, Text, ScrollView, Image, TextInput,
-  TouchableOpacity, StyleSheet, Animated, Alert, Platform, FlatList
+  View, Text, ScrollView, Image,
+  TouchableOpacity, StyleSheet, ActivityIndicator, Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -9,50 +9,101 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootStackParamList';
 import { useAuthStore } from '../store/authStore';
+import * as Location from 'expo-location';
+import apiClient from '../api/client';
 
-// ─── Hourly Weather Data ─────────────────────────────────────────────────────
-const HOURLY = [
-  { hour: '09', icon: 'cloud',      temp: '28°', active: false },
-  { hour: '10', icon: 'cloud',      temp: '30°', active: false },
-  { hour: '11', icon: 'sun',        temp: '32°', active: true  },
-  { hour: '12', icon: 'sun',        temp: '36°', active: false },
-  { hour: '13', icon: 'cloud-rain', temp: '35°', active: false },
-  { hour: '14', icon: 'cloud',      temp: '34°', active: false },
-];
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface HourlySlot {
+  hour: string;   // "09"
+  icon: string;   // feather icon name
+  iconColor: string;
+  temp: string;   // "28°"
+  active: boolean;
+}
+
+interface WeatherState {
+  temp: number;
+  condition: string;
+  conditionIcon: string;
+  locationName: string;
+  humidity: number;
+  windSpeed: number;
+  hourly: HourlySlot[];
+  loading: boolean;
+  error: boolean;
+}
+
+interface Plot {
+  id: string;
+  name: string;
+  location: string;
+  acres: string;
+  npk: string;
+  status: string;
+  image: string;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function weatherCodeToInfo(code: number): { label: string; icon: string; color: string } {
+  if (code === 0)                          return { label: 'Clear sky',       icon: 'sun',        color: '#f59e0b' };
+  if (code <= 3)                           return { label: 'Partly cloudy',   icon: 'cloud',      color: '#94a3b8' };
+  if (code <= 48)                          return { label: 'Foggy',           icon: 'wind',       color: '#94a3b8' };
+  if (code <= 55)                          return { label: 'Drizzle',         icon: 'cloud-drizzle', color: '#38bdf8' };
+  if (code <= 65)                          return { label: 'Rain',            icon: 'cloud-rain', color: '#0ea5e9' };
+  if (code <= 77)                          return { label: 'Snow',            icon: 'cloud-snow', color: '#bae6fd' };
+  if (code <= 82)                          return { label: 'Rain showers',    icon: 'cloud-rain', color: '#0ea5e9' };
+  if (code <= 99)                          return { label: 'Thunderstorm',    icon: 'zap',        color: '#a855f7' };
+  return                                          { label: 'Cloudy',          icon: 'cloud',      color: '#94a3b8' };
+}
+
+function cropAdviceFromWeather(code: number, temp: number): string {
+  if (code === 0 && temp > 25 && temp < 35) return 'Great day for Pepper & Palms';
+  if (code <= 3)                            return 'Good for most field work';
+  if (code <= 55)                           return 'Good for Coconut & Rubber';
+  if (code <= 65)                           return 'Avoid spraying today';
+  if (code <= 82)                           return 'Avoid field work today';
+  return 'Stay indoors — storm risk';
+}
+
+function getCurrentDate(): string {
+  const now = new Date();
+  const days   = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+}
 
 // ─── Quick Action Grid ────────────────────────────────────────────────────────
 const QUICK_ACTIONS = [
-  { id: 'agent',   icon: 'zap',         label: 'Farm Assistant', sub: 'Ask about a field',    bg: '#dcfce7', color: '#15803d', tab: 'AgentSelect' },
-  { id: 'doctor',  icon: 'camera',      label: 'Leaf Doctor',    sub: 'Disease Diagnosis',    bg: '#fee2e2', color: '#b91c1c', tab: 'Doctor'      },
-  { id: 'weather', icon: 'cloud-rain',  label: 'Rain Forecast',  sub: 'Spraying Radar',       bg: '#e0f2fe', color: '#0369a1', tab: 'Weather'     },
-  { id: 'market',  icon: 'trending-up', label: 'Mandi Prices',   sub: 'Rubber & Pepper',      bg: '#fef3c7', color: '#b45309', tab: 'Market'      },
+  { id: 'agent',   icon: 'zap',         label: 'Farm Assistant', sub: 'Ask about a field',  bg: '#dcfce7', color: '#15803d', tab: 'AgentSelect' },
+  { id: 'doctor',  icon: 'camera',      label: 'Leaf Doctor',    sub: 'Disease Diagnosis',  bg: '#fee2e2', color: '#b91c1c', tab: 'Doctor'      },
+  { id: 'weather', icon: 'cloud-rain',  label: 'Rain Forecast',  sub: 'Spraying Radar',     bg: '#e0f2fe', color: '#0369a1', tab: 'Weather'     },
+  { id: 'market',  icon: 'trending-up', label: 'Mandi Prices',   sub: 'Rubber & Pepper',    bg: '#fef3c7', color: '#b45309', tab: 'Market'      },
 ];
 
-// ─── My Fields Data ───────────────────────────────────────────────────────────
-const MY_FIELDS = [
-  {
-    id: 'F1',
-    name: 'Pepper & Hybrid Coconut Field',
-    tag: 'Wayanad Plot #F3 • 2.4 Acres',
-    monitoring: 'Continuous AI Monitoring: Active',
-    image: 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&w=800&q=80',
-    large: true,
-  },
-  {
-    id: 'F2',
-    name: 'Palakkad Nendran Banana Field',
-    tag: 'Palakkad #F2 • 1.8 Acres',
-    image: 'https://images.unsplash.com/photo-1528825871115-3581a5387919?auto=format&fit=crop&w=800&q=80',
-    large: false,
-  },
+// Fallback farm images by index
+const FARM_IMAGES = [
+  'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1528825871115-3581a5387919?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80',
 ];
 
+// ─── Component ────────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user } = useAuthStore();
-  const heroAnim = useRef(new Animated.Value(0)).current;
 
-  // Navigate to the appropriate tab
+  const [weather, setWeather] = useState<WeatherState>({
+    temp: 0, condition: 'Loading...', conditionIcon: 'cloud',
+    locationName: 'Locating...', humidity: 0, windSpeed: 0,
+    hourly: [], loading: true, error: false,
+  });
+
+  const [farms, setFarms]           = useState<Plot[]>([]);
+  const [farmsLoading, setFarmsLoading] = useState(true);
+  const [currentDate]               = useState(getCurrentDate());
+
+  // ── Navigate helpers ────────────────────────────────────────────────────────
   const handleQuickAction = (tab: string) => {
     if (tab === 'AgentSelect') {
       (navigation as any).navigate('Main', { screen: 'Assistant' });
@@ -60,15 +111,89 @@ export default function HomeScreen() {
       (navigation as any).navigate('Main', { screen: tab });
     }
   };
+  const openAgentHub    = () => (navigation as any).navigate('Main', { screen: 'Assistant' });
+  const openFieldDetail = (fieldId: string) => (navigation as any).navigate('FieldDetail', { fieldId });
 
-  const openAgentHub = () => {
-    (navigation as any).navigate('Main', { screen: 'Assistant' });
-  };
+  // ── Fetch live weather via Open-Meteo (free, no API key) ───────────────────
+  useEffect(() => {
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setWeather(w => ({ ...w, loading: false, error: true, locationName: 'Location denied' }));
+          return;
+        }
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        const { latitude, longitude } = loc.coords;
 
-  const openFieldDetail = (fieldId: string) => {
-    (navigation as any).navigate('FieldDetail', { fieldId });
-  };
+        // Reverse geocode for district name
+        const geo = await Location.reverseGeocodeAsync({ latitude, longitude });
+        const place = geo[0];
+        const locationName = place?.district || place?.city || place?.subregion || place?.region || 'Your Location';
 
+        // Open-Meteo API — completely free, no key
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}`
+          + `&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m`
+          + `&hourly=temperature_2m,weather_code`
+          + `&timezone=auto&forecast_days=1`;
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        const currentCode = data.current.weather_code;
+        const currentTemp = Math.round(data.current.temperature_2m);
+        const info        = weatherCodeToInfo(currentCode);
+        const nowHour     = new Date().getHours();
+
+        // Build 6-hour strip centred on current hour
+        const hourlySlots: HourlySlot[] = [];
+        for (let offset = -1; offset <= 4; offset++) {
+          const h = Math.max(0, Math.min(23, nowHour + offset));
+          const t = Math.round(data.hourly.temperature_2m[h]);
+          const c = data.hourly.weather_code[h];
+          const wInfo = weatherCodeToInfo(c);
+          hourlySlots.push({
+            hour:      String(h).padStart(2, '0'),
+            icon:      wInfo.icon,
+            iconColor: wInfo.color,
+            temp:      `${t}°`,
+            active:    h === nowHour,
+          });
+        }
+
+        setWeather({
+          temp: currentTemp,
+          condition: info.label,
+          conditionIcon: info.icon,
+          locationName,
+          humidity: data.current.relative_humidity_2m,
+          windSpeed: Math.round(data.current.wind_speed_10m),
+          hourly: hourlySlots,
+          loading: false,
+          error: false,
+        });
+      } catch (e) {
+        console.error('Weather fetch error:', e);
+        setWeather(w => ({ ...w, loading: false, error: true, locationName: 'Unavailable' }));
+      }
+    })();
+  }, []);
+
+  // ── Fetch real farms from backend ───────────────────────────────────────────
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await apiClient.get('/farms');
+        setFarms(res.data || []);
+      } catch (e) {
+        console.error('Farms fetch error:', e);
+      } finally {
+        setFarmsLoading(false);
+      }
+    })();
+  }, []);
+
+  // ─────────────────────────────────────────────────────────────────────────────
   return (
     <View style={{ flex: 1, backgroundColor: '#f1f5f9' }}>
       <ScrollView
@@ -83,17 +208,16 @@ export default function HomeScreen() {
             style={StyleSheet.absoluteFillObject}
             resizeMode="cover"
           />
-          {/* gradient overlay */}
           <View style={styles.heroOverlay} />
 
-          {/* Safe area inset + status */}
           <SafeAreaView edges={['top']}>
             <View style={styles.heroContent}>
-              {/* Top row */}
+
+              {/* Top row — greeting + avatar */}
               <View style={styles.heroTopRow}>
                 <View>
-                  <Text style={styles.greetingText}>Hello {user?.name || 'Farmer'}</Text>
-                  <Text style={styles.dateText}>Monday, 30 Jul 2026</Text>
+                  <Text style={styles.greetingText}>Hello, {user?.name || 'Farmer'} 👋</Text>
+                  <Text style={styles.dateText}>{currentDate}</Text>
                 </View>
                 <TouchableOpacity
                   style={styles.avatarBtn}
@@ -106,59 +230,67 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               </View>
 
-              {/* Slogan */}
+              {/* Slogan — enlarged now that search bar is removed */}
               <Text style={styles.slogan}>{'Farming Made\nSimple, Smarter,\nand Sustainable'}</Text>
 
-              {/* Search / Agent launcher */}
-              <View style={styles.searchRow}>
-                <TouchableOpacity style={styles.searchBar} onPress={openAgentHub} activeOpacity={0.8}>
-                  <Feather name="zap" size={16} color="#34d399" />
-                  <Text style={styles.searchPlaceholder}>Ask about your farm...</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.micBtn} onPress={openAgentHub} activeOpacity={0.85}>
-                  <Feather name="mic" size={16} color="#fff" />
-                </TouchableOpacity>
-              </View>
-
-              {/* Weather Glass Card */}
+              {/* ── Live Weather Card ───────────────────────── */}
               <View style={styles.weatherCard}>
-                {/* Hourly strip */}
-                <View style={styles.hourlyRow}>
-                  {HOURLY.map((h) => (
-                    <View key={h.hour} style={[styles.hourItem, h.active && styles.hourItemActive]}>
-                      <Text style={[styles.hourText, h.active && styles.hourTextActive]}>{h.hour}</Text>
-                      <Feather
-                        name={h.icon as any}
-                        size={13}
-                        color={h.active ? '#fff' : h.icon === 'cloud-rain' ? '#0ea5e9' : h.icon === 'sun' ? '#f59e0b' : '#64748b'}
-                      />
-                      <Text style={[styles.hourTemp, h.active && styles.hourTempActive]}>{h.temp}</Text>
+                {weather.loading ? (
+                  <View style={{ alignItems: 'center', paddingVertical: 20 }}>
+                    <ActivityIndicator color="#15803d" size="small" />
+                    <Text style={{ fontSize: 11, color: '#64748b', marginTop: 6 }}>Fetching live weather...</Text>
+                  </View>
+                ) : weather.error ? (
+                  <View style={{ alignItems: 'center', paddingVertical: 14 }}>
+                    <Feather name="cloud-off" size={24} color="#94a3b8" />
+                    <Text style={{ fontSize: 11, color: '#94a3b8', marginTop: 6 }}>Weather unavailable</Text>
+                  </View>
+                ) : (
+                  <>
+                    {/* Hourly strip */}
+                    <View style={styles.hourlyRow}>
+                      {weather.hourly.map((h) => (
+                        <View key={h.hour} style={[styles.hourItem, h.active && styles.hourItemActive]}>
+                          <Text style={[styles.hourText, h.active && styles.hourTextActive]}>{h.hour}</Text>
+                          <Feather
+                            name={h.icon as any}
+                            size={13}
+                            color={h.active ? '#fff' : h.iconColor}
+                          />
+                          <Text style={[styles.hourTemp, h.active && styles.hourTempActive]}>{h.temp}</Text>
+                        </View>
+                      ))}
                     </View>
-                  ))}
-                </View>
 
-                {/* Bottom info */}
-                <View style={styles.weatherBottom}>
-                  <View>
-                    <Text style={styles.weatherDateLabel}>Monday, 30 Jul 2026</Text>
-                    <Text style={styles.weatherTemp}>32°C</Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                      <Feather name="map-pin" size={11} color="#16a34a" />
-                      <Text style={styles.weatherLocation}>Wayanad District</Text>
+                    {/* Bottom info */}
+                    <View style={styles.weatherBottom}>
+                      <View>
+                        <Text style={styles.weatherDateLabel}>{currentDate}</Text>
+                        <Text style={styles.weatherTemp}>{weather.temp}°C</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <Feather name="map-pin" size={11} color="#16a34a" />
+                          <Text style={styles.weatherLocation}>{weather.locationName}</Text>
+                        </View>
+                      </View>
+                      <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <Feather name={weather.conditionIcon as any} size={13} color={weatherCodeToInfo(0).color} />
+                          <Text style={styles.weatherCondition}>{weather.condition}</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <Feather name="droplet" size={11} color="#0369a1" />
+                          <Text style={{ fontSize: 9, color: '#334155', fontWeight: '600' }}>{weather.humidity}% humidity</Text>
+                        </View>
+                        <View style={styles.cropBadge}>
+                          <Feather name="droplet" size={10} color="#15803d" />
+                          <Text style={styles.cropBadgeText}>{cropAdviceFromWeather(0, weather.temp)}</Text>
+                        </View>
+                      </View>
                     </View>
-                  </View>
-                  <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                      <Feather name="sun" size={13} color="#f59e0b" />
-                      <Text style={styles.weatherCondition}>Sunny & humid</Text>
-                    </View>
-                    <View style={styles.cropBadge}>
-                      <Feather name="droplet" size={10} color="#15803d" />
-                      <Text style={styles.cropBadgeText}>Good for Pepper & Palms</Text>
-                    </View>
-                  </View>
-                </View>
+                  </>
+                )}
               </View>
+
             </View>
           </SafeAreaView>
         </View>
@@ -212,60 +344,87 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Field Card #1 — Large */}
-            <TouchableOpacity
-              style={[styles.fieldCard, { height: 160 }]}
-              onPress={() => openFieldDetail('F1')}
-              activeOpacity={0.9}
-            >
-              <Image
-                source={{ uri: MY_FIELDS[0].image }}
-                style={StyleSheet.absoluteFillObject}
-                resizeMode="cover"
-              />
-              <View style={styles.fieldGradient} />
-              {/* Tag badge */}
-              <View style={styles.fieldTagBadge}>
-                <View style={styles.fieldTagDot} />
-                <Text style={styles.fieldTagText}>{MY_FIELDS[0].tag}</Text>
+            {farmsLoading ? (
+              <View style={{ alignItems: 'center', paddingVertical: 30 }}>
+                <ActivityIndicator color="#15803d" size="small" />
+                <Text style={{ fontSize: 12, color: '#64748b', marginTop: 8 }}>Loading your fields...</Text>
               </View>
-              {/* Bottom info */}
-              <View style={styles.fieldBottom}>
-                <View>
-                  <Text style={styles.fieldName}>{MY_FIELDS[0].name}</Text>
-                  <Text style={styles.fieldMonitoring}>{MY_FIELDS[0].monitoring}</Text>
-                </View>
-                <View style={styles.fieldChevron}>
-                  <Feather name="chevron-right" size={16} color="#fff" />
-                </View>
-              </View>
-            </TouchableOpacity>
-
-            {/* Field Card #2 — Compact */}
-            <TouchableOpacity
-              style={[styles.fieldCard, { height: 110, marginTop: 10 }]}
-              onPress={() => openFieldDetail('F2')}
-              activeOpacity={0.9}
-            >
-              <Image
-                source={{ uri: MY_FIELDS[1].image }}
-                style={StyleSheet.absoluteFillObject}
-                resizeMode="cover"
-              />
-              <View style={styles.fieldGradient} />
-              <View style={styles.fieldBottom}>
-                <View>
-                  <View style={styles.fieldSmallTag}>
-                    <Text style={styles.fieldSmallTagText}>{MY_FIELDS[1].tag}</Text>
+            ) : farms.length === 0 ? (
+              <TouchableOpacity
+                style={styles.emptyFieldsCard}
+                onPress={() => (navigation as any).navigate('Main', { screen: 'Farms' })}
+                activeOpacity={0.85}
+              >
+                <Feather name="plus-circle" size={28} color="#15803d" />
+                <Text style={styles.emptyFieldsTitle}>No fields registered yet</Text>
+                <Text style={styles.emptyFieldsSub}>Tap to go to My Farms and add your first plot</Text>
+              </TouchableOpacity>
+            ) : (
+              <>
+                {/* First farm — large card */}
+                <TouchableOpacity
+                  style={[styles.fieldCard, { height: 160 }]}
+                  onPress={() => openFieldDetail(farms[0].id)}
+                  activeOpacity={0.9}
+                >
+                  <Image
+                    source={{ uri: farms[0].image || FARM_IMAGES[0] }}
+                    style={StyleSheet.absoluteFillObject}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.fieldGradient} />
+                  <View style={styles.fieldTagBadge}>
+                    <View style={styles.fieldTagDot} />
+                    <Text style={styles.fieldTagText}>
+                      {farms[0].location} • {farms[0].acres}
+                    </Text>
                   </View>
-                  <Text style={[styles.fieldName, { marginTop: 4 }]}>{MY_FIELDS[1].name}</Text>
-                </View>
-                <View style={[styles.fieldChevron, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-                  <Feather name="chevron-right" size={14} color="#fff" />
-                </View>
-              </View>
-            </TouchableOpacity>
+                  <View style={styles.fieldBottom}>
+                    <View>
+                      <Text style={styles.fieldName}>{farms[0].name}</Text>
+                      <Text style={styles.fieldMonitoring}>
+                        Status: {farms[0].status} • {farms[0].npk}
+                      </Text>
+                    </View>
+                    <View style={styles.fieldChevron}>
+                      <Feather name="chevron-right" size={16} color="#fff" />
+                    </View>
+                  </View>
+                </TouchableOpacity>
+
+                {/* Remaining farms — compact cards */}
+                {farms.slice(1).map((farm, idx) => (
+                  <TouchableOpacity
+                    key={farm.id}
+                    style={[styles.fieldCard, { height: 110, marginTop: 10 }]}
+                    onPress={() => openFieldDetail(farm.id)}
+                    activeOpacity={0.9}
+                  >
+                    <Image
+                      source={{ uri: farm.image || FARM_IMAGES[(idx + 1) % FARM_IMAGES.length] }}
+                      style={StyleSheet.absoluteFillObject}
+                      resizeMode="cover"
+                    />
+                    <View style={styles.fieldGradient} />
+                    <View style={styles.fieldBottom}>
+                      <View>
+                        <View style={styles.fieldSmallTag}>
+                          <Text style={styles.fieldSmallTagText}>
+                            {farm.location} • {farm.acres}
+                          </Text>
+                        </View>
+                        <Text style={[styles.fieldName, { marginTop: 4 }]}>{farm.name}</Text>
+                      </View>
+                      <View style={[styles.fieldChevron, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                        <Feather name="chevron-right" size={14} color="#fff" />
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </>
+            )}
           </View>
+
         </View>
       </ScrollView>
     </View>
@@ -275,7 +434,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   // ── Hero ──────────────────────────────────────────────
   hero: {
-    minHeight: 450,
+    minHeight: 460,
     position: 'relative',
     justifyContent: 'flex-end',
     borderBottomLeftRadius: 36,
@@ -297,7 +456,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   greetingText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '800',
     color: '#fff',
     letterSpacing: -0.3,
@@ -320,49 +479,13 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  // Slogan — larger now that search bar is removed
   slogan: {
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: '900',
     color: '#fff',
-    lineHeight: 30,
-    letterSpacing: -0.5,
-  },
-  // Search bar
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  searchBar: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.4)',
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-  },
-  searchPlaceholder: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.9)',
-    fontWeight: '500',
-    flex: 1,
-  },
-  micBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#16a34a',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#16a34a',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 6,
+    lineHeight: 38,
+    letterSpacing: -0.8,
   },
   // Weather card
   weatherCard: {
@@ -590,6 +713,26 @@ const styles = StyleSheet.create({
   },
 
   // My Fields
+  emptyFieldsCard: {
+    backgroundColor: '#fff',
+    borderRadius: 22,
+    padding: 28,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderStyle: 'dashed',
+    gap: 8,
+  },
+  emptyFieldsTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0f172a',
+  },
+  emptyFieldsSub: {
+    fontSize: 11,
+    color: '#64748b',
+    textAlign: 'center',
+  },
   fieldCard: {
     borderRadius: 22,
     overflow: 'hidden',
@@ -604,8 +747,7 @@ const styles = StyleSheet.create({
   },
   fieldGradient: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.0)',
-    // Simulated gradient via top/bottom approach
+    backgroundColor: 'rgba(0,0,0,0.35)',
   },
   fieldTagBadge: {
     position: 'absolute',
