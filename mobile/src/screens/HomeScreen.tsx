@@ -145,12 +145,13 @@ export default function HomeScreen() {
         const info        = weatherCodeToInfo(currentCode);
         const nowHour     = new Date().getHours();
 
-        // Build 6-hour strip centred on current hour
+        // Build 6-hour strip centred on current hour (guaranteeing 6 distinct consecutive hours)
         const hourlySlots: HourlySlot[] = [];
-        for (let offset = -1; offset <= 4; offset++) {
-          const h = Math.max(0, Math.min(23, nowHour + offset));
-          const t = Math.round(data.hourly.temperature_2m[h]);
-          const c = data.hourly.weather_code[h];
+        const startHour = Math.max(0, Math.min(18, nowHour - 1));
+        for (let i = 0; i < 6; i++) {
+          const h = startHour + i;
+          const t = Math.round(data.hourly.temperature_2m[h] ?? currentTemp);
+          const c = data.hourly.weather_code[h] ?? currentCode;
           const wInfo = weatherCodeToInfo(c);
           hourlySlots.push({
             hour:      String(h).padStart(2, '0'),
@@ -249,8 +250,8 @@ export default function HomeScreen() {
                   <>
                     {/* Hourly strip */}
                     <View style={styles.hourlyRow}>
-                      {weather.hourly.map((h) => (
-                        <View key={h.hour} style={[styles.hourItem, h.active && styles.hourItemActive]}>
+                      {weather.hourly.map((h, idx) => (
+                        <View key={`hour-${h.hour}-${idx}`} style={[styles.hourItem, h.active && styles.hourItemActive]}>
                           <Text style={[styles.hourText, h.active && styles.hourTextActive]}>{h.hour}</Text>
                           <Feather
                             name={h.icon as any}
