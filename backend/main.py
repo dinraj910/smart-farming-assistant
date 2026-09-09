@@ -15,6 +15,7 @@ from app.routers import crop
 from app.routers import agent as agent_router
 from app.routers import auth as auth_router
 from app.routers import farm as farm_router
+from app.routers import disease as disease_router
 from prisma import Prisma
 
 
@@ -94,6 +95,13 @@ app.include_router(
     farm_router.router,
     prefix="/api/v1",
     tags=["Farm"],
+)
+
+# Disease Detection API
+app.include_router(
+    disease_router.router,
+    prefix="/api/v1",
+    tags=["Disease Detection"],
 )
 
 # Authentication API
