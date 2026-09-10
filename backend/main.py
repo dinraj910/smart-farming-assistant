@@ -16,6 +16,7 @@ from app.routers import agent as agent_router
 from app.routers import auth as auth_router
 from app.routers import farm as farm_router
 from app.routers import disease as disease_router
+from app.routers import market as market_router
 from prisma import Prisma
 
 
@@ -102,6 +103,13 @@ app.include_router(
     disease_router.router,
     prefix="/api/v1",
     tags=["Disease Detection"],
+)
+
+# Market Intelligence API (Agmarknet Live Mandi Data)
+app.include_router(
+    market_router.router,
+    prefix="/api/v1",
+    tags=["Market Intelligence"],
 )
 
 # Authentication API
