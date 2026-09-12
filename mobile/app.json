@@ -4,7 +4,6 @@
     "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "newArchEnabled": false,
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
@@ -37,7 +36,8 @@
         {
           "locationWhenInUsePermission": "NatureSync uses your location to show live local weather for your farm."
         }
-      ]
+      ],
+      "expo-font"
     ],
     "extra": {
       "eas": {
