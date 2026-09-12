@@ -16,7 +16,11 @@ _yield_metadata = None
 def load_yield_model(model_dir="ml_models/yield_prediction"):
     global _yield_pipeline, _yield_metadata
     if _yield_pipeline is None:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        backend_dir = os.path.abspath(os.path.join(base_dir, "..", "..", ".."))
         candidates = [
+            os.path.join(backend_dir, "ml_models", "yield_prediction", "crop_yield_pipeline.pkl"),
+            os.path.join(backend_dir, "ml_models", "Yield_prediction", "crop_yield_pipeline.pkl"),
             os.path.join(model_dir, "crop_yield_pipeline.pkl"),
             os.path.join("ml_models/Yield_prediction", "crop_yield_pipeline.pkl"),
         ]
