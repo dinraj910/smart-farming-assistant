@@ -10,6 +10,7 @@ import RegisterScreen    from './src/screens/Auth/RegisterScreen';
 import MainTabNavigator  from './src/navigation/MainTabNavigator';
 import AgentChatScreen   from './src/screens/AgentChatScreen';
 import FieldDetailScreen from './src/screens/FieldDetailScreen';
+import EditProfileScreen from './src/screens/EditProfileScreen';
 
 import { useAuthStore } from './src/store/authStore';
 
@@ -41,6 +42,7 @@ export default function App() {
             <Stack.Screen name="Main"        component={MainTabNavigator} options={{ animation: 'fade' }} />
             <Stack.Screen name="AgentChat"   component={AgentChatScreen}  />
             <Stack.Screen name="FieldDetail" component={FieldDetailScreen} />
+            <Stack.Screen name="EditProfile" component={EditProfileScreen} />
           </>
         ) : (
           <>

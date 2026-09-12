@@ -6,8 +6,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/RootStackParamList';
 import { useAuthStore } from '../store/authStore';
 import apiClient from '../api/client';
+import UserAvatar from '../components/UserAvatar';
 
 // ─── Registered plots ─────────────────────────────────────────────────────────
 interface Plot {
@@ -29,7 +32,7 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; border: string }
 };
 
 export default function FarmsScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user, logout } = useAuthStore();
   const [plots, setPlots] = useState<Plot[]>([]);
   const [loadingPlots, setLoadingPlots] = useState(true);
@@ -86,10 +89,18 @@ export default function FarmsScreen() {
   }
 
   async function handleQuickAction(actionLabel: string) {
-    if (actionLabel === 'Sign Out') {
+    if (actionLabel === 'Edit Profile') {
+      navigation.navigate('EditProfile');
+    } else if (actionLabel === 'Sign Out') {
       logout();
     }
   }
+
+  const calculatedAcres = plots.reduce((sum, p) => {
+    const match = p.acres ? p.acres.match(/([\d.]+)/) : null;
+    return sum + (match ? parseFloat(match[1]) : 0);
+  }, 0);
+  const displayAcres = calculatedAcres > 0 ? calculatedAcres.toFixed(1) : (user?.farmSize || '4.2');
 
   return (
     <View style={S.root}>
@@ -116,28 +127,59 @@ export default function FarmsScreen() {
 
           {/* ── Profile Box ──────────────────────────────────────────────── */}
           <View style={S.profileBox}>
-            <Image
-              source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80' }}
-              style={S.profileAvatar}
-            />
-            <View style={{ flex: 1 }}>
-              <Text style={S.profileName}>{user?.name || 'Farmer'}</Text>
-              <Text style={S.profileMeta}>{user?.email}</Text>
-              <View style={S.plotCountBadge}>
-                <Feather name="map-pin" size={10} color="#15803d" />
-                <Text style={S.plotCountText}>{plots.length} Plots Registered</Text>
+            <View style={S.profileMainRow}>
+              <UserAvatar
+                name={user?.name || 'Farmer'}
+                size={56}
+                fontSize={22}
+                showBadge
+              />
+              <View style={S.profileInfoCol}>
+                <View style={S.profileNameRow}>
+                  <Text style={S.profileName} numberOfLines={1}>{user?.name || 'Farmer'}</Text>
+                  <TouchableOpacity
+                    style={S.editBtn}
+                    activeOpacity={0.7}
+                    onPress={() => navigation.navigate('EditProfile')}
+                  >
+                    <Feather name="edit-2" size={12} color="#15803d" />
+                    <Text style={S.editBtnLabel}>Edit</Text>
+                  </TouchableOpacity>
+                </View>
+                <Text style={S.profileMeta} numberOfLines={1}>{user?.email || 'farmer@naturesync.ag'}</Text>
+                {user?.phone ? (
+                  <View style={S.phoneRow}>
+                    <Feather name="phone" size={10} color="#64748b" />
+                    <Text style={S.phoneText}>{user.phone}</Text>
+                  </View>
+                ) : null}
               </View>
             </View>
-            <TouchableOpacity style={S.editBtn}>
-              <Feather name="edit-2" size={14} color="#64748b" />
-            </TouchableOpacity>
+
+            {/* Profile Meta Chips */}
+            <View style={S.profileChipsRow}>
+              <View style={S.profileChip}>
+                <Feather name="map-pin" size={10} color="#15803d" />
+                <Text style={S.profileChipText} numberOfLines={1}>{user?.district || 'Kerala, India'}</Text>
+              </View>
+              {user?.primaryCrop ? (
+                <View style={[S.profileChip, S.cropChip]}>
+                  <Feather name="sun" size={10} color="#b45309" />
+                  <Text style={S.cropChipText} numberOfLines={1}>{user.primaryCrop}</Text>
+                </View>
+              ) : null}
+              <View style={S.profileChip}>
+                <Feather name="layers" size={10} color="#15803d" />
+                <Text style={S.profileChipText}>{plots.length} {plots.length === 1 ? 'Plot' : 'Plots'}</Text>
+              </View>
+            </View>
           </View>
 
           {/* ── Stats Row ────────────────────────────────────────────────── */}
           <View style={S.statsRow}>
             {[
               { icon: 'layers',    label: 'Total Plots', value: `${plots.length}` },
-              { icon: 'maximize',  label: 'Total Acres', value: '4.2'             },
+              { icon: 'maximize',  label: 'Total Acres', value: `${displayAcres}` },
               { icon: 'shield',    label: 'Health Score', value: '94%'            },
             ].map(stat => (
               <View key={stat.label} style={S.statBox}>
@@ -195,7 +237,8 @@ export default function FarmsScreen() {
           <View style={S.quickActionsBox}>
             <Text style={S.sectionTitle}>Account & Settings</Text>
             {[
-              { icon: 'bell',       label: 'Push Notifications', sub: '3 active alerts' },
+              { icon: 'user',        label: 'Edit Profile',       sub: 'Update personal & farm info' },
+              { icon: 'bell',        label: 'Push Notifications', sub: '3 active alerts' },
               { icon: 'shield',     label: 'Data & Privacy',     sub: 'GDPR compliant' },
               { icon: 'help-circle', label: 'Help & Support',    sub: 'Contact Agri expert' },
               { icon: 'log-out',    label: 'Sign Out',           sub: user?.name || 'User' },
@@ -292,24 +335,42 @@ const S = StyleSheet.create({
   profileBox: {
     marginHorizontal: 16, marginTop: 12,
     backgroundColor: 'white', borderRadius: 22, padding: 14,
-    flexDirection: 'row', alignItems: 'center', gap: 12,
     borderWidth: 1, borderColor: '#e2e8f0',
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
+    gap: 12,
   },
-  profileAvatar: { width: 52, height: 52, borderRadius: 16, borderWidth: 1, borderColor: '#e2e8f0' },
-  profileName: { fontSize: 13, fontWeight: '800', color: '#0f172a' },
-  profileMeta: { fontSize: 10, color: '#64748b', marginTop: 2 },
-  plotCountBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: '#f0fdf4', borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3,
-    borderWidth: 1, borderColor: '#bbf7d0', alignSelf: 'flex-start', marginTop: 5,
+  profileMainRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
   },
-  plotCountText: { fontSize: 9, fontWeight: '700', color: '#15803d' },
+  profileInfoCol: {
+    flex: 1, gap: 2,
+  },
+  profileNameRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+  },
+  profileName: { fontSize: 15, fontWeight: '800', color: '#0f172a', flex: 1, marginRight: 8 },
+  profileMeta: { fontSize: 11, color: '#64748b' },
+  phoneRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  phoneText: { fontSize: 10, color: '#64748b', fontWeight: '600' },
   editBtn: {
-    width: 32, height: 32, borderRadius: 12,
-    backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0',
-    alignItems: 'center', justifyContent: 'center',
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: '#f0fdf4', borderWidth: 1, borderColor: '#bbf7d0',
+    borderRadius: 12, paddingHorizontal: 9, paddingVertical: 5,
   },
+  editBtnLabel: { fontSize: 11, fontWeight: '700', color: '#15803d' },
+  profileChipsRow: {
+    flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingTop: 10,
+    borderTopWidth: 1, borderTopColor: '#f1f5f9',
+  },
+  profileChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: '#f8fafc', borderRadius: 99,
+    paddingHorizontal: 9, paddingVertical: 4,
+    borderWidth: 1, borderColor: '#e2e8f0',
+  },
+  profileChipText: { fontSize: 10, fontWeight: '700', color: '#334155' },
+  cropChip: { backgroundColor: '#fef3c7', borderColor: '#fde68a' },
+  cropChipText: { fontSize: 10, fontWeight: '700', color: '#92400e' },
 
   // Stats
   statsRow: {

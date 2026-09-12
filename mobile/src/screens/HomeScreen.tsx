@@ -11,6 +11,7 @@ import { RootStackParamList } from '../navigation/RootStackParamList';
 import { useAuthStore } from '../store/authStore';
 import * as Location from 'expo-location';
 import apiClient from '../api/client';
+import UserAvatar from '../components/UserAvatar';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface HourlySlot {
@@ -225,10 +226,13 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   style={styles.avatarBtn}
                   onPress={() => (navigation as any).navigate('Main', { screen: 'Farms' })}
+                  activeOpacity={0.8}
                 >
-                  <Image
-                    source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80' }}
-                    style={styles.avatar}
+                  <UserAvatar
+                    name={user?.name || 'Farmer'}
+                    size={42}
+                    fontSize={18}
+                    showBadge
                   />
                 </TouchableOpacity>
               </View>

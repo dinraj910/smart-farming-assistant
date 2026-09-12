@@ -12,6 +12,13 @@ export type RootStackParamList = {
     farmId?: string; // DB UUID of the farm; undefined for fallback static fields
   };
   FieldDetail: { fieldId: string };
+  CropDetail?: {
+    cropName?: string;
+    yieldData?: string;
+    harvestDate?: string;
+    imageUri?: string;
+  };
+  EditProfile: undefined;
 };
 
 export type MainTabParamList = {

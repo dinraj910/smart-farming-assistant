@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from pydantic import BaseModel, EmailStr
+from typing import Optional
 from app.auth.security import get_password_hash, verify_password, create_access_token
 from app.auth.dependencies import get_current_user
 import asyncio
@@ -114,3 +115,50 @@ async def read_users_me(current_user = Depends(get_current_user)):
         "name": current_user.name,
         "email": current_user.email
     }
+
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+
+
+@router.put("/me", response_model=UserResponse)
+async def update_users_me(
+    user_data: UserUpdate,
+    request: Request,
+    current_user = Depends(get_current_user),
+):
+    update_dict = {}
+    if user_data.name is not None and user_data.name.strip():
+        update_dict["name"] = user_data.name.strip()
+
+    if user_data.email is not None and user_data.email != current_user.email:
+        existing = await safe_db_execute(
+            request, "user.find_unique", where={"email": user_data.email}
+        )
+        if existing and str(existing.id) != str(current_user.id):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email is already taken by another account",
+            )
+        update_dict["email"] = user_data.email
+
+    if update_dict:
+        updated = await safe_db_execute(
+            request,
+            "user.update",
+            where={"id": current_user.id},
+            data=update_dict,
+        )
+        return {
+            "id": str(updated.id),
+            "name": updated.name,
+            "email": updated.email,
+        }
+
+    return {
+        "id": str(current_user.id),
+        "name": current_user.name,
+        "email": current_user.email,
+    }
+
