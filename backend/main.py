@@ -38,6 +38,19 @@ async def lifespan(app: FastAPI):
     print("Model loaded. Ready to serve predictions.")
     
     # ---- STARTUP: Initialize Prisma DB Client ----
+    print("Configuring Prisma query engine...")
+    from pathlib import Path
+    backend_dir = Path(__file__).resolve().parent
+    for candidate in backend_dir.iterdir():
+        if "query-engine" in candidate.name and not candidate.is_dir():
+            try:
+                os.chmod(candidate, 0o755)
+            except Exception:
+                pass
+            os.environ["PRISMA_QUERY_ENGINE_BINARY"] = str(candidate)
+            print(f"Using Prisma query engine: {candidate.name}")
+            break
+
     print("Connecting to database...")
     import asyncio
     db = Prisma()
