@@ -8,17 +8,13 @@ import * as SecureStore from 'expo-secure-store';
 // Example: const LOCALHOST = '192.168.1.15';
 import Constants from 'expo-constants';
 
-// Dynamically get the host running the Metro bundler (same machine as our backend).
-// This works for physical devices, emulators, and Expo Go automatically.
+// Live production backend on Render
+export const CLOUD_API_URL = 'https://smart-farming-assistant-backend-oncx.onrender.com/api/v1';
+
+// Dynamically get the host running the Metro bundler if testing locally
 function getApiUrl() {
-  // In Expo Go / dev builds, the debuggerHost points to the Metro server on your machine.
-  const debuggerHost = Constants.expoConfig?.hostUri ?? Constants.manifest2?.extra?.expoGo?.debuggerHost;
-  if (debuggerHost) {
-    const host = debuggerHost.split(':')[0]; // strip the port from Metro's host
-    return `http://${host}:8000/api/v1`;
-  }
-  // Fallback for production builds
-  return 'http://localhost:8000/api/v1';
+  // Use deployed cloud backend for both production builds and device testing
+  return CLOUD_API_URL;
 }
 
 export const API_URL = getApiUrl();
