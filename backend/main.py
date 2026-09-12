@@ -18,6 +18,7 @@ from app.routers import auth as auth_router
 from app.routers import farm as farm_router
 from app.routers import disease as disease_router
 from app.routers import market as market_router
+from app.routers import cron as cron_router
 from prisma import Prisma
 
 
@@ -37,8 +38,26 @@ async def lifespan(app: FastAPI):
     print("Model loaded. Ready to serve predictions.")
     
     # ---- STARTUP: Initialize Prisma DB Client ----
-    print("Connecting to database...")
+    print("Ensuring Prisma engine binaries are available...")
     import asyncio
+    import subprocess
+    import sys
+
+    try:
+        proc = subprocess.run(
+            [sys.executable, "-m", "prisma", "py", "fetch"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        if proc.returncode == 0:
+            print("Prisma engine binaries verified.")
+        else:
+            print(f"Notice: prisma py fetch exited with code {proc.returncode}: {proc.stderr}")
+    except Exception as fetch_err:
+        print(f"Notice during prisma py fetch check: {fetch_err}")
+
+    print("Connecting to database...")
     db = Prisma()
     for attempt in range(10):
         try:
@@ -47,7 +66,7 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             if attempt == 9:
                 raise e
-            print(f"Database connection dropped by Neon, retrying in 2 seconds... (Attempt {attempt+1}/10)")
+            print(f"Database connection attempt {attempt+1}/10 failed: {e}. Retrying in 2 seconds...")
             await asyncio.sleep(2)
             
     app.state.db = db
@@ -121,6 +140,13 @@ app.include_router(
     auth_router.router,
     prefix="/api/v1/auth",
     tags=["Auth"],
+)
+
+# Cron and Keep-Alive API
+app.include_router(
+    cron_router.router,
+    prefix="/api/v1/cron",
+    tags=["Cron"],
 )
 
 
