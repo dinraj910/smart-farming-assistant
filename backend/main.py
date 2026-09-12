@@ -38,26 +38,8 @@ async def lifespan(app: FastAPI):
     print("Model loaded. Ready to serve predictions.")
     
     # ---- STARTUP: Initialize Prisma DB Client ----
-    print("Ensuring Prisma engine binaries are available...")
-    import asyncio
-    import subprocess
-    import sys
-
-    try:
-        proc = subprocess.run(
-            [sys.executable, "-m", "prisma", "py", "fetch"],
-            capture_output=True,
-            text=True,
-            timeout=30,
-        )
-        if proc.returncode == 0:
-            print("Prisma engine binaries verified.")
-        else:
-            print(f"Notice: prisma py fetch exited with code {proc.returncode}: {proc.stderr}")
-    except Exception as fetch_err:
-        print(f"Notice during prisma py fetch check: {fetch_err}")
-
     print("Connecting to database...")
+    import asyncio
     db = Prisma()
     for attempt in range(10):
         try:
