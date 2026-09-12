@@ -39,6 +39,7 @@ export default function FarmsScreen() {
   const [modalOpen, setModalOpen] = useState(false);
   const [plotName, setPlotName] = useState('');
   const [plotAcres, setPlotAcres] = useState('');
+  const [plotLocation, setPlotLocation] = useState('');
   const [langMl, setLangMl] = useState(false);
 
   const labels = {
@@ -73,7 +74,7 @@ export default function FarmsScreen() {
     try {
       const res = await apiClient.post('/farms', {
         name: plotName,
-        location: 'Kerala, India',
+        location: plotLocation.trim() || 'Kerala, India',
         acres: plotAcres ? `${plotAcres} Acres` : '1.0 Acres',
         npk: 'NPK: --',
         status: 'Inspection Due'
@@ -81,6 +82,7 @@ export default function FarmsScreen() {
       setPlots(p => [res.data, ...p]);
       setPlotName('');
       setPlotAcres('');
+      setPlotLocation('');
       setModalOpen(false);
     } catch (error) {
       console.error('Error creating plot:', error);
@@ -100,7 +102,8 @@ export default function FarmsScreen() {
     const match = p.acres ? p.acres.match(/([\d.]+)/) : null;
     return sum + (match ? parseFloat(match[1]) : 0);
   }, 0);
-  const displayAcres = calculatedAcres > 0 ? calculatedAcres.toFixed(1) : (user?.farmSize || '4.2');
+  const displayAcres = plots.length > 0 ? calculatedAcres.toFixed(1) : '—';
+  const healthyCount = plots.filter(p => p.status === 'Healthy').length;
 
   return (
     <View style={S.root}>
@@ -178,9 +181,9 @@ export default function FarmsScreen() {
           {/* ── Stats Row ────────────────────────────────────────────────── */}
           <View style={S.statsRow}>
             {[
-              { icon: 'layers',    label: 'Total Plots', value: `${plots.length}` },
-              { icon: 'maximize',  label: 'Total Acres', value: `${displayAcres}` },
-              { icon: 'shield',    label: 'Health Score', value: '94%'            },
+              { icon: 'layers',    label: 'Total Plots',  value: `${plots.length}` },
+              { icon: 'maximize',  label: 'Total Acres',  value: displayAcres },
+              { icon: 'check-circle', label: 'Healthy',   value: loadingPlots ? '—' : `${healthyCount}` },
             ].map(stat => (
               <View key={stat.label} style={S.statBox}>
                 <View style={S.statIconBox}>
@@ -277,7 +280,17 @@ export default function FarmsScreen() {
                 <TextInput
                   value={plotName}
                   onChangeText={setPlotName}
-                  placeholder="e.g. Coorg Border Estate"
+                  placeholder="e.g. Wayanad Pepper Homestead"
+                  placeholderTextColor="#cbd5e1"
+                  style={S.textInput}
+                />
+              </View>
+              <View>
+                <Text style={S.inputLabel}>Location / Village</Text>
+                <TextInput
+                  value={plotLocation}
+                  onChangeText={setPlotLocation}
+                  placeholder="e.g. Mananthavady, Wayanad"
                   placeholderTextColor="#cbd5e1"
                   style={S.textInput}
                 />

@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException, Request
 
-from app.agent.memory import get_or_create_session
+from app.agent.memory import get_or_create_session, is_valid_uuid
 from app.agent.orchestrator import run_agent
+from app.routers.auth import safe_db_execute
 from app.schemas.agent import (
     AgentRequest,
     AgentResponse,
@@ -28,7 +29,9 @@ async def open_chat_session(
         payload.farm_id,
     )
 
-    messages = await db.chatmessage.find_many(
+    messages = await safe_db_execute(
+        request,
+        "chatmessage.find_many",
         where={
             "sessionId": session.id,
         },
@@ -45,7 +48,7 @@ async def open_chat_session(
                 "content": message.content,
                 "created_at": message.createdAt,
             }
-            for message in messages
+            for message in (messages or [])
         ],
     }
 
@@ -71,6 +74,38 @@ async def crop_advisory(
     if session_id is None:
         session = await get_or_create_session(db, payload.farm_id)
         session_id = session.id
+    elif payload.farm_id and is_valid_uuid(payload.farm_id):
+        try:
+            sess = await safe_db_execute(request, "chatsession.find_unique", where={"id": session_id})
+            if sess and not sess.farmId:
+                await safe_db_execute(request, "chatsession.update", where={"id": session_id}, data={"farmId": payload.farm_id})
+        except Exception:
+            pass
+
+    # Fetch farm info from DB if farm_id or session has farmId
+    farm_info = None
+    target_farm_id = payload.farm_id if is_valid_uuid(payload.farm_id) else None
+    if not target_farm_id and session_id:
+        try:
+            sess = await safe_db_execute(request, "chatsession.find_unique", where={"id": session_id})
+            if sess and sess.farmId:
+                target_farm_id = str(sess.farmId)
+        except Exception:
+            pass
+
+    if target_farm_id:
+        try:
+            farm_rec = await safe_db_execute(request, "farm.find_unique", where={"id": target_farm_id})
+            if farm_rec:
+                farm_info = {
+                    "name": farm_rec.name,
+                    "location": farm_rec.location,
+                    "acres": farm_rec.acres,
+                    "npk": farm_rec.npk,
+                    "status": farm_rec.status,
+                }
+        except Exception as ex:
+            print("Failed to fetch farm context:", ex)
 
     try:
         result = await run_agent(
@@ -78,6 +113,7 @@ async def crop_advisory(
             session_id=session_id,
             user_message=payload.message,
             crop_model=crop_model,
+            farm_info=farm_info,
         )
 
     except Exception as e:

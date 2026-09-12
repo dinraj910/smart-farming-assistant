@@ -53,9 +53,9 @@ const STATUS_CONFIG: Record<string, { bg: string; text: string; border: string; 
 
 // 1-Tap Quick Action Prompts on Cards
 const QUICK_PROMPTS = [
-  { id: 'soil',    icon: 'activity',    label: 'Soil & NPK' },
-  { id: 'weather', icon: 'cloud-rain',  label: 'Rain Radar' },
-  { id: 'market',  icon: 'trending-up', label: 'Mandi Rates' },
+  { id: 'soil',    icon: 'activity',    label: 'Soil & NPK', prompt: 'Analyze my plot soil parameters and recommend crops or fertilizer adjustments.' },
+  { id: 'weather', icon: 'cloud-rain',  label: 'Rain Radar', prompt: 'What is the rainfall and weather forecast for this field this week?' },
+  { id: 'market',  icon: 'trending-up', label: 'Mandi Rates', prompt: 'What are current local APMC mandi market prices for crops suited to my district?' },
 ];
 
 export default function AgentSelectScreen() {
@@ -95,7 +95,7 @@ export default function AgentSelectScreen() {
     loadFarms();
   }, []);
 
-  const selectFarm = (farm: Farm) => {
+  const selectFarm = (farm: Farm, initialPrompt?: string) => {
     // Parse district from "location" field (e.g. "Wayanad, Kerala" → "Wayanad")
     const district = farm.location ? farm.location.split(',')[0].trim() : 'Kerala';
     (navigation as any).navigate('AgentChat', {
@@ -104,6 +104,17 @@ export default function AgentSelectScreen() {
       district,
       acres: parseFloat(farm.acres) || undefined,
       farmId: farm.id,
+      location: farm.location,
+      npk: farm.npk,
+      initialPrompt,
+    });
+  };
+
+  const openGeneralChat = () => {
+    (navigation as any).navigate('AgentChat', {
+      fieldId: 'general',
+      fieldName: 'General Consultation',
+      district: 'Kerala',
     });
   };
 
@@ -275,14 +286,25 @@ export default function AgentSelectScreen() {
             </Text>
           </View>
 
-          <TouchableOpacity
-            style={styles.addPlotShortcut}
-            onPress={() => (navigation as any).navigate('Main', { screen: 'Farms' })}
-            activeOpacity={0.8}
-          >
-            <Feather name="plus" size={14} color="#15803d" />
-            <Text style={styles.addPlotShortcutText}>Manage</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+            <TouchableOpacity
+              style={[styles.addPlotShortcut, { backgroundColor: '#f0fdf4', borderColor: '#bbf7d0' }]}
+              onPress={openGeneralChat}
+              activeOpacity={0.8}
+            >
+              <Feather name="message-circle" size={13} color="#15803d" />
+              <Text style={styles.addPlotShortcutText}>General AI</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.addPlotShortcut}
+              onPress={() => (navigation as any).navigate('Main', { screen: 'Farms' })}
+              activeOpacity={0.8}
+            >
+              <Feather name="plus" size={13} color="#15803d" />
+              <Text style={styles.addPlotShortcutText}>Plots</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* ── Search & Filter Controls ──────────────────────────────────── */}
@@ -382,6 +404,15 @@ export default function AgentSelectScreen() {
               <Feather name="plus-circle" size={16} color="#fff" />
               <Text style={styles.emptyAddBtnText}>Register New Plot</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.emptyAddBtn, { backgroundColor: '#f0fdf4', borderWidth: 1, borderColor: '#bbf7d0', marginTop: 8 }]}
+              onPress={openGeneralChat}
+              activeOpacity={0.85}
+            >
+              <Feather name="message-circle" size={16} color="#15803d" />
+              <Text style={[styles.emptyAddBtnText, { color: '#15803d' }]}>General Consultation (No Plot)</Text>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -467,7 +498,7 @@ export default function AgentSelectScreen() {
                     <TouchableOpacity
                       key={qp.id}
                       style={styles.quickPromptBtn}
-                      onPress={() => selectFarm(farm)}
+                      onPress={() => selectFarm(farm, qp.prompt)}
                       activeOpacity={0.8}
                     >
                       <Feather name={qp.icon as any} size={10} color="#15803d" />

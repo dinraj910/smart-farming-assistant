@@ -1,11 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, Image,
   TouchableOpacity, StyleSheet, ActivityIndicator, Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootStackParamList';
 import { useAuthStore } from '../store/authStore';
@@ -183,19 +183,28 @@ export default function HomeScreen() {
     })();
   }, []);
 
-  // ── Fetch real farms from backend ───────────────────────────────────────────
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await apiClient.get('/farms');
-        setFarms(res.data || []);
-      } catch (e) {
-        console.error('Farms fetch error:', e);
-      } finally {
-        setFarmsLoading(false);
-      }
-    })();
+  // ── Fetch real farms from backend, refresh on tab focus ───────────────────────
+  const fetchFarms = useCallback(async () => {
+    try {
+      const res = await apiClient.get('/farms');
+      setFarms(res.data || []);
+    } catch (e) {
+      console.error('Farms fetch error:', e);
+    } finally {
+      setFarmsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchFarms();
+  }, []);
+
+  // Re-fetch when the Home tab is focused (e.g. after adding a plot)
+  useFocusEffect(
+    useCallback(() => {
+      fetchFarms();
+    }, [])
+  );
 
   // ─────────────────────────────────────────────────────────────────────────────
   return (
@@ -475,12 +484,10 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   avatarBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: '#34d399',
-    overflow: 'hidden',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    // No overflow:hidden — UserAvatar needs to render its badge outside the circle
   },
   avatar: {
     width: '100%',

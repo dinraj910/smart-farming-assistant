@@ -19,6 +19,13 @@ class FarmCreate(BaseModel):
     status: str = "Inspection Due"
     image: Optional[str] = None
 
+class FarmUpdate(BaseModel):
+    name: Optional[str] = None
+    location: Optional[str] = None
+    acres: Optional[str] = None
+    npk: Optional[str] = None
+    status: Optional[str] = None
+
 class FarmResponse(BaseModel):
     id: str
     userId: str
@@ -41,6 +48,52 @@ async def get_my_farms(request: Request, current_user = Depends(get_current_user
         order={"createdAt": "desc"}
     )
     return farms
+
+@router.get("/{farm_id}", response_model=FarmResponse)
+async def get_farm(farm_id: str, request: Request, current_user = Depends(get_current_user)):
+    """Get a single farm by ID"""
+    farm = await safe_db_execute(
+        request,
+        "farm.find_unique",
+        where={"id": farm_id}
+    )
+    if not farm:
+        raise HTTPException(status_code=404, detail="Farm not found")
+    if str(farm.userId) != str(current_user.id):
+        raise HTTPException(status_code=403, detail="Not authorized to access this farm")
+    return farm
+
+@router.put("/{farm_id}", response_model=FarmResponse)
+async def update_farm(farm_id: str, farm_data: FarmUpdate, request: Request, current_user = Depends(get_current_user)):
+    """Update an existing farm plot"""
+    existing = await safe_db_execute(request, "farm.find_unique", where={"id": farm_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Farm not found")
+    if str(existing.userId) != str(current_user.id):
+        raise HTTPException(status_code=403, detail="Not authorized to update this farm")
+
+    update_data = {}
+    if farm_data.name is not None:
+        update_data["name"] = farm_data.name
+    if farm_data.location is not None:
+        update_data["location"] = farm_data.location
+    if farm_data.acres is not None:
+        update_data["acres"] = farm_data.acres
+    if farm_data.npk is not None:
+        update_data["npk"] = farm_data.npk
+    if farm_data.status is not None:
+        update_data["status"] = farm_data.status
+
+    if not update_data:
+        return existing
+
+    updated = await safe_db_execute(
+        request,
+        "farm.update",
+        where={"id": farm_id},
+        data=update_data
+    )
+    return updated
 
 @router.post("", response_model=FarmResponse, status_code=status.HTTP_201_CREATED)
 async def create_farm(farm_data: FarmCreate, request: Request, current_user = Depends(get_current_user)):

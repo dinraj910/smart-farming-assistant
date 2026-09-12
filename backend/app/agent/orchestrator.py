@@ -267,6 +267,7 @@ async def run_agent(
     user_message: str,
     crop_model,
     max_turns: int = 6,
+    farm_info: dict | None = None,
 ):
     """
     The core agent loop using Groq (llama-3.3-70b-versatile).
@@ -277,6 +278,41 @@ async def run_agent(
     system_content = SYSTEM_PROMPT
     if memory_summary:
         system_content += "\n\nContext from earlier in this conversation:\n" + memory_summary
+
+    if farm_info:
+        loc = farm_info.get("location") or "Kerala"
+        district = loc.split(",")[0].strip() if loc else "Kerala"
+        npk_val = farm_info.get("npk") or "Not recorded"
+        acres_val = farm_info.get("acres") or "Not recorded"
+        farm_name = farm_info.get("name") or "Farmer's Field"
+        status_val = farm_info.get("status") or "Inspection Due"
+
+        system_content += f"""
+
+## Active Farm Profile (Automatically Loaded from Database)
+- Plot / Field Name: {farm_name}
+- Location: {loc} (District: {district})
+- Plot Area: {acres_val}
+- Recorded Soil Telemetry (NPK & pH): {npk_val}
+- Health / Monitoring Status: {status_val}
+
+### CRITICAL INSTRUCTIONS ON AUTOMATIC FARM CONTEXT:
+1. AUTOMATIC LOCATION: The farmer's plot location is ALREADY KNOWN ({loc}, District: {district}).
+   - For weather inquiries or planting calendars, automatically call `weather_lookup` or relevant tools using district="{district}".
+   - For mandi price inquiries, automatically call `market_price_lookup` using district="{district}".
+   - DO NOT ask the farmer for their location or district unless they explicitly ask for advice regarding a different location.
+2. AUTOMATIC SOIL DATA:
+   - If the farmer asks for crop recommendation or fertilizer advice and soil parameters ({npk_val}) are recorded above, use them automatically with `crop_recommendation_model`.
+   - ONLY ask the farmer for soil values (N, P, K, pH) if the record above is missing, "--", or unrecorded.
+3. ACREAGE / YIELD:
+   - Use the plot area ({acres_val}) for yield prediction if applicable.
+"""
+    else:
+        system_content += """
+
+## Active Farm Profile
+No specific plot is selected for this conversation. If the user's question requires a location (e.g. weather forecast, local mandi rates, or crop suitability) and no location was mentioned in their query, politely ask them to mention their district in Kerala before or while answering.
+"""
 
     # Build OpenAI-compatible message list
     messages = [{"role": "system", "content": system_content}]

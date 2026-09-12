@@ -6,10 +6,13 @@ export type RootStackParamList = {
   AgentChat: {
     fieldId: string;
     fieldName: string;
-    district: string;
+    district?: string;
     crop?: string;
     acres?: number;
     farmId?: string; // DB UUID of the farm; undefined for fallback static fields
+    location?: string;
+    npk?: string;
+    initialPrompt?: string;
   };
   FieldDetail: { fieldId: string };
   CropDetail?: {

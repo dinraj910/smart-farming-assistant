@@ -31,10 +31,13 @@ const QUICK_PROMPTS = [
 type RouteParams = {
   fieldId: string;
   fieldName: string;
-  district: string;
+  district?: string;
   crop?: string;
   acres?: number;
   farmId?: string;
+  location?: string;
+  npk?: string;
+  initialPrompt?: string;
 };
 
 // ─── Lightweight Markdown renderer ───────────────────────────────────────────
@@ -183,8 +186,8 @@ const mdStyles = StyleSheet.create({
 export default function AgentChatScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<any>();
-  const params: RouteParams = route.params ?? { fieldId: 'F1', fieldName: 'My Field', district: 'Kerala' };
-  const { fieldId, fieldName, district, crop, acres, farmId } = params;
+  const params: RouteParams = route.params ?? { fieldId: 'general', fieldName: 'General Consultation', district: 'Kerala' };
+  const { fieldId, fieldName, district = 'Kerala', crop, acres, farmId, location, npk, initialPrompt } = params;
 
   const {
     sessions, messages: allMessages,
@@ -197,6 +200,7 @@ export default function AgentChatScreen() {
   const flatListRef = useRef<FlatList>(null);
   const [inputText, setInputText] = React.useState('');
   const [expandedSources, setExpandedSources] = React.useState<Record<string, boolean>>({});
+  const initialPromptSent = useRef(false);
 
   useEffect(() => {
     initSession(fieldId, farmId);
@@ -211,7 +215,7 @@ export default function AgentChatScreen() {
           [fieldId]: [{
             id: 'init',
             role: 'assistant',
-            text: `Hello! I'm your AI farming assistant for **${fieldName}**.\n\nI can help you with:\n- **Crop recommendations** based on your soil and weather\n- **Planting calendars** with traditional Kerala wisdom\n- **Fertilizer schedules** from KAU Package of Practices\n- **Live mandi prices** and market outlook\n\nWhat would you like to know?`,
+            text: `Hello! I'm your AI farming assistant for **${fieldName}**.\n\n${location ? `📍 **Location:** ${location}\n` : ''}${npk && npk !== 'NPK: --' ? `🧪 **Soil Telemetry:** ${npk}\n` : ''}\nI can help you with:\n- **Crop recommendations** based on your soil and weather\n- **Planting calendars** with traditional Kerala wisdom\n- **Fertilizer schedules** from KAU Package of Practices\n- **Live mandi prices** and market outlook\n\nWhat would you like to know?`,
             status: 'sent',
             createdAt: new Date().toISOString(),
           }],
@@ -220,11 +224,27 @@ export default function AgentChatScreen() {
     }
   }, [sessionId]);
 
+  // If an initial prompt was passed (e.g. from quick ask chip), send it automatically
+  useEffect(() => {
+    if (initialPrompt && !initialPromptSent.current && sessionId && !isSending) {
+      initialPromptSent.current = true;
+      handleSend(initialPrompt);
+    }
+  }, [sessionId, initialPrompt]);
+
   const scrollToBottom = () =>
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
 
-  const buildContextMsg = (userText: string) =>
-    `${userText} (My field: "${fieldName}" in ${district}, Kerala${crop ? `, currently growing ${crop}` : ''}${acres ? `, ${acres} acres` : ''}.)`
+  const buildContextMsg = (userText: string) => {
+    if (!farmId && fieldName === 'General Consultation') {
+      return userText;
+    }
+    const locStr = location || `${district}, Kerala`;
+    const npkStr = npk && npk !== 'NPK: --' ? `, soil: ${npk}` : '';
+    const cropStr = crop ? `, crop: ${crop}` : '';
+    const acresStr = acres ? `, ${acres} acres` : '';
+    return `${userText} (Context: Field "${fieldName}", Location: ${locStr}${cropStr}${acresStr}${npkStr})`;
+  };
 
   const handleSend = async (text?: string) => {
     const msg = (text || inputText).trim();
@@ -268,7 +288,9 @@ export default function AgentChatScreen() {
   const renderUserMsg = (item: ChatMessage) => (
     <View style={styles.userRow}>
       <View style={[styles.userBubble, item.status === 'failed' && styles.userBubbleFailed]}>
-        <Text style={styles.userBubbleText}>{item.text.replace(/ \(My field:.*$/, '').trim()}</Text>
+        <Text style={styles.userBubbleText}>
+          {item.text.replace(/ \(Context:.*$/, '').replace(/ \(My field:.*$/, '').trim()}
+        </Text>
         <View style={styles.bubbleMeta}>
           {item.createdAt && <Text style={styles.timeUser}>{formatTime(item.createdAt)}</Text>}
           {item.status === 'sent' && <Feather name="check" size={10} color="#94a3b8" />}
@@ -375,6 +397,31 @@ export default function AgentChatScreen() {
           >
             <Feather name="refresh-cw" size={16} color="#374151" />
           </TouchableOpacity>
+        </View>
+
+        {/* ── Context Strip (Location & Soil Telemetry) ────────────────────── */}
+        <View style={styles.contextStrip}>
+          <View style={styles.contextPill}>
+            <Feather name="map-pin" size={10} color="#15803d" />
+            <Text style={styles.contextPillText} numberOfLines={1}>
+              {location || (district && district !== 'Kerala' ? `${district}, Kerala` : 'Location: Auto / Prompt in chat')}
+            </Text>
+          </View>
+          {npk && npk !== 'NPK: --' ? (
+            <View style={[styles.contextPill, { backgroundColor: '#eff6ff', borderColor: '#bfdbfe' }]}>
+              <Feather name="activity" size={10} color="#0284c7" />
+              <Text style={[styles.contextPillText, { color: '#0369a1' }]} numberOfLines={1}>
+                {npk.length > 25 ? npk.slice(0, 22) + '...' : npk}
+              </Text>
+            </View>
+          ) : (
+            <View style={[styles.contextPill, { backgroundColor: '#fffbeb', borderColor: '#fde68a' }]}>
+              <Feather name="info" size={10} color="#b45309" />
+              <Text style={[styles.contextPillText, { color: '#b45309' }]}>
+                {farmId ? 'Soil: Not set' : 'General Advisory'}
+              </Text>
+            </View>
+          )}
         </View>
 
         {error && (
@@ -579,4 +626,18 @@ const styles = StyleSheet.create({
   },
   sendBtnDisabled: { backgroundColor: '#86efac', shadowOpacity: 0 },
   inputFooter: { fontSize: 10, color: '#9ca3af', textAlign: 'center', marginTop: 6, fontWeight: '500' },
+
+  // Context Strip
+  contextStrip: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 16, paddingVertical: 7,
+    backgroundColor: '#ffffff', borderBottomWidth: 1, borderBottomColor: '#f1f5f9',
+  },
+  contextPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: '#f0fdf4', borderWidth: 1, borderColor: '#bbf7d0',
+    borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3,
+    maxWidth: '55%',
+  },
+  contextPillText: { fontSize: 10, fontWeight: '700', color: '#15803d' },
 });

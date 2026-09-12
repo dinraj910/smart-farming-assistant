@@ -21,18 +21,32 @@ def get_summarizer_client():
     return _summarizer_client
 
 
+import uuid
+
+def is_valid_uuid(val: str | None) -> bool:
+    if not val:
+        return False
+    try:
+        uuid.UUID(str(val))
+        return True
+    except (ValueError, AttributeError):
+        return False
+
+
 async def get_or_create_session(db: Prisma, farm_id: str | None):
-    # When farm_id is provided, look for an existing session for that farm.
-    # When it is None (anonymous request), always create a fresh session.
-    if farm_id is not None:
-        session = await db.chatsession.find_first(where={"farmId": farm_id})
+    # When farm_id is provided, check if it's a valid UUID.
+    # When it is None or invalid (anonymous request or fallback), always create a fresh session.
+    valid_farm_id = farm_id if is_valid_uuid(farm_id) else None
+    if valid_farm_id is not None:
+        session = await db.chatsession.find_first(where={"farmId": valid_farm_id})
     else:
         session = None  # anonymous — always create a new one
 
     if session is None:
-        data = {"farmId": farm_id} if farm_id is not None else {}
+        data = {"farmId": valid_farm_id} if valid_farm_id is not None else {}
         session = await db.chatsession.create(data=data)
     return session
+
 
 
 async def load_context(db: Prisma, session_id: str):
