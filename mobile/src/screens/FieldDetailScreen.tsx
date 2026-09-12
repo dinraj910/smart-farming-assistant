@@ -29,6 +29,15 @@ interface Farm {
   image: string | null;
 }
 
+interface AdvisoryData {
+  hasAdvisory: boolean;
+  recommendedCrop: string | null;
+  summary: string | null;
+  takeaways: string[];
+  consultedAt?: string | null;
+  source?: string;
+}
+
 // Parse NPK string like "N: 85 ppm, P: 42 ppm, K: 140 ppm, pH: 6.2" or "85-42-140" or "NPK: --"
 function parseNPK(raw: string | null) {
   if (!raw || raw === 'NPK: --') return { n: '', p: '', k: '', ph: '' };
@@ -90,6 +99,10 @@ export default function FieldDetailScreen() {
   const [farm, setFarm] = useState<Farm | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Latest AI Advisory consolidated state
+  const [advisory, setAdvisory] = useState<AdvisoryData | null>(null);
+  const [loadingAdvisory, setLoadingAdvisory] = useState(false);
+
   // Field Info edit states
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [plotName, setPlotName] = useState('');
@@ -108,7 +121,20 @@ export default function FieldDetailScreen() {
 
   useEffect(() => {
     loadFarm();
+    fetchAdvisory();
   }, [fieldId]);
+
+  async function fetchAdvisory() {
+    try {
+      setLoadingAdvisory(true);
+      const res = await apiClient.get<AdvisoryData>(`/farms/${fieldId}/advisory`);
+      setAdvisory(res.data);
+    } catch (e) {
+      console.log('Advisory fetch error:', e);
+    } finally {
+      setLoadingAdvisory(false);
+    }
+  }
 
   async function loadFarm() {
     try {
@@ -317,6 +343,99 @@ export default function FieldDetailScreen() {
               </View>
             </View>
           </View>
+        </View>
+
+        {/* ── Latest AI Agronomic Advisory Card (Consolidated) ─────────────── */}
+        <View style={styles.advisoryCard}>
+          <View style={styles.cardHeaderRow}>
+            <View style={styles.cardTitleGroup}>
+              <View style={[styles.cardIconBadge, { backgroundColor: '#ecfdf5', borderColor: '#a7f3d0' }]}>
+                <Feather name="award" size={16} color="#059669" />
+              </View>
+              <View>
+                <Text style={styles.cardTitle}>Latest Agronomic Advisory</Text>
+                <Text style={styles.cardSubtitle}>Consolidated Insights & Recommended Crop</Text>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={styles.chatAdvisoryBtn}
+              onPress={() => openAgentChat('What are the key agronomic insights and recommended crop for this plot?')}
+              activeOpacity={0.8}
+            >
+              <Feather name="message-square" size={11} color="#059669" />
+              <Text style={styles.chatAdvisoryBtnText}>Chat AI</Text>
+            </TouchableOpacity>
+          </View>
+
+          {loadingAdvisory ? (
+            <View style={{ paddingVertical: 18, alignItems: 'center' }}>
+              <ActivityIndicator size="small" color="#15803d" />
+              <Text style={{ fontSize: 11, color: '#64748b', marginTop: 6 }}>Fetching latest advisory insights...</Text>
+            </View>
+          ) : advisory?.hasAdvisory && advisory.recommendedCrop ? (
+            <View style={styles.advisoryContent}>
+              {/* Primary Recommended Crop Banner */}
+              <View style={styles.cropHighlightBanner}>
+                <View style={styles.cropIconBox}>
+                  <Text style={{ fontSize: 24 }}>🌱</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.cropBannerLabel}>RECOMMENDED CROP</Text>
+                  <Text style={styles.cropBannerName}>{advisory.recommendedCrop}</Text>
+                </View>
+                <View style={styles.matchBadge}>
+                  <Feather name="check-circle" size={11} color="#059669" />
+                  <Text style={styles.matchBadgeText}>High Suitability</Text>
+                </View>
+              </View>
+
+              {/* Very Important Takeaways (Consolidated bullets) */}
+              <View style={styles.takeawaysBox}>
+                <Text style={styles.takeawaysTitle}>KEY FIELD HIGHLIGHTS & ESSENTIALS</Text>
+                {advisory.takeaways.map((point, idx) => (
+                  <View key={idx} style={styles.takeawayRow}>
+                    <View style={styles.takeawayDot} />
+                    <Text style={styles.takeawayText}>{point}</Text>
+                  </View>
+                ))}
+              </View>
+
+              {/* Source Tag & Date */}
+              <View style={styles.advisoryFooterRow}>
+                <View style={styles.advisorySourceTag}>
+                  <Feather name="cpu" size={10} color="#0284c7" />
+                  <Text style={styles.advisorySourceText}>{advisory.source || 'AI Agronomy Model'}</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.openFullAdvisoryBtn}
+                  onPress={() => openAgentChat()}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.openFullAdvisoryText}>Consult AI Advisor</Text>
+                  <Feather name="arrow-right" size={11} color="#15803d" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.emptyAdvisoryBox}>
+              <View style={styles.emptyAdvisoryIcon}>
+                <Feather name="compass" size={20} color="#15803d" />
+              </View>
+              <Text style={styles.emptyAdvisoryTitle}>No Advisory Generated Yet</Text>
+              <Text style={styles.emptyAdvisorySub}>
+                Ask our AI Advisor to evaluate your soil parameters and season to produce consolidated crop recommendations for this plot.
+              </Text>
+              <TouchableOpacity
+                style={styles.getAdvisoryBtn}
+                onPress={() => openAgentChat('What crop should I plant on this plot based on my soil parameters and season?')}
+                activeOpacity={0.85}
+              >
+                <Feather name="zap" size={12} color="#ffffff" />
+                <Text style={styles.getAdvisoryBtnText}>Get First Recommendation</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         {/* ── Soil Telemetry Section (N, P, K, pH) ────────────────────────────── */}
@@ -1011,4 +1130,72 @@ const styles = StyleSheet.create({
   },
   timelineTitle: { fontSize: 12, fontWeight: '700', color: '#0f172a' },
   timelineMeta: { fontSize: 10, color: '#64748b', marginTop: 2 },
+
+  // Advisory Card Styles
+  advisoryCard: {
+    backgroundColor: '#ffffff', marginHorizontal: 16, marginTop: 14,
+    borderRadius: 22, padding: 16,
+    borderWidth: 1.5, borderColor: '#bbf7d0',
+    shadowColor: '#15803d', shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08, shadowRadius: 8, elevation: 3,
+  },
+  chatAdvisoryBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: '#f0fdf4', borderWidth: 1, borderColor: '#bbf7d0',
+    borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5,
+  },
+  chatAdvisoryBtnText: { fontSize: 11, fontWeight: '700', color: '#15803d' },
+
+  advisoryContent: { gap: 12 },
+  cropHighlightBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: '#f0fdf4', borderRadius: 16, padding: 12,
+    borderWidth: 1, borderColor: '#dcfce7',
+  },
+  cropIconBox: {
+    width: 44, height: 44, borderRadius: 12,
+    backgroundColor: '#dcfce7', alignItems: 'center', justifyContent: 'center',
+  },
+  cropBannerLabel: { fontSize: 9, fontWeight: '800', color: '#16a34a', letterSpacing: 0.8 },
+  cropBannerName: { fontSize: 16, fontWeight: '900', color: '#0f172a', marginTop: 1 },
+  matchBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: '#dcfce7', borderRadius: 99, paddingHorizontal: 8, paddingVertical: 4,
+  },
+  matchBadgeText: { fontSize: 10, fontWeight: '800', color: '#15803d' },
+
+  takeawaysBox: {
+    backgroundColor: '#f8fafc', borderRadius: 14, padding: 12, gap: 8,
+    borderWidth: 1, borderColor: '#f1f5f9',
+  },
+  takeawaysTitle: { fontSize: 10, fontWeight: '800', color: '#64748b', letterSpacing: 0.5 },
+  takeawayRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  takeawayDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#15803d', marginTop: 5 },
+  takeawayText: { flex: 1, fontSize: 12, color: '#334155', lineHeight: 17, fontWeight: '500' },
+
+  advisoryFooterRow: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingTop: 4,
+  },
+  advisorySourceTag: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  advisorySourceText: { fontSize: 10, color: '#64748b', fontWeight: '600' },
+  openFullAdvisoryBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  openFullAdvisoryText: { fontSize: 11, fontWeight: '700', color: '#15803d' },
+
+  emptyAdvisoryBox: {
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#f0fdf4', borderRadius: 16, padding: 16,
+    borderWidth: 1, borderColor: '#bbf7d0', borderStyle: 'dashed', gap: 6,
+  },
+  emptyAdvisoryIcon: {
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: '#dcfce7', alignItems: 'center', justifyContent: 'center',
+  },
+  emptyAdvisoryTitle: { fontSize: 13, fontWeight: '800', color: '#15803d' },
+  emptyAdvisorySub: { fontSize: 11, color: '#166534', textAlign: 'center', lineHeight: 16 },
+  getAdvisoryBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: '#15803d', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8, marginTop: 4,
+  },
+  getAdvisoryBtnText: { fontSize: 11, fontWeight: '800', color: '#ffffff' },
 });

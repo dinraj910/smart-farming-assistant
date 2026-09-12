@@ -49,6 +49,125 @@ async def get_my_farms(request: Request, current_user = Depends(get_current_user
     )
     return farms
 
+@router.get("/{farm_id}/advisory")
+async def get_farm_advisory(farm_id: str, request: Request, current_user = Depends(get_current_user)):
+    """Get the latest consolidated advisory insights and recommended crop for this plot."""
+    farm = await safe_db_execute(
+        request,
+        "farm.find_unique",
+        where={"id": farm_id}
+    )
+    if not farm:
+        raise HTTPException(status_code=404, detail="Farm not found")
+    if str(farm.userId) != str(current_user.id):
+        raise HTTPException(status_code=403, detail="Not authorized to access this farm")
+
+    # 1. Look for recent chat session linked to this farm
+    session = await safe_db_execute(
+        request,
+        "chatsession.find_first",
+        where={"farmId": farm_id},
+        order={"updatedAt": "desc"}
+    )
+
+    if session:
+        messages = await safe_db_execute(
+            request,
+            "chatmessage.find_many",
+            where={"sessionId": session.id, "role": "assistant"},
+            order={"createdAt": "desc"},
+            take=3
+        )
+        if messages and len(messages) > 0:
+            latest_msg = messages[0].content
+            
+            # Extract recommended crop from message
+            all_known_crops = [
+                "Coconut", "Banana", "Black Pepper", "Rice", "Paddy", "Cardamom", 
+                "Rubber", "Coffee", "Papaya", "Mango", "Tapioca", "Ginger", "Turmeric",
+                "Arecanut", "Nutmeg", "Pineapple", "Vegetables"
+            ]
+            detected_crop = None
+            for c in all_known_crops:
+                if c.lower() in latest_msg.lower():
+                    detected_crop = c if c != "Rice" else "Rice / Paddy"
+                    break
+            
+            if not detected_crop:
+                import re
+                bold_matches = re.findall(r'\*\*([A-Za-z\s/]{3,20})\*\*', latest_msg)
+                if bold_matches:
+                    detected_crop = bold_matches[0].strip()
+                else:
+                    detected_crop = "Recommended Mixed Intercrop"
+
+            # Create clean, high-value bullet takeaways from the message
+            clean_lines = [
+                l.strip().lstrip('-*•0123456789. ').strip() 
+                for l in latest_msg.split('\n') 
+                if len(l.strip()) > 15 and not l.strip().startswith('#') and not l.strip().startswith('|')
+            ]
+            takeaways = clean_lines[:3] if clean_lines else [latest_msg[:160].strip() + "..."]
+
+            return {
+                "hasAdvisory": True,
+                "recommendedCrop": detected_crop,
+                "summary": latest_msg[:240],
+                "takeaways": takeaways,
+                "consultedAt": messages[0].createdAt.isoformat() if hasattr(messages[0], 'createdAt') and messages[0].createdAt else None,
+                "source": "AI Chat History"
+            }
+
+    # 2. If no chat history yet, check if the plot has NPK telemetry to generate preliminary guidance
+    npk_raw = farm.npk or ""
+    import re
+    n_match = re.search(r'N[:\s]*(\d+)', npk_raw, re.IGNORECASE)
+    p_match = re.search(r'P[:\s]*(\d+)', npk_raw, re.IGNORECASE)
+    k_match = re.search(r'K[:\s]*(\d+)', npk_raw, re.IGNORECASE)
+    
+    if n_match and p_match and k_match:
+        n_val = int(n_match.group(1))
+        p_val = int(p_match.group(1))
+        k_val = int(k_match.group(1))
+        
+        if k_val >= 120 and n_val >= 70:
+            preview_crop = "Coconut & Banana Intercrop"
+            preview_takeaways = [
+                f"High potassium ({k_val} ppm) and nitrogen ({n_val} ppm) strongly favor robust fruit and canopy development.",
+                "Plant ahead of the southwest monsoon (May – June) for optimal root establishment.",
+                "Apply organic green manure around root basins to prevent soil leaching."
+            ]
+        elif n_val >= 85:
+            preview_crop = "Paddy / Rice (Wetland Cycle)"
+            preview_takeaways = [
+                f"Sufficient nitrogen ({n_val} ppm) supports tillering and grain filling.",
+                "Maintain 3-5 cm standing water layer and monitor field drainage.",
+                "Schedule potassium top-dressing prior to panicle initiation."
+            ]
+        else:
+            preview_crop = "Black Pepper & Spices"
+            preview_takeaways = [
+                "Moderate nutrient balance is ideal for pepper vines trailing on live support trees.",
+                "Ensure raised beds to avoid waterlogging and Phytophthora foot rot.",
+                "Maintain soil pH near 6.0 with agricultural lime or dolomite if needed."
+            ]
+
+        return {
+            "hasAdvisory": True,
+            "recommendedCrop": preview_crop,
+            "summary": "Telemetry-matched preliminary agronomic recommendation.",
+            "takeaways": preview_takeaways,
+            "consultedAt": farm.updatedAt.isoformat() if hasattr(farm, 'updatedAt') and farm.updatedAt else None,
+            "source": "Soil Telemetry Match"
+        }
+
+    return {
+        "hasAdvisory": False,
+        "recommendedCrop": None,
+        "takeaways": [],
+        "source": "None"
+    }
+
 @router.get("/{farm_id}", response_model=FarmResponse)
 async def get_farm(farm_id: str, request: Request, current_user = Depends(get_current_user)):
     """Get a single farm by ID"""

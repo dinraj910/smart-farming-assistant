@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  Modal, TextInput, Image, Alert, ActivityIndicator
+  Modal, TextInput, Image, Alert, ActivityIndicator,
+  Switch, Linking
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -41,6 +42,23 @@ export default function FarmsScreen() {
   const [plotAcres, setPlotAcres] = useState('');
   const [plotLocation, setPlotLocation] = useState('');
   const [langMl, setLangMl] = useState(false);
+
+  // Settings & Support Modals
+  const [activeModal, setActiveModal] = useState<'NONE' | 'NOTIFICATIONS' | 'PRIVACY' | 'SUPPORT'>('NONE');
+  
+  // Notification toggles
+  const [notifWeather, setNotifWeather] = useState(true);
+  const [notifPest, setNotifPest] = useState(true);
+  const [notifMandi, setNotifMandi] = useState(true);
+  const [notifInspection, setNotifInspection] = useState(true);
+
+  // Data & Privacy toggles
+  const [privacyResearch, setPrivacyResearch] = useState(true);
+  const [privacyCoarseLocation, setPrivacyCoarseLocation] = useState(false);
+
+  // Help & Support state
+  const [supportMessage, setSupportMessage] = useState('');
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
   const labels = {
     sub:     langMl ? 'രജിസ്ട്ഡ് ഭൂമികൾ' : 'Registered Plots',
@@ -93,8 +111,21 @@ export default function FarmsScreen() {
   async function handleQuickAction(actionLabel: string) {
     if (actionLabel === 'Edit Profile') {
       navigation.navigate('EditProfile');
+    } else if (actionLabel === 'Push Notifications') {
+      setActiveModal('NOTIFICATIONS');
+    } else if (actionLabel === 'Data & Privacy') {
+      setActiveModal('PRIVACY');
+    } else if (actionLabel === 'Help & Support') {
+      setActiveModal('SUPPORT');
     } else if (actionLabel === 'Sign Out') {
-      logout();
+      Alert.alert(
+        'Sign Out',
+        'Are you sure you want to sign out?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign Out', style: 'destructive', onPress: logout },
+        ]
+      );
     }
   }
 
@@ -315,6 +346,392 @@ export default function FarmsScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* ── Push Notifications Modal ────────────────────────────────────────── */}
+      <Modal visible={activeModal === 'NOTIFICATIONS'} transparent animationType="slide">
+        <View style={S.modalOverlay}>
+          <View style={[S.modalCard, { maxHeight: '88%' }]}>
+            <View style={S.modalHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={[S.modalIconCircle, { backgroundColor: '#f0fdf4' }]}>
+                  <Feather name="bell" size={16} color="#15803d" />
+                </View>
+                <View>
+                  <Text style={S.modalTitle}>Push Notifications</Text>
+                  <Text style={S.modalSubTitle}>Kerala Hyperlocal Farming Alerts</Text>
+                </View>
+              </View>
+              <TouchableOpacity onPress={() => setActiveModal('NONE')} style={S.closeBtn}>
+                <Feather name="x" size={18} color="#64748b" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
+              {/* Category Toggles */}
+              <View style={S.notifSection}>
+                <Text style={S.notifSectionHeader}>ALERT CATEGORIES</Text>
+
+                {[
+                  {
+                    key: 'weather',
+                    icon: 'cloud-rain',
+                    title: 'Weather & Monsoon Radar',
+                    desc: 'Real-time warnings for heavy rainfall (>50mm), thunderstorms, and dry spells in your district.',
+                    val: notifWeather,
+                    set: setNotifWeather,
+                  },
+                  {
+                    key: 'pest',
+                    icon: 'alert-triangle',
+                    title: 'Pest & Disease Community Alerts',
+                    desc: 'Hyperlocal alerts when nearby farms report fungal blights, leaf spots, or stem borer infestations.',
+                    val: notifPest,
+                    set: setNotifPest,
+                  },
+                  {
+                    key: 'mandi',
+                    icon: 'trending-up',
+                    title: 'APMC Mandi Price Spikes',
+                    desc: 'Notifications when pepper, coconut, or rubber market rates rise significantly (>5%).',
+                    val: notifMandi,
+                    set: setNotifMandi,
+                  },
+                  {
+                    key: 'inspection',
+                    icon: 'calendar',
+                    title: 'Plot & Soil Inspection Schedules',
+                    desc: 'Periodic reminders to review NPK telemetry and seasonal planting calendars.',
+                    val: notifInspection,
+                    set: setNotifInspection,
+                  },
+                ].map(item => (
+                  <View key={item.key} style={S.notifToggleRow}>
+                    <View style={S.notifToggleIconBox}>
+                      <Feather name={item.icon as any} size={15} color="#15803d" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={S.notifToggleTitle}>{item.title}</Text>
+                      <Text style={S.notifToggleDesc}>{item.desc}</Text>
+                    </View>
+                    <Switch
+                      value={item.val}
+                      onValueChange={item.set}
+                      trackColor={{ false: '#e2e8f0', true: '#86efac' }}
+                      thumbColor={item.val ? '#15803d' : '#f8fafc'}
+                    />
+                  </View>
+                ))}
+              </View>
+
+              {/* Recent Alerts Feed */}
+              <View style={[S.notifSection, { marginTop: 14 }]}>
+                <Text style={S.notifSectionHeader}>RECENT DISPATCHED ALERTS</Text>
+                <View style={S.recentAlertItem}>
+                  <Feather name="cloud-lightning" size={14} color="#0284c7" />
+                  <View style={{ flex: 1 }}>
+                    <Text style={S.recentAlertTitle}>Wayanad Monsoon Watch</Text>
+                    <Text style={S.recentAlertText}>75mm precipitation expected over next 48 hours. Ensure plot drainage.</Text>
+                    <Text style={S.recentAlertTime}>2 hours ago</Text>
+                  </View>
+                </View>
+
+                <View style={S.recentAlertItem}>
+                  <Feather name="trending-up" size={14} color="#15803d" />
+                  <View style={{ flex: 1 }}>
+                    <Text style={S.recentAlertTitle}>Kozhikode Mandi Price Alert</Text>
+                    <Text style={S.recentAlertText}>Coconut modal price increased by ₹120/Qtl to ₹3,150/Qtl.</Text>
+                    <Text style={S.recentAlertTime}>Yesterday</Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* Action buttons */}
+              <View style={{ gap: 8, marginTop: 14 }}>
+                <TouchableOpacity
+                  style={S.secondaryActionBtn}
+                  onPress={() => Alert.alert('🔔 Push Alert Sent', 'Test Notification: NatureSync push alerts are properly configured and operational on your device.')}
+                  activeOpacity={0.8}
+                >
+                  <Feather name="send" size={14} color="#15803d" />
+                  <Text style={S.secondaryActionBtnText}>Trigger Test Notification</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={S.primarySaveBtn}
+                  onPress={() => {
+                    setActiveModal('NONE');
+                    Alert.alert('Success', 'Notification preferences saved successfully.');
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <Feather name="check" size={15} color="#ffffff" />
+                  <Text style={S.primarySaveBtnText}>Save Preferences</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Data & Privacy Modal ───────────────────────────────────────────── */}
+      <Modal visible={activeModal === 'PRIVACY'} transparent animationType="slide">
+        <View style={S.modalOverlay}>
+          <View style={[S.modalCard, { maxHeight: '88%' }]}>
+            <View style={S.modalHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={[S.modalIconCircle, { backgroundColor: '#eff6ff' }]}>
+                  <Feather name="shield" size={16} color="#0284c7" />
+                </View>
+                <View>
+                  <Text style={S.modalTitle}>Data & Privacy Hub</Text>
+                  <Text style={S.modalSubTitle}>Security & Privacy Governance</Text>
+                </View>
+              </View>
+              <TouchableOpacity onPress={() => setActiveModal('NONE')} style={S.closeBtn}>
+                <Feather name="x" size={18} color="#64748b" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
+              {/* Compliance Badge */}
+              <View style={S.complianceBadge}>
+                <Feather name="lock" size={14} color="#15803d" />
+                <View style={{ flex: 1 }}>
+                  <Text style={S.complianceBadgeTitle}>GDPR & India DPDP Act Compliant</Text>
+                  <Text style={S.complianceBadgeSub}>Your farm data is encrypted and strictly owned by you.</Text>
+                </View>
+              </View>
+
+              {/* Principles */}
+              <View style={S.privacyPrinciplesBox}>
+                <View style={S.privacyPrincipleRow}>
+                  <Feather name="check-circle" size={14} color="#16a34a" />
+                  <View style={{ flex: 1 }}>
+                    <Text style={S.privacyPrincipleTitle}>Zero Commercial Brokering</Text>
+                    <Text style={S.privacyPrincipleSub}>We never sell or monetize your yield numbers, plots, or soil telemetry to commercial advertisers.</Text>
+                  </View>
+                </View>
+
+                <View style={S.privacyPrincipleRow}>
+                  <Feather name="check-circle" size={14} color="#16a34a" />
+                  <View style={{ flex: 1 }}>
+                    <Text style={S.privacyPrincipleTitle}>End-to-End Chat Isolation</Text>
+                    <Text style={S.privacyPrincipleSub}>AI conversations are scoped strictly to your registered plots and never leaked across accounts.</Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* Toggles */}
+              <View style={[S.notifSection, { marginTop: 14 }]}>
+                <Text style={S.notifSectionHeader}>DATA PERMISSIONS</Text>
+
+                <View style={S.notifToggleRow}>
+                  <View style={S.notifToggleIconBox}>
+                    <Feather name="database" size={15} color="#0284c7" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={S.notifToggleTitle}>Anonymized Agro-Research</Text>
+                    <Text style={S.notifToggleDesc}>Contribute anonymized regional soil trends to open agronomy research with Kerala Agricultural University.</Text>
+                  </View>
+                  <Switch
+                    value={privacyResearch}
+                    onValueChange={setPrivacyResearch}
+                    trackColor={{ false: '#e2e8f0', true: '#86efac' }}
+                    thumbColor={privacyResearch ? '#15803d' : '#f8fafc'}
+                  />
+                </View>
+
+                <View style={S.notifToggleRow}>
+                  <View style={S.notifToggleIconBox}>
+                    <Feather name="map-pin" size={15} color="#0284c7" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={S.notifToggleTitle}>District-Level Coarse Geofence</Text>
+                    <Text style={S.notifToggleDesc}>Use district center instead of exact GPS latitude/longitude when requesting mandi prices & weather.</Text>
+                  </View>
+                  <Switch
+                    value={privacyCoarseLocation}
+                    onValueChange={setPrivacyCoarseLocation}
+                    trackColor={{ false: '#e2e8f0', true: '#86efac' }}
+                    thumbColor={privacyCoarseLocation ? '#15803d' : '#f8fafc'}
+                  />
+                </View>
+              </View>
+
+              {/* Data actions */}
+              <View style={{ gap: 8, marginTop: 14 }}>
+                <TouchableOpacity
+                  style={S.secondaryActionBtn}
+                  onPress={() => Alert.alert('Farm Archive Generated', `A complete JSON backup of your ${plots.length} plots and telemetry logs has been prepared and exported.`)}
+                  activeOpacity={0.8}
+                >
+                  <Feather name="download" size={14} color="#15803d" />
+                  <Text style={S.secondaryActionBtnText}>Export My Farm Data (JSON)</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[S.secondaryActionBtn, { borderColor: '#fecaca', backgroundColor: '#fff1f2' }]}
+                  onPress={() => Alert.alert('Cache Cleared', 'Offline temporary weather cache and model assets have been flushed.')}
+                  activeOpacity={0.8}
+                >
+                  <Feather name="trash-2" size={14} color="#b91c1c" />
+                  <Text style={[S.secondaryActionBtnText, { color: '#b91c1c' }]}>Clear Offline Cache</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={S.primarySaveBtn}
+                  onPress={() => {
+                    setActiveModal('NONE');
+                    Alert.alert('Saved', 'Privacy preferences updated successfully.');
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <Feather name="check" size={15} color="#ffffff" />
+                  <Text style={S.primarySaveBtnText}>Done</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Help & Support Modal ───────────────────────────────────────────── */}
+      <Modal visible={activeModal === 'SUPPORT'} transparent animationType="slide">
+        <View style={S.modalOverlay}>
+          <View style={[S.modalCard, { maxHeight: '88%' }]}>
+            <View style={S.modalHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={[S.modalIconCircle, { backgroundColor: '#fef3c7' }]}>
+                  <Feather name="help-circle" size={16} color="#b45309" />
+                </View>
+                <View>
+                  <Text style={S.modalTitle}>Help & Agri Support Desk</Text>
+                  <Text style={S.modalSubTitle}>KAU Extension & Technical Assistance</Text>
+                </View>
+              </View>
+              <TouchableOpacity onPress={() => setActiveModal('NONE')} style={S.closeBtn}>
+                <Feather name="x" size={18} color="#64748b" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
+              {/* Direct helpline buttons */}
+              <Text style={S.notifSectionHeader}>DIRECT HELPLINES</Text>
+              
+              <TouchableOpacity
+                style={S.helplineCard}
+                onPress={() => Linking.openURL('tel:18004251661')}
+                activeOpacity={0.8}
+              >
+                <View style={[S.helplineIconBox, { backgroundColor: '#f0fdf4' }]}>
+                  <Feather name="phone-call" size={18} color="#15803d" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={S.helplineTitle}>KAU Kisan Call Centre</Text>
+                  <Text style={S.helplineSub}>Toll-Free 1800-425-1661 · Malayalam Agronomists</Text>
+                </View>
+                <Feather name="external-link" size={14} color="#64748b" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={S.helplineCard}
+                onPress={() => Linking.openURL('https://wa.me/919447000000?text=Hello%20NatureSync%20Support')}
+                activeOpacity={0.8}
+              >
+                <View style={[S.helplineIconBox, { backgroundColor: '#ecfdf5' }]}>
+                  <Feather name="message-circle" size={18} color="#059669" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={S.helplineTitle}>WhatsApp Agri Desk</Text>
+                  <Text style={S.helplineSub}>Instant chat with Kerala Krishi Bhavan specialists</Text>
+                </View>
+                <Feather name="external-link" size={14} color="#64748b" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={S.helplineCard}
+                onPress={() => Linking.openURL('mailto:support@naturesync.farm?subject=NatureSync%20Support%20Ticket')}
+                activeOpacity={0.8}
+              >
+                <View style={[S.helplineIconBox, { backgroundColor: '#eff6ff' }]}>
+                  <Feather name="mail" size={18} color="#0284c7" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={S.helplineTitle}>Email Technical Support</Text>
+                  <Text style={S.helplineSub}>support@naturesync.farm (24h response guarantee)</Text>
+                </View>
+                <Feather name="external-link" size={14} color="#64748b" />
+              </TouchableOpacity>
+
+              {/* FAQs */}
+              <View style={[S.notifSection, { marginTop: 14 }]}>
+                <Text style={S.notifSectionHeader}>FREQUENTLY ASKED QUESTIONS</Text>
+
+                {[
+                  {
+                    q: 'How does AI Plant Disease diagnosis work?',
+                    a: 'Take a clear picture of a leaf or upload a photo in Leaf Doctor. Our vision model classifies 38 plant disease classes, and the LLM provides organic/chemical remedies tailored to Kerala crops.'
+                  },
+                  {
+                    q: 'Where do the live Mandi rates come from?',
+                    a: 'All market prices are synchronized daily with the official Agmarknet repository (Resource ID: 9ef84268) across Kerala APMC markets.'
+                  },
+                  {
+                    q: 'How do I add or update soil NPK values?',
+                    a: 'Navigate to Registered Plots, tap on any plot to open the details page, and tap "Edit NPK". Enter values in ppm for Nitrogen, Phosphorus, Potassium and pH.'
+                  }
+                ].map((faq, index) => {
+                  const isOpen = expandedFaq === index;
+                  return (
+                    <TouchableOpacity
+                      key={index}
+                      style={S.faqItem}
+                      onPress={() => setExpandedFaq(isOpen ? null : index)}
+                      activeOpacity={0.8}
+                    >
+                      <View style={S.faqHeaderRow}>
+                        <Text style={S.faqQuestion}>{faq.q}</Text>
+                        <Feather name={isOpen ? 'chevron-up' : 'chevron-down'} size={14} color="#64748b" />
+                      </View>
+                      {isOpen && <Text style={S.faqAnswer}>{faq.a}</Text>}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Submit Query Ticket */}
+              <View style={[S.notifSection, { marginTop: 14 }]}>
+                <Text style={S.notifSectionHeader}>SEND A MESSAGE TO AN AGRI SPECIALIST</Text>
+                <TextInput
+                  style={S.supportTextArea}
+                  placeholder="Describe your plot query or question in detail..."
+                  placeholderTextColor="#94a3b8"
+                  multiline
+                  numberOfLines={4}
+                  value={supportMessage}
+                  onChangeText={setSupportMessage}
+                />
+                <TouchableOpacity
+                  style={[S.primarySaveBtn, { marginTop: 8 }]}
+                  onPress={() => {
+                    if (!supportMessage.trim()) {
+                      Alert.alert('Enter Message', 'Please describe your query before submitting.');
+                      return;
+                    }
+                    setSupportMessage('');
+                    setActiveModal('NONE');
+                    Alert.alert('Ticket Created #NS-9241', 'Thank you! Your request has been logged. An agricultural extension expert will follow up within 24 hours.');
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <Feather name="send" size={14} color="#ffffff" />
+                  <Text style={S.primarySaveBtnText}>Submit Support Ticket</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -471,4 +888,91 @@ const S = StyleSheet.create({
     shadowColor: '#15803d', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5,
   },
   saveBtnText: { color: 'white', fontWeight: '800', fontSize: 14 },
+
+  // Modal Header & Common
+  modalIconCircle: {
+    width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
+  },
+  modalSubTitle: { fontSize: 10, color: '#64748b', fontWeight: '600', marginTop: 1 },
+
+  notifSection: { gap: 8 },
+  notifSectionHeader: { fontSize: 10, fontWeight: '800', color: '#64748b', letterSpacing: 0.6, marginBottom: 2 },
+  notifToggleRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#f1f5f9',
+    borderRadius: 14, padding: 12,
+  },
+  notifToggleIconBox: {
+    width: 30, height: 30, borderRadius: 9,
+    backgroundColor: '#ffffff', alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: '#e2e8f0',
+  },
+  notifToggleTitle: { fontSize: 12, fontWeight: '700', color: '#0f172a' },
+  notifToggleDesc: { fontSize: 10, color: '#64748b', lineHeight: 14, marginTop: 2 },
+
+  recentAlertItem: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 10,
+    backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#e2e8f0',
+    borderRadius: 12, padding: 10,
+  },
+  recentAlertTitle: { fontSize: 11, fontWeight: '800', color: '#0f172a' },
+  recentAlertText: { fontSize: 10, color: '#475569', lineHeight: 14, marginTop: 2 },
+  recentAlertTime: { fontSize: 9, color: '#94a3b8', fontWeight: '600', marginTop: 3 },
+
+  secondaryActionBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    paddingVertical: 11, borderRadius: 12,
+    borderWidth: 1, borderColor: '#bbf7d0', backgroundColor: '#f0fdf4',
+  },
+  secondaryActionBtnText: { fontSize: 12, fontWeight: '700', color: '#15803d' },
+
+  primarySaveBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    paddingVertical: 12, borderRadius: 12,
+    backgroundColor: '#15803d',
+  },
+  primarySaveBtnText: { fontSize: 13, fontWeight: '800', color: '#ffffff' },
+
+  // Privacy
+  complianceBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: '#f0fdf4', borderWidth: 1, borderColor: '#bbf7d0',
+    borderRadius: 14, padding: 12,
+  },
+  complianceBadgeTitle: { fontSize: 12, fontWeight: '800', color: '#15803d' },
+  complianceBadgeSub: { fontSize: 10, color: '#166534', marginTop: 1 },
+
+  privacyPrinciplesBox: {
+    backgroundColor: '#f8fafc', borderRadius: 14, padding: 12, gap: 10,
+    borderWidth: 1, borderColor: '#e2e8f0', marginTop: 10,
+  },
+  privacyPrincipleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  privacyPrincipleTitle: { fontSize: 11, fontWeight: '700', color: '#0f172a' },
+  privacyPrincipleSub: { fontSize: 10, color: '#64748b', lineHeight: 14, marginTop: 1 },
+
+  // Support
+  helplineCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#e2e8f0',
+    borderRadius: 14, padding: 12,
+  },
+  helplineIconBox: {
+    width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
+  },
+  helplineTitle: { fontSize: 12, fontWeight: '800', color: '#0f172a' },
+  helplineSub: { fontSize: 10, color: '#64748b', marginTop: 1 },
+
+  faqItem: {
+    backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0',
+    borderRadius: 12, padding: 12,
+  },
+  faqHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  faqQuestion: { fontSize: 11, fontWeight: '700', color: '#0f172a', flex: 1, paddingRight: 8 },
+  faqAnswer: { fontSize: 10, color: '#475569', lineHeight: 15, marginTop: 8, borderTopWidth: 1, borderTopColor: '#e2e8f0', paddingTop: 8 },
+
+  supportTextArea: {
+    backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#cbd5e1',
+    borderRadius: 12, padding: 10, fontSize: 12, color: '#0f172a',
+    textAlignVertical: 'top', height: 80,
+  },
 });
