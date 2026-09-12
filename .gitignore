@@ -23,7 +23,7 @@ mobile/.env
 backend/.env
 
 # ML
-backend/ml_models/**/*.pkl
+backend/ml_models/Yield_prediction/*.pkl
 backend/ml_models/**/*.h5
 ml/**/*.h5
 ml/**/*.pkl

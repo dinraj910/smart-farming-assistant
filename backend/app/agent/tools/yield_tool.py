@@ -16,9 +16,31 @@ _yield_metadata = None
 def load_yield_model(model_dir="ml_models/yield_prediction"):
     global _yield_pipeline, _yield_metadata
     if _yield_pipeline is None:
-        _yield_pipeline = joblib.load(os.path.join(model_dir, "crop_yield_pipeline.pkl"))
-        with open(os.path.join(model_dir, "metadata.json")) as f:
-            _yield_metadata = json.load(f)
+        candidates = [
+            os.path.join(model_dir, "crop_yield_pipeline.pkl"),
+            os.path.join("ml_models/Yield_prediction", "crop_yield_pipeline.pkl"),
+        ]
+        chosen_path = None
+        for p in candidates:
+            if os.path.exists(p):
+                chosen_path = p
+                break
+
+        if not chosen_path:
+            return None, None
+
+        try:
+            _yield_pipeline = joblib.load(chosen_path)
+            meta_path = os.path.join(os.path.dirname(chosen_path), "metadata.json")
+            if os.path.exists(meta_path):
+                with open(meta_path) as f:
+                    _yield_metadata = json.load(f)
+            else:
+                _yield_metadata = {}
+        except Exception as e:
+            print("Yield model load notice:", e)
+            return None, None
+
     return _yield_pipeline, _yield_metadata
 
 
@@ -30,6 +52,10 @@ def run_yield_prediction(crop: str, season: str, state: str,
     field), convert before calling this: hectares = acres * 0.4047.
     """
     pipeline, metadata = load_yield_model()
+    if pipeline is None or metadata is None:
+        return {
+            "error": "Trained yield regressor is not bundled. The agent should fall back to kau_knowledge_search for expected harvest and yield guidelines."
+        }
 
     # Case-insensitive lookup maps
     crops_map = {c.lower(): c for c in metadata.get("crops_covered", [])}

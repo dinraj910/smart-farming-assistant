@@ -6,6 +6,7 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 """
 
 from contextlib import asynccontextmanager
+import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,8 +27,11 @@ async def lifespan(app: FastAPI):
     # ---- STARTUP: load the model ONCE into memory, not per-request ----
     print("Loading Crop Recommendation model...")
 
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    model_path = os.path.join(base_dir, "ml_models", "crop_recommendation")
+
     app.state.crop_model = CropRecommendationModel(
-        model_dir="ml_models/crop_recommendation"
+        model_dir=model_path
     )
 
     print("Model loaded. Ready to serve predictions.")
