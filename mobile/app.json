@@ -37,6 +37,11 @@
           "locationWhenInUsePermission": "NatureSync uses your location to show live local weather for your farm."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "62e17c06-38fa-40da-a28f-bc1a8a111a3c"
+      }
+    }
   }
 }
