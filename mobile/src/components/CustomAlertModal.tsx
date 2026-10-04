@@ -141,8 +141,8 @@ export default function CustomAlertModal() {
                   const isCancel = btn.style === 'cancel';
                   const isDestructive = btn.style === 'destructive';
 
-                  let btnStyle = [styles.button, styles.primaryBtn, { backgroundColor: config.primaryBtnBg }];
-                  let btnTextStyle = styles.primaryBtnText;
+                  let btnStyle: any = [styles.button, styles.primaryBtn, { backgroundColor: config.primaryBtnBg }];
+                  let btnTextStyle: any = styles.primaryBtnText;
 
                   if (isCancel) {
                     btnStyle = [styles.button, styles.cancelBtn];

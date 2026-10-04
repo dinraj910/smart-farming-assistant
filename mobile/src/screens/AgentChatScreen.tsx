@@ -202,7 +202,28 @@ export default function AgentChatScreen() {
   const flatListRef = useRef<FlatList>(null);
   const [inputText, setInputText] = React.useState('');
   const [expandedSources, setExpandedSources] = React.useState<Record<string, boolean>>({});
+  const [keyboardHeight, setKeyboardHeight] = React.useState(0);
   const initialPromptSent = useRef(false);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+      }
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   useEffect(() => {
     initSession(fieldId, farmId);
@@ -549,7 +570,14 @@ export default function AgentChatScreen() {
       />
 
       {/* ── Input Bar ───────────────────────────────────────────────────────── */}
-      <View style={styles.inputBar}>
+      <View
+        style={[
+          styles.inputBar,
+          Platform.OS === 'android' && keyboardHeight > 0
+            ? { marginBottom: keyboardHeight }
+            : null,
+        ]}
+      >
         <View style={styles.inputRow}>
           <TextInput
             style={styles.textInput}
@@ -557,6 +585,7 @@ export default function AgentChatScreen() {
             placeholderTextColor="#9ca3af"
             value={inputText}
             onChangeText={setInputText}
+            onFocus={() => setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 150)}
             onSubmitEditing={() => handleSend()}
             multiline
             returnKeyType="send"

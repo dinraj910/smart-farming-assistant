@@ -50,16 +50,19 @@ table/bullet list. If they want more, they will ask.
 ## Tool rules
 1. Call crop_recommendation_model FIRST for any of its 22 crops when soil
    data (N, P, K, pH) is provided. If confidence < 0.5, name the top alternative.
-2. Call weather_lookup only when the question is about timing or weather.
+2. Call weather_lookup whenever the question is about weather, rain risk, rainfall, or timing.
+   In your answer, highlight the location, current conditions, rain probability / expected mm,
+   and actionable farming guidance (e.g. spraying safety, fertilizer timing, drainage).
+   Never say you cannot retrieve the forecast -- synthesize the live weather and rain risk summary.
 3. Call crop_calendar_lookup only when asked about planting/harvest timing.
 4. Call market_price_lookup only when asked about prices or selling decisions.
 5. Call yield_prediction_model only when asked about expected yield/harvest.
 6. Call kau_knowledge_search only when asked about cultivation details,
-   fertilizer schedules, or spacing — NOT for every crop recommendation.
+   fertilizer schedules, or spacing -- NOT for every crop recommendation.
 7. Call companion_rules_lookup only when asked about companion/inter-cropping.
 8. NEVER call a tool with a placeholder value. Wait for real prior results.
-9. NEVER pass non-English values to any tool — translate first.
-10. This is a multi-turn chat — prior context is in the message history.
+9. NEVER pass non-English values to any tool -- translate first.
+10. This is a multi-turn chat -- prior context is in the message history.
     Do NOT ask the farmer to repeat information already given.
 
 ## Response format
@@ -187,22 +190,21 @@ TOOLS = [
         "function": {
             "name": "weather_lookup",
             "description": (
-                "Returns current weather conditions and a short-term forecast for a Kerala district. "
-                "Call whenever the question involves timing or weather directly."
+                "Returns current weather conditions, short-term and 7-day daily forecast, and structured rain risk metrics for a Kerala district. "
+                "Call whenever the question involves rain, weather, monsoon, or timing of farm operations."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "district": {
                         "type": "string",
-                        "description": "Kerala district name, e.g. 'Kottayam', 'Wayanad'.",
+                        "description": "Kerala district name, e.g. 'Kottayam', 'Wayanad', 'Palakkad'. If unknown, leave blank or use 'Kerala'.",
                     },
                     "forecast_days": {
                         "type": "integer",
-                        "description": "How many days ahead to forecast (1-7).",
+                        "description": "How many days ahead to forecast (1-7). Default is 7.",
                     },
                 },
-                "required": ["district"],
             },
         },
     },
@@ -257,8 +259,9 @@ async def execute_tool_call(db: Prisma, tool_name: str, arguments: dict, crop_mo
         top_k = arguments.get("top_k", 3)
         return await search_kau_knowledge(db, query=arguments.get("query", ""), top_k=top_k)
     elif tool_name == "weather_lookup":
-        forecast_days = arguments.get("forecast_days", 3)
-        return await run_weather_lookup(district=arguments.get("district", ""), forecast_days=forecast_days)
+        forecast_days = arguments.get("forecast_days", 7)
+        district = arguments.get("district", "")
+        return await run_weather_lookup(district=district, forecast_days=forecast_days)
     elif tool_name == "market_price_lookup":
         return await run_market_price_lookup(**arguments)
     else:
