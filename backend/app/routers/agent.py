@@ -25,6 +25,11 @@ async def open_chat_session(
     """
 
     db = request.app.state.db
+    if not db.is_connected():
+        try:
+            await db.connect()
+        except Exception:
+            pass
 
     session = await get_or_create_session(
         db,
@@ -69,6 +74,11 @@ async def crop_advisory(
 
     crop_model = request.app.state.crop_model
     db = request.app.state.db
+    if not db.is_connected():
+        try:
+            await db.connect()
+        except Exception:
+            pass
 
     # If the caller didn't supply a session_id, create (or retrieve) one now.
     # This guarantees run_agent always receives a valid UUID, never None.
@@ -147,8 +157,8 @@ async def translate_text(payload: TranslateRequest):
     groq_key = os.environ.get("GROQ_API_KEY")
     if groq_key:
         try:
-            from groq import Groq
-            client = Groq(api_key=groq_key)
+            from groq import AsyncGroq
+            client = AsyncGroq(api_key=groq_key)
             prompt = (
                 "You are an expert agricultural translator for Kerala farmers. "
                 "Translate the following agricultural advisory message into natural, fluent Malayalam. "
@@ -156,7 +166,7 @@ async def translate_text(payload: TranslateRequest):
                 "Output ONLY the Malayalam translation without conversational preamble.\n\n"
                 f"{text}"
             )
-            completion = client.chat.completions.create(
+            completion = await client.chat.completions.create(
                 model="llama-3.1-8b-instant",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.2,

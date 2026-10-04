@@ -49,8 +49,17 @@ async def get_or_create_session(db: Prisma, farm_id: str | None):
 
 
 
+async def _ensure_db(db: Prisma):
+    if not db.is_connected():
+        try:
+            await db.connect()
+        except Exception:
+            pass
+
+
 async def load_context(db: Prisma, session_id: str):
     """Returns (memory_summary: str | None, recent_messages: list[dict])."""
+    await _ensure_db(db)
     session = await db.chatsession.find_unique(where={"id": session_id})
 
     # Session may not exist yet (first call) — return empty context.
@@ -75,6 +84,7 @@ async def load_context(db: Prisma, session_id: str):
 
 
 async def save_turn(db: Prisma, session_id: str, user_message: str, assistant_message: str):
+    await _ensure_db(db)
     await db.chatmessage.create(data={
         "sessionId": session_id, "role": "user", "content": user_message,
     })
@@ -84,6 +94,7 @@ async def save_turn(db: Prisma, session_id: str, user_message: str, assistant_me
 
 
 async def maybe_summarize(db: Prisma, session_id: str):
+    await _ensure_db(db)
     session = await db.chatsession.find_unique(where={"id": session_id})
     all_messages = await db.chatmessage.find_many(
         where={"sessionId": session_id},

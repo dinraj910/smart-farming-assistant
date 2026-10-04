@@ -116,7 +116,7 @@ async def fetch_kerala_price(commodity: str, district: str | None = None) -> dic
     url = f"{BASE}/{slug}/kerala"
 
     try:
-        async with httpx.AsyncClient(timeout=20.0, headers=HEADERS, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=5.0, headers=HEADERS, follow_redirects=True) as client:
             resp = await client.get(url)
             if resp.status_code != 200:
                 return None

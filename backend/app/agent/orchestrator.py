@@ -270,7 +270,7 @@ async def run_agent(
     session_id: str,
     user_message: str,
     crop_model,
-    max_turns: int = 6,
+    max_turns: int = 4,
     farm_info: dict | None = None,
 ):
     """
