@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput,
-  TouchableOpacity, ActivityIndicator, Alert, Platform, KeyboardAvoidingView,
+  TouchableOpacity, ActivityIndicator, Platform, KeyboardAvoidingView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -10,6 +10,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootStackParamList';
 import { useAuthStore } from '../store/authStore';
 import UserAvatar from '../components/UserAvatar';
+import { showAlert } from '../components/CustomAlertModal';
 
 const DISTRICT_PRESETS = [
   'Wayanad', 'Palakkad', 'Idukki', 'Kottayam', 'Kozhikode', 'Ernakulam', 'Thrissur', 'Kannur', 'Alappuzha'
@@ -33,11 +34,11 @@ export default function EditProfileScreen() {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert('Validation Error', 'Please enter your name.');
+      showAlert('Validation Error', 'Please enter your name.', undefined, 'warning');
       return;
     }
     if (!email.trim() || !email.includes('@')) {
-      Alert.alert('Validation Error', 'Please enter a valid email address.');
+      showAlert('Validation Error', 'Please enter a valid email address.', undefined, 'warning');
       return;
     }
 
@@ -52,13 +53,14 @@ export default function EditProfileScreen() {
         farmSize: farmSize.trim(),
       });
 
-      Alert.alert(
+      showAlert(
         'Profile Updated',
         'Your profile information and farmer avatar have been updated successfully!',
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
+        [{ text: 'OK', onPress: () => navigation.goBack() }],
+        'success'
       );
     } catch (err: any) {
-      Alert.alert('Update Failed', err?.message || 'Could not update profile. Please try again.');
+      showAlert('Update Failed', err?.message || 'Could not update profile. Please try again.', undefined, 'error');
     } finally {
       setSaving(false);
     }
@@ -352,6 +354,7 @@ const S = StyleSheet.create({
 
   scrollContent: {
     padding: 16,
+    paddingBottom: 140,
     gap: 14,
   },
 

@@ -49,7 +49,7 @@ export default function RegisterScreen({ navigation }: Props) {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
       <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboardView}
       >
         {/* Header */}
@@ -65,6 +65,7 @@ export default function RegisterScreen({ navigation }: Props) {
         <ScrollView 
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           <View style={styles.titleContainer}>
             <Text style={styles.title}>Create Account</Text>

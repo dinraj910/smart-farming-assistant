@@ -13,6 +13,7 @@ import FieldDetailScreen from './src/screens/FieldDetailScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
 
 import { useAuthStore } from './src/store/authStore';
+import CustomAlertModal from './src/components/CustomAlertModal';
 
 import "./global.css";
 
@@ -30,28 +31,31 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator
-        screenOptions={{
-          headerShown: false,
-          animation: 'slide_from_right',
-        }}
-      >
-        {token ? (
-          <>
-            <Stack.Screen name="Main"        component={MainTabNavigator} options={{ animation: 'fade' }} />
-            <Stack.Screen name="AgentChat"   component={AgentChatScreen}  />
-            <Stack.Screen name="FieldDetail" component={FieldDetailScreen} />
-            <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-          </>
-        ) : (
-          <>
-            <Stack.Screen name="Welcome"  component={WelcomeScreen}  />
-            <Stack.Screen name="Login"    component={LoginScreen}    />
-            <Stack.Screen name="Register" component={RegisterScreen} />
-          </>
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <>
+      <NavigationContainer>
+        <Stack.Navigator
+          screenOptions={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
+        >
+          {token ? (
+            <>
+              <Stack.Screen name="Main"        component={MainTabNavigator} options={{ animation: 'fade' }} />
+              <Stack.Screen name="AgentChat"   component={AgentChatScreen}  />
+              <Stack.Screen name="FieldDetail" component={FieldDetailScreen} />
+              <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+            </>
+          ) : (
+            <>
+              <Stack.Screen name="Welcome"  component={WelcomeScreen}  />
+              <Stack.Screen name="Login"    component={LoginScreen}    />
+              <Stack.Screen name="Register" component={RegisterScreen} />
+            </>
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+      <CustomAlertModal />
+    </>
   );
 }

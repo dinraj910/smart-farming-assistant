@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
-  Image, Animated, Alert, ActivityIndicator, Platform,
+  Image, Animated, ActivityIndicator, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { API_URL } from '../api/client';
 import * as SecureStore from 'expo-secure-store';
+import { showAlert } from '../components/CustomAlertModal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface DiseaseResult {
@@ -127,7 +128,7 @@ export default function LeafDoctorScreen() {
   const pickFromGallery = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('Permission Required', 'Please allow access to your photo library.');
+      showAlert('Permission Required', 'Please allow access to your photo library in settings to scan plant leaves.', undefined, 'warning');
       return;
     }
     const picked = await ImagePicker.launchImageLibraryAsync({
@@ -144,7 +145,7 @@ export default function LeafDoctorScreen() {
   const openCamera = async () => {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('Permission Required', 'Please allow camera access.');
+      showAlert('Permission Required', 'Please allow camera access in settings to capture leaf photos directly.', undefined, 'warning');
       return;
     }
     const taken = await ImagePicker.launchCameraAsync({

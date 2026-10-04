@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  Modal, TextInput, Image, Alert, ActivityIndicator,
-  Switch, Linking
+  Modal, TextInput, Image, ActivityIndicator,
+  Switch, Linking, KeyboardAvoidingView, Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -12,6 +12,7 @@ import { RootStackParamList } from '../navigation/RootStackParamList';
 import { useAuthStore } from '../store/authStore';
 import apiClient from '../api/client';
 import UserAvatar from '../components/UserAvatar';
+import { showAlert } from '../components/CustomAlertModal';
 
 // ─── Registered plots ─────────────────────────────────────────────────────────
 interface Plot {
@@ -85,7 +86,7 @@ export default function FarmsScreen() {
 
   async function addPlot() {
     if (!plotName.trim()) {
-      Alert.alert('Error', 'Please enter a plot name');
+      showAlert('Plot Name Required', 'Please enter a name for your plot.', undefined, 'warning');
       return;
     }
     
@@ -102,9 +103,10 @@ export default function FarmsScreen() {
       setPlotAcres('');
       setPlotLocation('');
       setModalOpen(false);
+      showAlert('Plot Created', 'Your plot has been added successfully.', undefined, 'success');
     } catch (error) {
       console.error('Error creating plot:', error);
-      Alert.alert('Error', 'Failed to create plot');
+      showAlert('Creation Failed', 'Failed to create plot. Please try again.', undefined, 'error');
     }
   }
 
@@ -118,13 +120,14 @@ export default function FarmsScreen() {
     } else if (actionLabel === 'Help & Support') {
       setActiveModal('SUPPORT');
     } else if (actionLabel === 'Sign Out') {
-      Alert.alert(
+      showAlert(
         'Sign Out',
-        'Are you sure you want to sign out?',
+        'Are you sure you want to sign out of NatureSync?',
         [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Sign Out', style: 'destructive', onPress: logout },
-        ]
+        ],
+        'warning'
       );
     }
   }
@@ -296,55 +299,64 @@ export default function FarmsScreen() {
 
       {/* ── Add Plot Modal ───────────────────────────────────────────────── */}
       <Modal visible={modalOpen} transparent animationType="slide">
-        <View style={S.modalOverlay}>
-          <View style={S.modalCard}>
-            <View style={S.modalHeader}>
-              <Text style={S.modalTitle}>{labels.modalTitle}</Text>
-              <TouchableOpacity onPress={() => setModalOpen(false)} style={S.closeBtn}>
-                <Feather name="x" size={16} color="#64748b" />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={S.modalOverlay}
+        >
+          <ScrollView
+            contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }}
+            keyboardShouldPersistTaps="handled"
+            bounces={false}
+          >
+            <View style={S.modalCard}>
+              <View style={S.modalHeader}>
+                <Text style={S.modalTitle}>{labels.modalTitle}</Text>
+                <TouchableOpacity onPress={() => setModalOpen(false)} style={S.closeBtn}>
+                  <Feather name="x" size={16} color="#64748b" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={S.modalInputs}>
+                <View>
+                  <Text style={S.inputLabel}>Plot Name</Text>
+                  <TextInput
+                    value={plotName}
+                    onChangeText={setPlotName}
+                    placeholder="e.g. Wayanad Pepper Homestead"
+                    placeholderTextColor="#cbd5e1"
+                    style={S.textInput}
+                  />
+                </View>
+                <View>
+                  <Text style={S.inputLabel}>Location / Village</Text>
+                  <TextInput
+                    value={plotLocation}
+                    onChangeText={setPlotLocation}
+                    placeholder="e.g. Mananthavady, Wayanad"
+                    placeholderTextColor="#cbd5e1"
+                    style={S.textInput}
+                  />
+                </View>
+                <View>
+                  <Text style={S.inputLabel}>Acreage (Acres)</Text>
+                  <TextInput
+                    value={plotAcres}
+                    onChangeText={setPlotAcres}
+                    placeholder="1.5"
+                    placeholderTextColor="#cbd5e1"
+                    keyboardType="numeric"
+                    style={S.textInput}
+                  />
+                </View>
+              </View>
+
+              <TouchableOpacity style={S.saveBtn} onPress={addPlot} activeOpacity={0.85}>
+                <Feather name="check" size={15} color="white" />
+                <Text style={S.saveBtnText}>{labels.savePlot}</Text>
               </TouchableOpacity>
             </View>
-
-            <View style={S.modalInputs}>
-              <View>
-                <Text style={S.inputLabel}>Plot Name</Text>
-                <TextInput
-                  value={plotName}
-                  onChangeText={setPlotName}
-                  placeholder="e.g. Wayanad Pepper Homestead"
-                  placeholderTextColor="#cbd5e1"
-                  style={S.textInput}
-                />
-              </View>
-              <View>
-                <Text style={S.inputLabel}>Location / Village</Text>
-                <TextInput
-                  value={plotLocation}
-                  onChangeText={setPlotLocation}
-                  placeholder="e.g. Mananthavady, Wayanad"
-                  placeholderTextColor="#cbd5e1"
-                  style={S.textInput}
-                />
-              </View>
-              <View>
-                <Text style={S.inputLabel}>Acreage (Acres)</Text>
-                <TextInput
-                  value={plotAcres}
-                  onChangeText={setPlotAcres}
-                  placeholder="1.5"
-                  placeholderTextColor="#cbd5e1"
-                  keyboardType="numeric"
-                  style={S.textInput}
-                />
-              </View>
-            </View>
-
-            <TouchableOpacity style={S.saveBtn} onPress={addPlot} activeOpacity={0.85}>
-              <Feather name="check" size={15} color="white" />
-              <Text style={S.saveBtnText}>{labels.savePlot}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* ── Push Notifications Modal ────────────────────────────────────────── */}
@@ -449,7 +461,7 @@ export default function FarmsScreen() {
               <View style={{ gap: 8, marginTop: 14 }}>
                 <TouchableOpacity
                   style={S.secondaryActionBtn}
-                  onPress={() => Alert.alert('🔔 Push Alert Sent', 'Test Notification: NatureSync push alerts are properly configured and operational on your device.')}
+                  onPress={() => showAlert('🔔 Push Alert Sent', 'Test Notification: NatureSync push alerts are properly configured and operational on your device.', undefined, 'info')}
                   activeOpacity={0.8}
                 >
                   <Feather name="send" size={14} color="#15803d" />
@@ -460,7 +472,7 @@ export default function FarmsScreen() {
                   style={S.primarySaveBtn}
                   onPress={() => {
                     setActiveModal('NONE');
-                    Alert.alert('Success', 'Notification preferences saved successfully.');
+                    showAlert('Success', 'Notification preferences saved successfully.', undefined, 'success');
                   }}
                   activeOpacity={0.85}
                 >
@@ -562,7 +574,7 @@ export default function FarmsScreen() {
               <View style={{ gap: 8, marginTop: 14 }}>
                 <TouchableOpacity
                   style={S.secondaryActionBtn}
-                  onPress={() => Alert.alert('Farm Archive Generated', `A complete JSON backup of your ${plots.length} plots and telemetry logs has been prepared and exported.`)}
+                  onPress={() => showAlert('Farm Archive Generated', `A complete JSON backup of your ${plots.length} plots and telemetry logs has been prepared and exported.`, undefined, 'success')}
                   activeOpacity={0.8}
                 >
                   <Feather name="download" size={14} color="#15803d" />
@@ -571,7 +583,7 @@ export default function FarmsScreen() {
 
                 <TouchableOpacity
                   style={[S.secondaryActionBtn, { borderColor: '#fecaca', backgroundColor: '#fff1f2' }]}
-                  onPress={() => Alert.alert('Cache Cleared', 'Offline temporary weather cache and model assets have been flushed.')}
+                  onPress={() => showAlert('Cache Cleared', 'Offline temporary weather cache and model assets have been flushed.', undefined, 'info')}
                   activeOpacity={0.8}
                 >
                   <Feather name="trash-2" size={14} color="#b91c1c" />
@@ -582,7 +594,7 @@ export default function FarmsScreen() {
                   style={S.primarySaveBtn}
                   onPress={() => {
                     setActiveModal('NONE');
-                    Alert.alert('Saved', 'Privacy preferences updated successfully.');
+                    showAlert('Saved', 'Privacy preferences updated successfully.', undefined, 'success');
                   }}
                   activeOpacity={0.85}
                 >
@@ -597,7 +609,10 @@ export default function FarmsScreen() {
 
       {/* ── Help & Support Modal ───────────────────────────────────────────── */}
       <Modal visible={activeModal === 'SUPPORT'} transparent animationType="slide">
-        <View style={S.modalOverlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={S.modalOverlay}
+        >
           <View style={[S.modalCard, { maxHeight: '88%' }]}>
             <View style={S.modalHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -614,7 +629,11 @@ export default function FarmsScreen() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
+            <ScrollView 
+              showsVerticalScrollIndicator={false} 
+              contentContainerStyle={{ paddingBottom: 16 }}
+              keyboardShouldPersistTaps="handled"
+            >
               {/* Direct helpline buttons */}
               <Text style={S.notifSectionHeader}>DIRECT HELPLINES</Text>
               
@@ -715,12 +734,12 @@ export default function FarmsScreen() {
                   style={[S.primarySaveBtn, { marginTop: 8 }]}
                   onPress={() => {
                     if (!supportMessage.trim()) {
-                      Alert.alert('Enter Message', 'Please describe your query before submitting.');
+                      showAlert('Enter Message', 'Please describe your query before submitting.', undefined, 'warning');
                       return;
                     }
                     setSupportMessage('');
                     setActiveModal('NONE');
-                    Alert.alert('Ticket Created #NS-9241', 'Thank you! Your request has been logged. An agricultural extension expert will follow up within 24 hours.');
+                    showAlert('Ticket Created #NS-9241', 'Thank you! Your request has been logged. An agricultural extension expert will follow up within 24 hours.', undefined, 'success');
                   }}
                   activeOpacity={0.85}
                 >
@@ -730,7 +749,7 @@ export default function FarmsScreen() {
               </View>
             </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

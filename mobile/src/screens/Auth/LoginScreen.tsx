@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   View, Text, TextInput, TouchableOpacity, 
   StyleSheet, KeyboardAvoidingView, 
-  Platform, StatusBar 
+  Platform, StatusBar, ScrollView 
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -37,7 +37,7 @@ export default function LoginScreen({ navigation }: Props) {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
       <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboardView}
       >
         {/* Header */}
@@ -50,84 +50,91 @@ export default function LoginScreen({ navigation }: Props) {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.content}>
-          <View style={styles.titleContainer}>
-            <View style={styles.iconContainer}>
-              <Feather name="feather" size={32} color={Colors.brand[600]} />
-            </View>
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Sign in to manage your farm and get AI insights.</Text>
-          </View>
-
-          <View style={styles.form}>
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email Address</Text>
-              <View style={styles.inputContainer}>
-                <Feather name="mail" size={20} color={Colors.slate[400]} style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter your email"
-                  placeholderTextColor={Colors.slate[400]}
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
+          <View style={styles.content}>
+            <View style={styles.titleContainer}>
+              <View style={styles.iconContainer}>
+                <Feather name="feather" size={32} color={Colors.brand[600]} />
               </View>
+              <Text style={styles.title}>Welcome Back</Text>
+              <Text style={styles.subtitle}>Sign in to manage your farm and get AI insights.</Text>
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Password</Text>
-              <View style={styles.inputContainer}>
-                <Feather name="lock" size={20} color={Colors.slate[400]} style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter your password"
-                  placeholderTextColor={Colors.slate[400]}
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                />
-                <TouchableOpacity 
-                  onPress={() => setShowPassword(!showPassword)}
-                  style={styles.eyeIcon}
-                >
-                  <Feather name={showPassword ? "eye" : "eye-off"} size={20} color={Colors.slate[400]} />
-                </TouchableOpacity>
+            <View style={styles.form}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Email Address</Text>
+                <View style={styles.inputContainer}>
+                  <Feather name="mail" size={20} color={Colors.slate[400]} style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter your email"
+                    placeholderTextColor={Colors.slate[400]}
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                </View>
               </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Password</Text>
+                <View style={styles.inputContainer}>
+                  <Feather name="lock" size={20} color={Colors.slate[400]} style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter your password"
+                    placeholderTextColor={Colors.slate[400]}
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                  />
+                  <TouchableOpacity 
+                    onPress={() => setShowPassword(!showPassword)}
+                    style={styles.eyeIcon}
+                  >
+                    <Feather name={showPassword ? "eye" : "eye-off"} size={20} color={Colors.slate[400]} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <TouchableOpacity style={styles.forgotPassword}>
+                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+              </TouchableOpacity>
+
+              {error && (
+                <View style={styles.errorContainer}>
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
+              )}
+
+              <TouchableOpacity 
+                style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+                onPress={handleLogin}
+                activeOpacity={0.8}
+                disabled={isLoading}
+              >
+                <Text style={styles.loginButtonText}>{isLoading ? 'Signing In...' : 'Sign In'}</Text>
+                {!isLoading && <Feather name="arrow-right" size={20} color={Colors.white} />}
+              </TouchableOpacity>
             </View>
 
-            <TouchableOpacity style={styles.forgotPassword}>
-              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-            </TouchableOpacity>
-
-            {error && (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{error}</Text>
-              </View>
-            )}
-
-            <TouchableOpacity 
-              style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
-              onPress={handleLogin}
-              activeOpacity={0.8}
-              disabled={isLoading}
-            >
-              <Text style={styles.loginButtonText}>{isLoading ? 'Signing In...' : 'Sign In'}</Text>
-              {!isLoading && <Feather name="arrow-right" size={20} color={Colors.white} />}
-            </TouchableOpacity>
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Don't have an account? </Text>
+              <TouchableOpacity onPress={() => {
+                clearError();
+                navigation.navigate('Register');
+              }}>
+                <Text style={styles.registerLink}>Sign Up</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => {
-              clearError();
-              navigation.navigate('Register');
-            }}>
-              <Text style={styles.registerLink}>Sign Up</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -154,10 +161,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
+  },
+  content: {
+    paddingHorizontal: 24,
     paddingBottom: 40,
   },
   titleContainer: {

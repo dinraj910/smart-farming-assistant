@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
-  TextInput, Platform, KeyboardAvoidingView, Alert, ActivityIndicator,
+  TextInput, Platform, KeyboardAvoidingView, ActivityIndicator,
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,6 +10,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootStackParamList';
 import apiClient from '../api/client';
+import { showAlert } from '../components/CustomAlertModal';
 
 // Fallback high-res agricultural photography
 const FARM_IMAGES = [
@@ -191,9 +192,9 @@ export default function FieldDetailScreen() {
       } : prev);
 
       setIsEditingInfo(false);
-      Alert.alert('Saved', 'Plot information updated successfully.');
+      showAlert('Saved', 'Plot information updated successfully.', undefined, 'success');
     } catch (err) {
-      Alert.alert('Error', 'Failed to save changes. Please try again.');
+      showAlert('Save Failed', 'Failed to save changes. Please try again.', undefined, 'error');
     } finally {
       setSavingInfo(false);
     }
@@ -217,9 +218,9 @@ export default function FieldDetailScreen() {
       await apiClient.put(`/farms/${farm.id}`, { npk: npkString });
       setFarm(prev => prev ? { ...prev, npk: npkString } : prev);
       setIsEditingSoil(false);
-      Alert.alert('Saved', 'Soil telemetry parameters updated successfully.');
+      showAlert('Saved', 'Soil telemetry parameters updated successfully.', undefined, 'success');
     } catch (err) {
-      Alert.alert('Error', 'Failed to save soil data. Please try again.');
+      showAlert('Save Failed', 'Failed to save soil data. Please try again.', undefined, 'error');
     } finally {
       setSavingSoil(false);
     }
@@ -274,7 +275,8 @@ export default function FieldDetailScreen() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: '#f8fafc' }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       {/* ── Top Header ──────────────────────────────────────────────────────── */}
       <SafeAreaView edges={['top']} style={styles.headerSafe}>
@@ -306,6 +308,8 @@ export default function FieldDetailScreen() {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
         {/* ── Hero Image & Floating Badges ───────────────────────────────────── */}
         <View style={styles.heroWrap}>
@@ -928,7 +932,7 @@ const styles = StyleSheet.create({
   },
   askHeaderBtnText: { fontSize: 12, fontWeight: '700', color: '#15803d' },
 
-  scrollContent: { paddingBottom: 40 },
+  scrollContent: { paddingBottom: 160 },
 
   // Hero Section
   heroWrap: {

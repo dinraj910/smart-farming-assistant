@@ -369,7 +369,8 @@ export default function AgentChatScreen() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: '#f8fafc' }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <SafeAreaView edges={['top']} style={styles.headerSafe}>
@@ -444,6 +445,8 @@ export default function AgentChatScreen() {
         contentContainerStyle={styles.chatContent}
         onContentSizeChange={scrollToBottom}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
         ListHeaderComponent={messages.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyIcon}>🌱</Text>

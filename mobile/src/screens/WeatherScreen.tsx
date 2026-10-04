@@ -483,6 +483,7 @@ export default function WeatherScreen() {
     <View style={S.root}>
       <ScrollView
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
