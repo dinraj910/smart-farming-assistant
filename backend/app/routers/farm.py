@@ -81,38 +81,115 @@ async def get_farm_advisory(farm_id: str, request: Request, current_user = Depen
         if messages and len(messages) > 0:
             latest_msg = messages[0].content
             
-            # Extract recommended crop from message
-            all_known_crops = [
-                "Coconut", "Banana", "Black Pepper", "Rice", "Paddy", "Cardamom", 
-                "Rubber", "Coffee", "Papaya", "Mango", "Tapioca", "Ginger", "Turmeric",
-                "Arecanut", "Nutmeg", "Pineapple", "Vegetables"
-            ]
-            detected_crop = None
-            for c in all_known_crops:
-                if c.lower() in latest_msg.lower():
-                    detected_crop = c if c != "Rice" else "Rice / Paddy"
-                    break
-            
-            if not detected_crop:
-                import re
-                bold_matches = re.findall(r'\*\*([A-Za-z\s/]{3,20})\*\*', latest_msg)
-                if bold_matches:
-                    detected_crop = bold_matches[0].strip()
-                else:
-                    detected_crop = "Recommended Mixed Intercrop"
+            # Robust crop extraction and markdown formatting cleanup
+            import re
 
-            # Create clean, high-value bullet takeaways from the message
-            clean_lines = [
-                l.strip().lstrip('-*•0123456789. ').strip() 
-                for l in latest_msg.split('\n') 
-                if len(l.strip()) > 15 and not l.strip().startswith('#') and not l.strip().startswith('|')
+            def clean_markdown_text(text: Optional[str]) -> str:
+                if not text:
+                    return ""
+                # Strip all markdown asterisks like **, ***, *, etc.
+                cleaned = re.sub(r'\*+', '', text)
+                # Strip underscores like __ or _
+                cleaned = re.sub(r'_+', '', cleaned)
+                # Strip leading bullet indicators (e.g. - , • , 1. )
+                cleaned = re.sub(r'^[-•\s\d.]+', '', cleaned)
+                return cleaned.strip()
+
+            ALL_KNOWN_CROPS = [
+                # 22 ML model crops (singular & plural)
+                "Grapes", "Grape", "Pomegranate", "Watermelon", "Muskmelon",
+                "Apple", "Orange", "Papaya", "Coconut", "Cotton", "Jute", "Coffee",
+                "Rice", "Paddy", "Maize", "Chickpea", "Kidney Beans", "Kidneybeans",
+                "Pigeonpeas", "Mothbeans", "Mungbean", "Blackgram", "Lentil", "Banana", "Mango",
+                # Kerala crops & spices
+                "Black Pepper", "Pepper", "Cardamom", "Rubber", "Tapioca", "Ginger",
+                "Turmeric", "Arecanut", "Nutmeg", "Pineapple", "Vegetables", "Cowpea"
             ]
-            takeaways = clean_lines[:3] if clean_lines else [latest_msg[:160].strip() + "..."]
+
+            CROP_DISPLAY_MAP = {
+                "grape": "Grapes",
+                "grapes": "Grapes",
+                "rice": "Rice / Paddy",
+                "paddy": "Rice / Paddy",
+                "kidneybeans": "Kidney Beans",
+                "kidney beans": "Kidney Beans",
+                "black pepper": "Black Pepper",
+                "pepper": "Black Pepper",
+            }
+
+            def detect_recommended_crop_from_message(msg: str) -> str:
+                if not msg:
+                    return "Recommended Mixed Intercrop"
+
+                # 1. Search for explicit "Primary Recommendation", "Recommended Crop", etc.
+                rec_patterns = [
+                    r'(?:Primary\s+Recommendation|Recommended\s+Crop|Top\s+Recommendation|Recommended|Recommend(?:ing)?|Suggest(?:ed)?\s+Crop|Best\s+Suited\s+Crop)[:\s*]+(?:\*\*)?([A-Za-z\s/]{3,30})(?:\*\*)?',
+                    r'(?:recommend(?:ed)?\s+crop\s+(?:for\s+this\s+field\s+)?is)[:\s*]+(?:\*\*)?([A-Za-z\s/]{3,30})(?:\*\*)?',
+                    r'\*\*(?:Primary\s+Recommendation|Recommended\s+Crop)\*\*[:\s*]+(?:\*\*)?([A-Za-z\s/]{3,30})(?:\*\*)?',
+                ]
+                for pat in rec_patterns:
+                    match = re.search(pat, msg, re.IGNORECASE)
+                    if match:
+                        raw_crop = clean_markdown_text(match.group(1)).split('\n')[0].strip()
+                        # Check if any known crop is within this matched recommendation phrase
+                        for c in ALL_KNOWN_CROPS:
+                            if re.search(rf'\b{re.escape(c)}\b', raw_crop, re.IGNORECASE):
+                                norm = c.lower()
+                                return CROP_DISPLAY_MAP.get(norm, c)
+                        if 2 < len(raw_crop) < 25:
+                            norm = raw_crop.lower()
+                            return CROP_DISPLAY_MAP.get(norm, raw_crop.title())
+
+                # 2. Look for lines that contain "recommend" or "suitable" and match a known crop in that line
+                for line in msg.split('\n'):
+                    if re.search(r'\b(recommend|suitable|plant)\b', line, re.IGNORECASE):
+                        for c in ALL_KNOWN_CROPS:
+                            if re.search(rf'\b{re.escape(c)}\b', line, re.IGNORECASE):
+                                norm = c.lower()
+                                return CROP_DISPLAY_MAP.get(norm, c)
+
+                # 3. Look for bolded crops: e.g. **Grape** or **Grapes**
+                bold_matches = re.findall(r'\*\*([A-Za-z\s/]{3,25})\*\*', msg)
+                for bm in bold_matches:
+                    cleaned_bm = clean_markdown_text(bm)
+                    for c in ALL_KNOWN_CROPS:
+                        if re.search(rf'\b{re.escape(c)}\b', cleaned_bm, re.IGNORECASE):
+                            norm = c.lower()
+                            return CROP_DISPLAY_MAP.get(norm, c)
+
+                # 4. Fallback to earliest occurring crop in the text
+                earliest_pos = len(msg) + 1
+                earliest_crop = None
+                msg_lower = msg.lower()
+                for c in ALL_KNOWN_CROPS:
+                    m = re.search(rf'\b{re.escape(c.lower())}\b', msg_lower)
+                    if m and m.start() < earliest_pos:
+                        earliest_pos = m.start()
+                        norm = c.lower()
+                        earliest_crop = CROP_DISPLAY_MAP.get(norm, c)
+
+                if earliest_crop:
+                    return earliest_crop
+
+                return "Recommended Mixed Intercrop"
+
+            detected_crop = clean_markdown_text(detect_recommended_crop_from_message(latest_msg))
+
+            # Create clean, high-value bullet takeaways from the message, completely stripping markdown asterisks
+            clean_lines = []
+            for l in latest_msg.split('\n'):
+                stripped = l.strip()
+                if len(stripped) > 15 and not stripped.startswith('#') and not stripped.startswith('|') and not stripped.startswith('---'):
+                    cleaned_point = clean_markdown_text(stripped)
+                    if len(cleaned_point) > 12:
+                        clean_lines.append(cleaned_point)
+
+            takeaways = clean_lines[:3] if clean_lines else [clean_markdown_text(latest_msg[:160]) + "..."]
 
             return {
                 "hasAdvisory": True,
                 "recommendedCrop": detected_crop,
-                "summary": latest_msg[:240],
+                "summary": clean_markdown_text(latest_msg[:240]),
                 "takeaways": takeaways,
                 "consultedAt": messages[0].createdAt.isoformat() if hasattr(messages[0], 'createdAt') and messages[0].createdAt else None,
                 "source": "AI Chat History"

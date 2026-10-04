@@ -39,6 +39,16 @@ interface AdvisoryData {
   source?: string;
 }
 
+// Clean markdown asterisks and formatting to present clean, normal text
+function cleanDisplayText(text?: string | null): string {
+  if (!text) return '';
+  return text
+    .replace(/\*{1,6}/g, '')       // remove *, **, ***, etc.
+    .replace(/_{1,4}/g, '')        // remove _ or __
+    .replace(/^[-•\s\d.]+\s*/, '') // remove leading bullets or numbers
+    .trim();
+}
+
 // Parse NPK string like "N: 85 ppm, P: 42 ppm, K: 140 ppm, pH: 6.2" or "85-42-140" or "NPK: --"
 function parseNPK(raw: string | null) {
   if (!raw || raw === 'NPK: --') return { n: '', p: '', k: '', ph: '' };
@@ -129,7 +139,16 @@ export default function FieldDetailScreen() {
     try {
       setLoadingAdvisory(true);
       const res = await apiClient.get<AdvisoryData>(`/farms/${fieldId}/advisory`);
-      setAdvisory(res.data);
+      const data = res.data;
+      if (data) {
+        setAdvisory({
+          ...data,
+          recommendedCrop: cleanDisplayText(data.recommendedCrop),
+          takeaways: (data.takeaways || []).map(t => cleanDisplayText(t)).filter(Boolean),
+        });
+      } else {
+        setAdvisory(null);
+      }
     } catch (e) {
       console.log('Advisory fetch error:', e);
     } finally {
@@ -386,7 +405,7 @@ export default function FieldDetailScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.cropBannerLabel}>RECOMMENDED CROP</Text>
-                  <Text style={styles.cropBannerName}>{advisory.recommendedCrop}</Text>
+                  <Text style={styles.cropBannerName}>{cleanDisplayText(advisory.recommendedCrop)}</Text>
                 </View>
                 <View style={styles.matchBadge}>
                   <Feather name="check-circle" size={11} color="#059669" />
@@ -400,7 +419,7 @@ export default function FieldDetailScreen() {
                 {advisory.takeaways.map((point, idx) => (
                   <View key={idx} style={styles.takeawayRow}>
                     <View style={styles.takeawayDot} />
-                    <Text style={styles.takeawayText}>{point}</Text>
+                    <Text style={styles.takeawayText}>{cleanDisplayText(point)}</Text>
                   </View>
                 ))}
               </View>
