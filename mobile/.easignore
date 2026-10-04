@@ -1,0 +1,9 @@
+# EAS Build Ignore File (Mobile App)
+node_modules/
+.expo/
+dist/
+web-build/
+*.log
+.DS_Store
+android/
+ios/
