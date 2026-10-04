@@ -358,7 +358,7 @@ export default function FieldDetailScreen() {
               </View>
               <View>
                 <Text style={styles.cardTitle}>Latest Agronomic Advisory</Text>
-                <Text style={styles.cardSubtitle}>Consolidated Insights & Recommended Crop</Text>
+                <Text style={styles.cardSubtitle}>Recommended Crop</Text>
               </View>
             </View>
 
