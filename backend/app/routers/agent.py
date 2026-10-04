@@ -8,6 +8,8 @@ from app.schemas.agent import (
     AgentResponse,
     SessionRequest,
     SessionResponse,
+    TranslateRequest,
+    TranslateResponse,
 )
 
 router = APIRouter()
@@ -123,3 +125,60 @@ async def crop_advisory(
         )
 
     return result
+
+
+@router.post("/agent/translate", response_model=TranslateResponse)
+async def translate_text(payload: TranslateRequest):
+    """
+    Translates advisory text into Malayalam or requested language.
+    Uses Groq LLM or fallback public engine with markdown preservation.
+    """
+    import os
+    import json
+    import urllib.parse
+    import urllib.request
+
+    target_lang = payload.target_lang or "ml"
+    text = (payload.text or "").strip()
+    if not text:
+        return {"translated_text": "", "target_lang": target_lang}
+
+    # 1. Try Groq fast translation
+    groq_key = os.environ.get("GROQ_API_KEY")
+    if groq_key:
+        try:
+            from groq import Groq
+            client = Groq(api_key=groq_key)
+            prompt = (
+                "You are an expert agricultural translator for Kerala farmers. "
+                "Translate the following agricultural advisory message into natural, fluent Malayalam. "
+                "Keep all markdown formatting (bold, bullet points, headings, numbers, tables) intact. "
+                "Output ONLY the Malayalam translation without conversational preamble.\n\n"
+                f"{text}"
+            )
+            completion = client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.2,
+                max_tokens=1500,
+            )
+            translated = completion.choices[0].message.content.strip()
+            if translated:
+                return {"translated_text": translated, "target_lang": target_lang}
+        except Exception as e:
+            print("Groq translation failed, falling back to public engine:", e)
+
+    # 2. Fallback to public translation engine
+    try:
+        encoded = urllib.parse.quote(text)
+        url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl={target_lang}&dt=t&q={encoded}"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=8) as response:
+            data = json.loads(response.read().decode("utf-8"))
+            if isinstance(data, list) and len(data) > 0 and isinstance(data[0], list):
+                translated = "".join(item[0] for item in data[0] if item and item[0])
+                return {"translated_text": translated or text, "target_lang": target_lang}
+    except Exception as e:
+        print("Fallback translation failed:", e)
+
+    return {"translated_text": text, "target_lang": target_lang}

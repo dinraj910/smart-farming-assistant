@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   View, Text, TextInput, TouchableOpacity, 
   StyleSheet, KeyboardAvoidingView, 
-  Platform, StatusBar, ScrollView 
+  Platform, StatusBar, ScrollView, Keyboard 
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -24,8 +24,35 @@ export default function RegisterScreen({ navigation }: Props) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState('');
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const scrollViewRef = useRef<ScrollView>(null);
   
   const { register, isLoading, error, clearError } = useAuthStore();
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  const handleInputFocus = (offset: number) => {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollTo({ y: offset, animated: true });
+    }, 120);
+  };
 
   const handleRegister = async () => {
     setLocalError('');
@@ -45,6 +72,8 @@ export default function RegisterScreen({ navigation }: Props) {
     }
   };
 
+  const isKeyboardUp = keyboardHeight > 0;
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
@@ -63,9 +92,18 @@ export default function RegisterScreen({ navigation }: Props) {
         </View>
 
         <ScrollView 
-          contentContainerStyle={styles.scrollContent}
+          ref={scrollViewRef}
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingBottom: isKeyboardUp ? keyboardHeight + 40 : 40,
+            }
+          ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+          bounces={false}
         >
           <View style={styles.titleContainer}>
             <Text style={styles.title}>Create Account</Text>
@@ -83,6 +121,7 @@ export default function RegisterScreen({ navigation }: Props) {
                   placeholderTextColor={Colors.slate[400]}
                   value={name}
                   onChangeText={setName}
+                  onFocus={() => handleInputFocus(30)}
                 />
               </View>
             </View>
@@ -99,6 +138,7 @@ export default function RegisterScreen({ navigation }: Props) {
                   onChangeText={setEmail}
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  onFocus={() => handleInputFocus(110)}
                 />
               </View>
             </View>
@@ -114,6 +154,7 @@ export default function RegisterScreen({ navigation }: Props) {
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
+                  onFocus={() => handleInputFocus(200)}
                 />
                 <TouchableOpacity 
                   onPress={() => setShowPassword(!showPassword)}
@@ -135,6 +176,7 @@ export default function RegisterScreen({ navigation }: Props) {
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry={!showPassword}
+                  onFocus={() => handleInputFocus(280)}
                 />
               </View>
             </View>
@@ -287,7 +329,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 'auto',
+    marginTop: 24,
+    paddingBottom: 24,
   },
   footerText: {
     color: Colors.slate[500],

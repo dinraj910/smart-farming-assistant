@@ -5,6 +5,7 @@
  */
 import { create } from 'zustand';
 import { openSession, sendAgentMessage, ReasoningStep } from '../api/chatApi';
+import { translateToMalayalam } from '../services/translationService';
 
 export type MessageStatus = 'sending' | 'sent' | 'failed';
 
@@ -12,6 +13,9 @@ export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   text: string;
+  translatedText?: string;
+  isTranslating?: boolean;
+  showingTranslation?: boolean;
   status?: MessageStatus;
   trace?: { tool: string }[];
   isThinking?: boolean;
@@ -30,11 +34,16 @@ interface ChatState {
   isSending: boolean;
   /** last error, per field */
   error: string | null;
+  /** Auto translate incoming assistant responses into Malayalam */
+  autoTranslateMalayalam: boolean;
 
   // Actions
   initSession: (fieldId: string, farmId?: string) => Promise<void>;
   send: (fieldId: string, text: string, farmId?: string) => Promise<void>;
   retry: (fieldId: string, msgId: string, farmId?: string) => Promise<void>;
+  translateMessage: (fieldId: string, messageId: string) => Promise<void>;
+  toggleMessageLanguage: (fieldId: string, messageId: string) => void;
+  toggleAutoTranslateMalayalam: () => void;
   clearError: () => void;
 }
 
@@ -138,6 +147,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
           messages: { ...state.messages, [fieldId]: [...existing, assistantMsg] },
         };
       });
+
+      if (get().autoTranslateMalayalam) {
+        get().translateMessage(fieldId, assistantMsg.id);
+      }
     } catch (err: any) {
       const errMsg =
         err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED'
@@ -159,6 +172,77 @@ export const useChatStore = create<ChatState>((set, get) => ({
         };
       });
     }
+  },
+
+  autoTranslateMalayalam: false,
+
+  toggleAutoTranslateMalayalam: () => {
+    set(state => ({ autoTranslateMalayalam: !state.autoTranslateMalayalam }));
+  },
+
+  translateMessage: async (fieldId, messageId) => {
+    const msgs = get().messages[fieldId] || [];
+    const target = msgs.find(m => m.id === messageId);
+    if (!target || target.role !== 'assistant') return;
+
+    // If already translated, just toggle view to Malayalam
+    if (target.translatedText) {
+      set(state => ({
+        messages: {
+          ...state.messages,
+          [fieldId]: (state.messages[fieldId] || []).map(m =>
+            m.id === messageId ? { ...m, showingTranslation: true } : m
+          ),
+        },
+      }));
+      return;
+    }
+
+    // Mark isTranslating
+    set(state => ({
+      messages: {
+        ...state.messages,
+        [fieldId]: (state.messages[fieldId] || []).map(m =>
+          m.id === messageId ? { ...m, isTranslating: true } : m
+        ),
+      },
+    }));
+
+    try {
+      const ml = await translateToMalayalam(target.text);
+      set(state => ({
+        messages: {
+          ...state.messages,
+          [fieldId]: (state.messages[fieldId] || []).map(m =>
+            m.id === messageId
+              ? { ...m, isTranslating: false, translatedText: ml, showingTranslation: true }
+              : m
+          ),
+        },
+      }));
+    } catch {
+      set(state => ({
+        messages: {
+          ...state.messages,
+          [fieldId]: (state.messages[fieldId] || []).map(m =>
+            m.id === messageId ? { ...m, isTranslating: false } : m
+          ),
+        },
+      }));
+    }
+  },
+
+  toggleMessageLanguage: (fieldId, messageId) => {
+    set(state => ({
+      messages: {
+        ...state.messages,
+        [fieldId]: (state.messages[fieldId] || []).map(m =>
+          m.id === messageId
+            ? { ...m, showingTranslation: !m.showingTranslation }
+            : m
+        ),
+      },
+    }));
   },
 
   retry: async (fieldId, msgId, farmId) => {

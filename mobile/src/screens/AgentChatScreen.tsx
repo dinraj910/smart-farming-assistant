@@ -192,6 +192,8 @@ export default function AgentChatScreen() {
   const {
     sessions, messages: allMessages,
     isInitializingSession, isSending, error,
+    autoTranslateMalayalam, toggleAutoTranslateMalayalam,
+    translateMessage, toggleMessageLanguage,
     initSession, send, retry, clearError,
   } = useChatStore();
 
@@ -221,6 +223,9 @@ export default function AgentChatScreen() {
           }],
         },
       }));
+      if (useChatStore.getState().autoTranslateMalayalam) {
+        useChatStore.getState().translateMessage(fieldId, 'init');
+      }
     }
   }, [sessionId]);
 
@@ -309,32 +314,79 @@ export default function AgentChatScreen() {
   const renderAssistantMsg = (item: ChatMessage) => {
     const sourceNames = [...new Set((item.trace || []).map(t => TOOL_LABELS[t.tool] || t.tool))];
     const isExpanded = expandedSources[item.id];
+    const isShowingTranslation = !!(item.showingTranslation && item.translatedText);
+    const displayText = isShowingTranslation ? item.translatedText! : item.text;
 
     return (
       <View style={styles.assistantRow}>
         <View style={styles.assistantAvatar}>
           <Text style={{ fontSize: 12 }}>🌾</Text>
         </View>
-        <View style={{ flex: 1, gap: 4 }}>
+        <View style={{ flex: 1, gap: 5 }}>
           <View style={styles.assistantBubble}>
-            <MarkdownText text={item.text} color="#1e293b" />
+            {isShowingTranslation && (
+              <View style={styles.translationBadge}>
+                <Feather name="globe" size={10} color="#15803d" />
+                <Text style={styles.translationBadgeText}>മലയാളം പതിപ്പ് (Malayalam)</Text>
+              </View>
+            )}
+            <MarkdownText text={displayText} color="#1e293b" />
             <View style={styles.bubbleMetaAsst}>
               {item.createdAt && <Text style={styles.timeAsst}>{formatTime(item.createdAt)}</Text>}
             </View>
           </View>
 
-          {sourceNames.length > 0 && (
+          {/* Action buttons bar: Translate to Malayalam + Sources */}
+          <View style={styles.actionsBar}>
             <TouchableOpacity
-              style={styles.sourcesBtn}
-              onPress={() => setExpandedSources(prev => ({ ...prev, [item.id]: !isExpanded }))}
+              style={[
+                styles.translateBtn,
+                isShowingTranslation && styles.translateBtnActive,
+              ]}
+              onPress={() => {
+                if (!item.translatedText) {
+                  translateMessage(fieldId, item.id);
+                } else {
+                  toggleMessageLanguage(fieldId, item.id);
+                }
+              }}
+              disabled={item.isTranslating}
+              activeOpacity={0.8}
             >
-              <Feather name="zap" size={11} color="#16a34a" />
-              <Text style={styles.sourcesBtnText}>
-                {sourceNames.length} source{sourceNames.length > 1 ? 's' : ''} checked
-              </Text>
-              <Feather name={isExpanded ? 'chevron-up' : 'chevron-down'} size={11} color="#94a3b8" />
+              {item.isTranslating ? (
+                <>
+                  <ActivityIndicator size="small" color="#15803d" style={{ transform: [{ scale: 0.65 }] }} />
+                  <Text style={styles.translateBtnText}>വിവർത്തനം ചെയ്യുന്നു...</Text>
+                </>
+              ) : isShowingTranslation ? (
+                <>
+                  <Feather name="rotate-ccw" size={11} color="#475569" />
+                  <Text style={[styles.translateBtnText, { color: '#475569' }]}>Show English</Text>
+                </>
+              ) : (
+                <>
+                  <Feather name="globe" size={11} color="#15803d" />
+                  <Text style={styles.translateBtnText}>
+                    {item.translatedText ? 'മലയാളത്തിൽ കാണിക്കുക' : 'Translate to മലയാളം'}
+                  </Text>
+                </>
+              )}
             </TouchableOpacity>
-          )}
+
+            {sourceNames.length > 0 && (
+              <TouchableOpacity
+                style={styles.sourcesBtn}
+                onPress={() => setExpandedSources(prev => ({ ...prev, [item.id]: !isExpanded }))}
+              >
+                <Feather name="zap" size={11} color="#16a34a" />
+                <Text style={styles.sourcesBtnText}>
+                  {sourceNames.length} source{sourceNames.length > 1 ? 's' : ''} checked
+                </Text>
+                <Feather name={isExpanded ? 'chevron-up' : 'chevron-down'} size={11} color="#94a3b8" />
+              </TouchableOpacity>
+            )}
+          </View>
+
           {isExpanded && (
             <View style={styles.sourceChips}>
               {sourceNames.map(name => (
@@ -392,12 +444,37 @@ export default function AgentChatScreen() {
             </View>
           </View>
 
-          <TouchableOpacity
-            style={styles.headerBtn}
-            onPress={() => { useChatStore.setState(s => ({ messages: { ...s.messages, [fieldId]: [] }, sessions: { ...s.sessions, [fieldId]: undefined as any } })); initSession(fieldId, farmId); }}
-          >
-            <Feather name="refresh-cw" size={16} color="#374151" />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <TouchableOpacity
+              style={[
+                styles.langHeaderBtn,
+                autoTranslateMalayalam && styles.langHeaderBtnActive,
+              ]}
+              onPress={toggleAutoTranslateMalayalam}
+              activeOpacity={0.8}
+            >
+              <Feather
+                name="globe"
+                size={12}
+                color={autoTranslateMalayalam ? '#ffffff' : '#15803d'}
+              />
+              <Text
+                style={[
+                  styles.langHeaderText,
+                  autoTranslateMalayalam && styles.langHeaderTextActive,
+                ]}
+              >
+                {autoTranslateMalayalam ? 'മലയാളം' : 'EN / ML'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.headerBtn}
+              onPress={() => { useChatStore.setState(s => ({ messages: { ...s.messages, [fieldId]: [] }, sessions: { ...s.sessions, [fieldId]: undefined as any } })); initSession(fieldId, farmId); }}
+            >
+              <Feather name="refresh-cw" size={16} color="#374151" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* ── Context Strip (Location & Soil Telemetry) ────────────────────── */}
@@ -605,6 +682,77 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: '#bbf7d0',
   },
   sourceChipText: { fontSize: 10, fontWeight: '600', color: '#16a34a' },
+
+  // Translation & Actions Bar
+  actionsBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+    paddingLeft: 4,
+    marginTop: 2,
+  },
+  translateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#f0fdf4',
+    borderWidth: 1,
+    borderColor: '#86efac',
+    borderRadius: 14,
+    paddingHorizontal: 9,
+    paddingVertical: 4.5,
+  },
+  translateBtnActive: {
+    backgroundColor: '#f8fafc',
+    borderColor: '#cbd5e1',
+  },
+  translateBtnText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#15803d',
+  },
+  translationBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#f0fdf4',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 2.5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#86efac',
+    marginBottom: 6,
+  },
+  translationBadgeText: {
+    fontSize: 9.5,
+    fontWeight: '700',
+    color: '#15803d',
+  },
+  langHeaderBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#f0fdf4',
+    borderWidth: 1.5,
+    borderColor: '#86efac',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    height: 36,
+  },
+  langHeaderBtnActive: {
+    backgroundColor: '#15803d',
+    borderColor: '#15803d',
+  },
+  langHeaderText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#15803d',
+  },
+  langHeaderTextActive: {
+    color: '#ffffff',
+  },
 
   // Input
   inputBar: {

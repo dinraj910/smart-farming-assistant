@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   View, Text, TextInput, TouchableOpacity, 
   StyleSheet, KeyboardAvoidingView, 
-  Platform, StatusBar, ScrollView 
+  Platform, StatusBar, ScrollView, Keyboard 
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -21,7 +21,34 @@ export default function LoginScreen({ navigation }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const scrollViewRef = useRef<ScrollView>(null);
   const { login, isLoading, error, clearError } = useAuthStore();
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  const handleInputFocus = (offset: number) => {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollTo({ y: offset, animated: true });
+    }, 120);
+  };
 
   const handleLogin = async () => {
     if (!email || !password) return;
@@ -32,6 +59,8 @@ export default function LoginScreen({ navigation }: Props) {
       // Error is handled by store
     }
   };
+
+  const isKeyboardUp = keyboardHeight > 0;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -51,10 +80,19 @@ export default function LoginScreen({ navigation }: Props) {
         </View>
 
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          ref={scrollViewRef}
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingBottom: isKeyboardUp ? keyboardHeight + 30 : 40,
+              justifyContent: isKeyboardUp ? 'flex-start' : 'center',
+            }
+          ]}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
           bounces={false}
+          automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
         >
           <View style={styles.content}>
             <View style={styles.titleContainer}>
@@ -78,6 +116,7 @@ export default function LoginScreen({ navigation }: Props) {
                     onChangeText={setEmail}
                     keyboardType="email-address"
                     autoCapitalize="none"
+                    onFocus={() => handleInputFocus(60)}
                   />
                 </View>
               </View>
@@ -93,6 +132,7 @@ export default function LoginScreen({ navigation }: Props) {
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry={!showPassword}
+                    onFocus={() => handleInputFocus(160)}
                   />
                   <TouchableOpacity 
                     onPress={() => setShowPassword(!showPassword)}
@@ -274,7 +314,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 'auto',
+    marginTop: 28,
+    paddingBottom: 20,
   },
   footerText: {
     color: Colors.slate[500],

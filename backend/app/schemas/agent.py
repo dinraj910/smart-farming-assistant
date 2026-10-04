@@ -46,3 +46,14 @@ class AgentResponse(BaseModel):
 
     # Optional until the full chat system is finished.
     session_id: str | None = None
+
+
+class TranslateRequest(BaseModel):
+    text: str
+    target_lang: str = "ml"
+    source_lang: str = "en"
+
+
+class TranslateResponse(BaseModel):
+    translated_text: str
+    target_lang: str
