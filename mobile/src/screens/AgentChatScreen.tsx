@@ -646,7 +646,7 @@ const styles = StyleSheet.create({
   retryBtnText: { fontSize: 10, color: '#dc2626', fontWeight: '600' },
 
   // Assistant bubble
-  assistantRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', paddingRight: 24 },
+  assistantRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', paddingRight: 8 },
   assistantAvatar: {
     width: 34, height: 34, borderRadius: 12, flexShrink: 0,
     backgroundColor: '#dcfce7', alignItems: 'center', justifyContent: 'center',

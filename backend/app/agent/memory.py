@@ -5,7 +5,7 @@ active reasoning, plus a rolling summary for anything older -- similar in
 spirit to how ChatGPT bounds context per conversation.
 """
 import os
-from groq import Groq
+from groq import AsyncGroq
 from prisma import Prisma
 
 WINDOW_SIZE = 12          # most recent messages kept verbatim (~6 turns)
@@ -17,7 +17,7 @@ _summarizer_client = None
 def get_summarizer_client():
     global _summarizer_client
     if _summarizer_client is None:
-        _summarizer_client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+        _summarizer_client = AsyncGroq(api_key=os.environ.get("GROQ_API_KEY"))
     return _summarizer_client
 
 
@@ -105,7 +105,7 @@ async def maybe_summarize(db: Prisma, session_id: str):
     )
     user_msg = f"Previous summary: {session.memorySummary or 'None'}\n\nConversation to fold in:\n{overflow_text}"
 
-    response = client.chat.completions.create(
+    response = await client.chat.completions.create(
         model="openai/gpt-oss-120b",
         messages=[
             {"role": "system", "content": sys_prompt},

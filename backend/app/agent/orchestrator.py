@@ -1,7 +1,8 @@
+import asyncio
 import json
 import os
 import re
-from groq import Groq
+from groq import AsyncGroq
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -22,14 +23,17 @@ from app.agent.memory import (
     maybe_summarize,
 )
 
-# ─── Groq client (ultra-fast, generous free tier) ─────────────────────────────
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+# ─── Async Groq client (non-blocking, won't stall the FastAPI event loop) ─────
+client = AsyncGroq(api_key=os.environ.get("GROQ_API_KEY"))
 
 # openai/gpt-oss-120b: 120B OpenAI open-source model on Groq
 # - Full tool/function calling support
 # - ~1-2s response time on Groq LPU hardware
 # - Generous free tier (no per-day quota)
 MODEL_NAME = "openai/gpt-oss-120b"
+
+# Per-turn timeout for any single LLM call (seconds)
+LLM_CALL_TIMEOUT = 60
 
 SYSTEM_PROMPT = """You are a concise, expert AI farming advisor for Kerala farmers.
 You have tools — use the minimum needed to answer exactly what was asked.
@@ -349,14 +353,24 @@ No specific plot is selected for this conversation. If the user's question requi
             "model": MODEL_NAME,
             "messages": messages,
             "temperature": 0.3,
-            "max_tokens": 1500,
+            # Use fewer tokens on intermediate tool-calling turns for speed
+            "max_tokens": 1500 if is_final_push else 1000,
         }
         if not is_final_push:
             completion_kwargs["tools"] = TOOLS
             completion_kwargs["tool_choice"] = "auto"
 
         try:
-            response = client.chat.completions.create(**completion_kwargs)
+            response = await asyncio.wait_for(
+                client.chat.completions.create(**completion_kwargs),
+                timeout=LLM_CALL_TIMEOUT,
+            )
+        except asyncio.TimeoutError:
+            return {
+                "answer": "The AI advisor is experiencing high load. Please try again in a moment.",
+                "reasoning_trace": reasoning_trace,
+                "session_id": session_id,
+            }
         except Exception as e:
             return {
                 "answer": f"Agent failed: {str(e)}",
@@ -412,17 +426,20 @@ No specific plot is selected for this conversation. If the user's question requi
 
     if final_answer is None:
         try:
-            force_response = client.chat.completions.create(
-                model=MODEL_NAME,
-                messages=messages + [{
-                    "role": "user",
-                    "content": "[System: Give your final concise answer now. No more tool calls.]"
-                }],
-                temperature=0.3,
-                max_tokens=1500,
+            force_response = await asyncio.wait_for(
+                client.chat.completions.create(
+                    model=MODEL_NAME,
+                    messages=messages + [{
+                        "role": "user",
+                        "content": "[System: Give your final concise answer now. No more tool calls.]"
+                    }],
+                    temperature=0.3,
+                    max_tokens=1500,
+                ),
+                timeout=LLM_CALL_TIMEOUT,
             )
             final_answer = force_response.choices[0].message.content
-        except Exception:
+        except (asyncio.TimeoutError, Exception):
             final_answer = "I collected the tool data but wasn't able to finalize an answer. Please try again."
 
     await save_turn(db, session_id, user_message, final_answer)
