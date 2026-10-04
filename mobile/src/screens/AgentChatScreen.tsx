@@ -421,7 +421,7 @@ export default function AgentChatScreen() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: '#f8fafc' }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior="padding"
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       {/* ── Header ─────────────────────────────────────────────────────────── */}
@@ -613,7 +613,7 @@ const styles = StyleSheet.create({
   errorText: { flex: 1, fontSize: 11, color: '#dc2626', fontWeight: '500' },
 
   // Chat
-  chatContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 130, gap: 16 },
+  chatContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16, gap: 16 },
 
   emptyState: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 24 },
   emptyIcon: { fontSize: 48, marginBottom: 12 },
@@ -756,7 +756,6 @@ const styles = StyleSheet.create({
 
   // Input
   inputBar: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
     backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#f1f5f9',
     paddingTop: 10, paddingBottom: Platform.OS === 'ios' ? 28 : 12,
     paddingHorizontal: 12,

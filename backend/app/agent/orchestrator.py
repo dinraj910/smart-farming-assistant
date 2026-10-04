@@ -442,11 +442,24 @@ No specific plot is selected for this conversation. If the user's question requi
         except (asyncio.TimeoutError, Exception):
             final_answer = "I collected the tool data but wasn't able to finalize an answer. Please try again."
 
-    await save_turn(db, session_id, user_message, final_answer)
-    await maybe_summarize(db, session_id)
+    try:
+        await save_turn(db, session_id, user_message, final_answer)
+    except Exception as e:
+        print(f"Warning: could not save turn to DB: {e}")
+
+    # Fire-and-forget: summarize in background so it never delays the response
+    asyncio.create_task(_safe_summarize(db, session_id))
 
     return {
         "answer": final_answer,
         "reasoning_trace": reasoning_trace,
         "session_id": session_id,
     }
+
+
+async def _safe_summarize(db: Prisma, session_id: str):
+    """Run maybe_summarize in background; never let it crash the server."""
+    try:
+        await maybe_summarize(db, session_id)
+    except Exception as e:
+        print(f"Background summarize failed (non-fatal): {e}")
